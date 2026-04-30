@@ -13,7 +13,7 @@ import {
   View
 } from 'react-native';
 
-import { useAuth } from '../routes/routes';
+import { useAuth } from '@/routes/routes';
 
 
 export default function Home() {
@@ -63,7 +63,7 @@ export default function Home() {
   
       <View>  
          <View style ={styles.logoContent}>
-             <Image source={require('./assets/logo.png')} 
+             <Image source={require('@/app/assets/logo.png')}
              style ={styles.LogoStyling}
             /> 
          </View>

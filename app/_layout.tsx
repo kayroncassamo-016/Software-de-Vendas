@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/contexts/AuthProvider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { Stack } from 'expo-router';
@@ -10,22 +11,25 @@ export default function RootLayout() {
   const theme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
 
   return (
-    <PaperProvider>
+    <AuthProvider>
+      <PaperProvider>
       <Stack
         screenOptions={{
-          headerShown: true,
+         
           animation: 'fade',
-        }}>
-
+        }}>  
+        <Stack.Screen name="(authenticated)/settings" options={
+          { headerShown: false   }}/>
+      
+        <Stack.Screen name="login/login" options={{headerShown: false}}/> 
+        
         <Stack.Screen name="(authenticated)/produtos" options={
-          {    }}/>
+          {headerShown: false    }}/>
 
         <Stack.Screen name="(authenticated)/dashboard" options={
-          {    }}/>
+          {headerShown: false    }}/>
 
-        <Stack.Screen name="(authenticated)/settings" options={
-          {    }}/>
-        <Stack.Screen name="index" options={{headerShown: false}}/> 
+      
         <Stack.Screen name="register/index" options={{headerShown: true,
             headerTitle: '',
             headerStyle: { backgroundColor: '#1a253f', }
@@ -36,6 +40,7 @@ export default function RootLayout() {
         </Stack>
 
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-    </PaperProvider>
+     </PaperProvider>
+    </AuthProvider>
   );
 }

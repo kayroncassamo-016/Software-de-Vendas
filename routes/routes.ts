@@ -3,14 +3,14 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from "react";
 
 import { api } from "@/services/api";
-import { LoginResponse } from "../types/types";
+import { LoginResponse, User } from "../types/types";
 
 
 export  function useAuth()
 {
     const [signed,setSigned] = useState(false)
     const [loading,setLoading] = useState(true)
-    const [user,setUser] = useState<Object|null>(null)
+    const [user,setUser] = useState<User|null>(null)
     const router = useRouter();
     
     useEffect(() =>{
@@ -70,7 +70,8 @@ export  function useAuth()
             await AsyncStorage.setItem("@token", token)
             await AsyncStorage.setItem("@user", 
                 JSON.stringify(userData))
-
+            
+            
             setUser(userData)
         }
 
@@ -83,13 +84,30 @@ export  function useAuth()
     }
 
 
-    async function signOut()
+    async function signOut(token:string)
     {
-    await AsyncStorage.removeItem("@token")
-    await AsyncStorage.removeItem("@user")
 
+    try
+    {
+       await api.post('/logout',
+        {
+        token:token
+        }) 
+
+        await AsyncStorage.removeItem("@token")
+        await AsyncStorage.removeItem("@user")
+
+    }
+    catch (err)
+    {
+
+    }
+    finally{
+
+    }
     setUser(null)
     }
+
     return {
         user,
         signed,

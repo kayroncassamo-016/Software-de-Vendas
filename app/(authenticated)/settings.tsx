@@ -1,31 +1,60 @@
 import { colors } from '@/constants/theme';
+import { useAuth } from '@/routes/routes';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  Pressable,
+  //SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+ import { AuthContext } from "@/contexts/AuthProvider";
+import { useContext } from "react";
+
 const ConfigScreen = () => {
+ 
+  const NAV_ITEMS = [
+  { icon: ShoppingBag , label: 'Vendas' },
+    {icon:Handshake,label:'Clientes'},
+    { icon: Grid2X2, label: 'Painel' },
+    { icon: Package, label: 'Produtos' },
+    { icon: Cog, label: 'Config.' },
+];
+  const [activeNav, setActiveNav] = useState(4);
+  const router = useRouter()
+  const { signOut } = useAuth();
+
   const [usuario, setUsuario] = useState({
     nome: 'Kayron Cassamo',
     senha: '400123456',
   });
 
+  
   const [notificacoes, setNotificacoes] = useState(true);
   const [temaEscuro, setTemaEscuro] = useState(false);
+  const { user } = useContext(AuthContext);
 
   const [modalUsuario, setModalUsuario] = useState(false);
   const [nome, setNome] = useState(usuario.nome);
   const [senha, setSenha] = useState(usuario.senha);
+  const [showSenha, setShowSenha] = useState(false)
+
+ 
+  
 
   const salvarUsuario = () => {
     setUsuario({ nome, senha });
@@ -34,7 +63,7 @@ const ConfigScreen = () => {
 
   const Item = ({ label, value, onPress, toggle, onToggle }:any) => (
     <TouchableOpacity style={styles.item} onPress={onPress} disabled={toggle}>
-      <View>
+      {/* <View>
         <Text style={styles.label}>{label}</Text>
         {value && <Text style={styles.value}>{value}</Text>}
       </View>
@@ -43,20 +72,100 @@ const ConfigScreen = () => {
         <Switch value={value} onValueChange={onToggle} />
       ) : (
         <Text style={styles.arrow}>›</Text>
+      )} */}
+
+      {toggle ? (
+          <View style={{flexDirection:'row',
+            alignItems:'center'
+          }}>
+              <Text style={styles.label}>{label}</Text>
+              <Switch value={value} onValueChange={onToggle}
+              style={{flex:1, }} />
+          </View>
+
+      ):
+      (
+        <View style={{flexDirection:'row',
+          alignItems:'center'
+        }}>
+            <View style={{flex:1,}}>
+              <Text style={styles.label}>{label}</Text>
+              {value && <Text style={styles.value}>{value}</Text>}
+            </View>
+             <Text style={styles.arrow}>›</Text>
+        </View>
       )}
     </TouchableOpacity>
+
   );
+    function navigatePage(pageIndex:number)
+    {
+          setActiveNav(pageIndex)
+          
+          if (pageIndex === 2) {
+              router.push("/(authenticated)/dashboard")
+            }
+
+          
+          if (pageIndex === 3) {
+              router.push("/(authenticated)/produtos")
+            }
+    }
+
+     async function sairDoSistema () {
+
+      const token  = await AsyncStorage.getItem("@token")
+
+      Alert.alert(
+        'Sair',
+        'Deseja realmente sair do sistema?',
+        [
+          {
+            text: 'Não',
+            style: 'cancel',
+          },
+          {
+            text: 'Sim',
+            onPress: () => {
+
+              console.log('token eh este:', token)
+              
+                if(token){
+                  signOut(token);
+                }
+              console.log('token eh este:', token)
+              console.log('Usuário saiu');
+
+              router.replace("/login/login")
+              
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+};
+
+
+
+
+
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe,
+       { backgroundColor: temaEscuro ? '#292828' : '#f4f6f9' }
+    ]}>
       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
 
       {/* HEADER */}
-      <View style={styles.header}>
+      <View style={[styles.header,
+         
+      ]}>
         <Text style={styles.title}>Perfil</Text>
       </View>
 
-      <ScrollView style={styles.scroll}>
+      <ScrollView style={[styles.scroll,
+        { backgroundColor: temaEscuro ? '#292828' : '#f4f6f9' }
+      ]}>
         
         {/* EMPRESA */}
         <Text style={styles.section}>Usuário</Text>
@@ -66,15 +175,6 @@ const ConfigScreen = () => {
           value={`${usuario.nome} `}
           onPress={() => setModalUsuario(true)}
         />
-
-        {/* FACTURA
-        <Text style={styles.section}>Facturação</Text>
-
-        <Item
-          label="IVA"
-          value="17%"
-          onPress={() => Alert.alert('Editar IVA')}
-        /> */}
 
         {/* PREFERENCIAS */}
         <Text style={styles.section}>Preferências</Text>
@@ -98,7 +198,7 @@ const ConfigScreen = () => {
 
         <Item
           label="Sair"
-          onPress={() => Alert.alert('Logout')}
+          onPress={() => sairDoSistema()}
         />
 
       </ScrollView>
@@ -114,23 +214,66 @@ const ConfigScreen = () => {
             onChangeText={setNome}
             style={styles.input}
           />
-
-          <TextInput
-            placeholder="Senha"
-            value={senha}
-            onChangeText={setSenha}
-            style={styles.input}
-          />
-
+          <View style={styles.textFieldSenha}>
+            <TextInput
+              placeholder="Senha"
+              value={senha}
+              onChangeText={setSenha}
+              style={[styles.input,{flex:1}]}
+              secureTextEntry={!showSenha}
+            />
+            <Pressable onPress={() => setShowSenha(!showSenha)}
+              style={styles.eyeIcon}
+              >
+               <Ionicons 
+                 name={showSenha ? 'eye-off' : 'eye'}
+                 size={24}
+                 color="#999"
+                />
+            </Pressable>
+           
+          </View>
+          
           <TouchableOpacity onPress={salvarUsuario} style={styles.btn}>
             <Text style={{ color: '#fff' }}>Guardar</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setModalUsuario(false)}>
-            <Text style={{ marginTop: 10 }}>Cancelar</Text>
+          <TouchableOpacity onPress={() => setModalUsuario(false)}
+             style={styles.btnCancelar}>
+            <Text style={{ 
+              
+              color:'#fff'
+           }}>
+                Cancelar
+            </Text>
           </TouchableOpacity>
         </SafeAreaView>
       </Modal>
+
+       <View style={styles.bottomNav}>
+              {NAV_ITEMS.map((nav, i) => 
+              {
+                const Icon = nav.icon
+              return (
+                
+                <TouchableOpacity
+                  key={i}
+                  style={styles.navItem}
+                  onPress={() => {
+                    navigatePage(i)
+                    
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.navIcon, i === 4 && styles.navIconActive]}>
+                    <Icon color={'#5c5b5b'}/>
+                  </Text>
+                  <Text style={[styles.navLabel, i === 4 && styles.navLabelActive]}>
+                    {nav.label}
+                  </Text>
+                  {i === 4 && <View style={styles.navDot} />}
+                </TouchableOpacity>
+              )})}
+            </View>
     </SafeAreaView>
   );
 };
@@ -138,11 +281,15 @@ const ConfigScreen = () => {
 export default ConfigScreen;
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#185FA5' },
+  safe: { flex: 1,},
 
   header: {
-    padding: 16,
-    backgroundColor: colors.blue,
+    backgroundColor: '#185FA5',
+    paddingHorizontal: 16,
+    paddingVertical:22,
+    paddingBottom: 14,
+    borderRadius:12,
+    marginHorizontal:5
   },
 
   title: {
@@ -152,7 +299,7 @@ const styles = StyleSheet.create({
   },
 
   scroll: {
-    backgroundColor: '#f4f6f9',
+    // backgroundColor: '#f4f6f9',
     flex: 1,
     padding: 10,
   },
@@ -187,6 +334,9 @@ const styles = StyleSheet.create({
   arrow: {
     fontSize: 18,
     color: '#999',
+    // position: 'absolute',
+    // left:325,
+    
   },
 
   modal: {
@@ -201,6 +351,7 @@ const styles = StyleSheet.create({
   },
 
   input: {
+    
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
@@ -213,5 +364,60 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  btnCancelar:
+  {
+    marginTop:10,
+    alignItems:'center',
+    borderRadius:8,
+    backgroundColor:colors.gray,
+    padding:12
+  },
+  eyeIcon:
+  {
+    position:'absolute',
+    right:5,
+    paddingBottom:10
+  },
+  textFieldSenha:
+  {
+    flexDirection:'row',
+    alignItems:'center',
+  },
+
+   navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+  },
+  navIcon: {
+    fontSize: 18,
+    color: '#8E8E93',
+  },
+  navIconActive: {
+    color: '#185FA5',
+  },
+  navLabel: {
+    fontSize: 10,
+    color: '#8E8E93',
+  },
+  navLabelActive: {
+    color: '#185FA5',
+    fontWeight: '500',
+  },
+  navDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#185FA5',
+    marginTop: 1,
+  },
+   bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderTopWidth: 0.5,
+    borderTopColor: '#E5E5EA',
+    paddingTop: 8,
+    paddingBottom: 20,
   },
 });

@@ -1,17 +1,21 @@
 export interface User
 {
-    id:string,
-    name:string,
-    email:string,
-    role:"admin"|"STAFF",
-    created_At?: string
-
-    // token: string,
-   
     // id:string,
     // name:string,
     // email:string,
     // role:"admin"|"STAFF",
+    // created_At?: string
+
+   
+    user:
+    {
+   
+    id:string,
+    name:string,
+    email:string,
+    role:"admin"|"STAFF",
+    }
+ 
     
 }
 
