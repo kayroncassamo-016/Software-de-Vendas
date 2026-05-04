@@ -13,7 +13,7 @@ import {
   View
 } from 'react-native';
 
-import { useAuth } from '@/routes/routes';
+import { useContexto } from '@/contexts/AuthContext';
 
 
 export default function Home() {
@@ -26,7 +26,7 @@ export default function Home() {
   const [loading,setLoading] = useState(false)
   const [errorMessage,setErrorMessage] = useState(false);
 
-  const { signIn } = useAuth();
+  const { signIn } = useContexto();
   
 
    async function handleLogin()

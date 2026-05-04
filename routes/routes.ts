@@ -3,14 +3,15 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from "react";
 
 import { api } from "@/services/api";
-import { LoginResponse, User } from "../types/types";
+import { LoginResponse, Produtos, User } from "../types/types";
 
 
 export  function useAuth()
 {
     const [signed,setSigned] = useState(false)
     const [loading,setLoading] = useState(true)
-    const [user,setUser] = useState<User|null>(null)
+    const [user,setUser] = useState<User>()
+    const [produtos, setProdutos] = useState<Produtos>()
     const router = useRouter();
     
     useEffect(() =>{
@@ -33,9 +34,19 @@ export  function useAuth()
             console.log(storedUser)
             setLoading(true)
 
-            if(storedToken && storedUser)
-            {
-                setUser(JSON.parse(storedUser))
+            // if(storedToken && storedUser)
+            // {
+            //     setUser(JSON.parse(storedUser))
+            //      setSigned(true);
+            // }
+
+            if (storedToken) {
+                const response = await api.get('/me', {
+                    headers: { Authorization: `Bearer ${storedToken}` }
+                });
+
+                setUser(response.data);
+                setSigned(true);
             }
 
         }
@@ -64,15 +75,23 @@ export  function useAuth()
                 pathname:"/(authenticated)/dashboard",
                  params:{name:response.data.user.name.toString()}
             })
+            setSigned(true)
 
+             
+            
             const {token, ...userData} = response.data
+
+            const responsee = await api.get('/me',
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
 
             await AsyncStorage.setItem("@token", token)
             await AsyncStorage.setItem("@user", 
                 JSON.stringify(userData))
             
             
-            setUser(userData)
+            setUser(responsee.data)
         }
 
         catch(err )
@@ -96,6 +115,8 @@ export  function useAuth()
 
         await AsyncStorage.removeItem("@token")
         await AsyncStorage.removeItem("@user")
+        setSigned(false);
+        setUser(undefined)
 
     }
     catch (err)
@@ -104,9 +125,9 @@ export  function useAuth()
     }
     finally{
 
-    }
-    setUser(null)
-    }
+    }}
+
+   
 
     return {
         user,

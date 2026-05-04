@@ -1,8 +1,13 @@
 import { Select } from '@/components/project/Select';
+import { formatMoney, formatPercent } from '@/utils/format';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from 'expo-router';
 import { Cog, Grid2X2, Handshake, Package, Plus, ShoppingBag } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   // SafeAreaView,
   ScrollView,
@@ -13,22 +18,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from '@/constants/theme';
+import { api } from '@/services/api';
+import { Imposto, Produtos } from '@/types/types';
 import { Button, Dialog, Portal } from 'react-native-paper';
 
 const { width } = Dimensions.get('window');
 
-// ─── Types e Interfaces ────────────────────────────────────────────
-interface Produto {
-  id: number;
-  nome: string;
-  categoria: 'Serviço' | 'Licença' | 'Projecto' | 'Recorrente'|'Produto';
-  preco: number;
-  iva: number;
-}
 
 interface CategoriaConfig {
   bg: string;
@@ -45,25 +43,16 @@ interface NavItem {
   label: string;
 }
 
-// ─── Dados de exemplo ───────────────────────────────────────────────
-const PRODUTOS: Produto[] = [
-  { id: 1, nome: 'Consultoria em TI',        categoria: 'Serviço',    preco: 6000,   iva: 15 },
-  { id: 2, nome: 'Licença Software ERP',     categoria: 'Licença',    preco: 4500,   iva: 17 },
-  { id: 3, nome: 'Suporte técnico / hora',   categoria: 'Serviço',    preco: 750,    iva: 18 },
-  { id: 4, nome: 'Instalação de Rede LAN',   categoria: 'Projecto',   preco: 25000,  iva: 19 },
-  { id: 5, nome: 'Manutenção mensal',        categoria: 'Recorrente', preco: 3200,   iva: 20 },
-  { id: 6, nome: 'Backup em nuvem',          categoria: 'Serviço',    preco: 2500,   iva: 21 },
-  { id: 7, nome: 'Antivírus corporativo',    categoria: 'Licença',    preco: 1800,   iva: 22},
-  { id: 8, nome: 'Configuração de servidor', categoria: 'Projecto',   preco: 12000,  iva: 1 },
-];
 
 const CATEGORIAS_CONFIG: CategoriaConfigMap = {
+  
   Serviço:    { bg: '#E6F1FB', color: '#185FA5', },
   Licença:    { bg: '#FAEEDA', color: '#854F0B',},
   Projecto:   { bg: '#EAF3DE', color: '#3B6D11' },
   Recorrente: { bg: '#EEEDFE', color: '#534AB7' },
   Produto :{bg:'#e0ddff',color:'#05031d'}
-};
+  }
+
 
 const NAV_ITEMS = [
   { icon: ShoppingBag , label: 'Vendas' },
@@ -75,22 +64,23 @@ const NAV_ITEMS = [
 
 // ─── Props Interfaces ──────────────────────────────────────────────
 interface CategoriaTagProps {
-  categoria: Produto['categoria'];
+  categoria: Produtos['categoria'];
 }
 
 interface ProdutoItemProps {
-  produto: Produto;
+  produto: Produtos;
   onPress: () => void;
 }
 
 // ─── Badge de categoria ─────────────────────────────────────────────
 const CategoriaTag: React.FC<CategoriaTagProps> = ({ categoria }) => {
-  const config = CATEGORIAS_CONFIG[categoria];
+  const config = CATEGORIAS_CONFIG[categoria?.designacao ?? ''] 
+  ?? { bg: '#ccc', color: '#000' };
   
   return (
     <View style={[styles.tagCategoria, { backgroundColor: config.bg }]}>
       <Text style={[styles.tagCategoriaText, { color: config.color }]}>
-        {categoria}
+        {categoria?.designacao}
       </Text>
     </View>
   );
@@ -98,9 +88,16 @@ const CategoriaTag: React.FC<CategoriaTagProps> = ({ categoria }) => {
 
 // ─── Item do produto ───────────────────────────────────────────────
 const ProdutoItem: React.FC<ProdutoItemProps> = ({ produto, onPress }) => {
-  const precoComIVA = produto.iva 
-    ? (produto.preco * produto.iva/100 + produto.preco).toFixed(2) 
-    : produto.preco.toString();
+  // const precoComIVA = produto.imposto?.taxa
+  //   ? (produto.preco_venda * produto.imposto?.taxa/100 + produto.preco_custo).toFixed(2) 
+  //   : produto.preco_custo.toString();
+
+  const precoVenda = parseFloat(produto.preco_venda) || 0;
+  const taxaIVA = parseFloat(produto.imposto?.taxa ?? "0") || 0;
+ 
+  const precoComIVA = taxaIVA
+  ? ( formatMoney(precoVenda + (precoVenda * taxaIVA / 100)))
+  : precoVenda.toString();
 
   return (
     <TouchableOpacity 
@@ -109,50 +106,50 @@ const ProdutoItem: React.FC<ProdutoItemProps> = ({ produto, onPress }) => {
       activeOpacity={0.7}
     >
       <View style={styles.produtoLeft}>
-        <Text style={styles.produtoNome}>{produto.nome}</Text>
+        <Text style={styles.produtoNome}>{produto.designacao}</Text>
         <CategoriaTag categoria={produto.categoria} />
       </View>
       <View style={styles.produtoRight}>
         <Text style={styles.produtoPreco}>
-          {produto.preco.toLocaleString('pt-MZ')} MT
+          {/* {produto. preco_venda.toLocaleString()} MT */}
+          {formatMoney(produto.preco_venda)  + ' MT'}
         </Text>
         <Text style={styles.produtoIVA}>
-          {produto.iva ? `+ IVA ${produto.iva}% (${precoComIVA} MT)` : 'Sem IVA'}
+          {produto.imposto?.taxa ? `+ IVA ${formatPercent(produto.imposto?.taxa)} (${precoComIVA} MT)` : 'Sem IVA'}
         </Text>
       </View>
     </TouchableOpacity>
+    
+
+    
   );
 };
 
 // ─── Ecrã de Produtos ──────────────────────────────────────────────
 const ProdutosScreen = () => {
 const [searchText, setSearchText] = useState<string>('');
-//const [filtrados, setFiltrados] = useState<Produto[]>(PRODUTOS);
-
 const [activeNav, setActiveNav] = useState(3);
 
-const [produtos, setProdutos] = useState<Produto[]>(PRODUTOS);
-const [filtrados, setFiltrados] = useState<Produto[]>(produtos);
+const [produtos, setProdutos] = useState<Produtos[]>([]);
+const [loadingProdutos,setLoadingProdutos] = useState(false)
+const [filtrados, setFiltrados] = useState<Produtos[]>([]);
+const [categorias, setCategorias] =  useState([])
+const [impostos, setImpostos] =  useState<Imposto[]>([])
+
 const router = useRouter()
 const [visible, setVisible] = useState(false);
 
-const [nome, setNome] = useState('');
-const [tipo, setTipo] = useState('');
-const [preco, setPreco] = useState('');
+const [designacao, setDesignacao] = useState('');
+const [precoVenda, setPrecoVenda] = useState('');
 const [iva, setIva] = useState('');
+const [codigo, setCodigo] = useState('');
 
-const tipos = [
-  'Produto físico',
-  'Projecto',
-  'Licença',
-  'Serviço',
-  'Recorrente'
-];
+
 const [categories,setCategories] = useState(CATEGORIAS_CONFIG)
 const [selectedCategory, setSelectedCategory] = useState<string>('');
 
 
-const precoNum = parseFloat(preco) || 0;
+const precoNum = parseFloat(precoVenda) || 0;
 const ivaNum = parseFloat(iva) || 0;
 
 const total = precoNum + (precoNum * ivaNum / 100);
@@ -174,45 +171,155 @@ const total = precoNum + (precoNum * ivaNum / 100);
   const handleSearch = (text: string): void => {
     setSearchText(text);
     if (text === '') {
-      setFiltrados(filtrados)
+      setFiltrados(produtos)
     } else {
       const filtered = produtos.filter(
         (p) =>
-          p.nome.toLowerCase().includes(text.toLowerCase()) ||
-          p.categoria.toLowerCase().includes(text.toLowerCase())
+          p.designacao.toLowerCase().includes(text.toLowerCase()) ||
+          p.categoria?.designacao.toLowerCase().includes(text.toLowerCase())
       );
       setFiltrados(filtered);
     }
   };
 
-  const handleProdutoPress = (produto: Produto): void => {
-    alert(`Produto: ${produto.nome}`);
+  const handleProdutoPress = (produto: Produtos): void => {
+    alert(`Produto: ${produto.designacao}`);
   };
 
-  const adicionarProduto = () =>
+  async function adicionarProduto () 
   {
-    if (!nome || !selectedCategory || !preco) return;
 
-  const novoProduto: Produto = {
-    id: produtos.length + 1,
-    nome,
-    categoria: selectedCategory as Produto['categoria'],
-    preco: precoNum,
-    iva: ivaNum
-  };
+    try
+    {
+
+    if (!designacao || !selectedCategory || !precoVenda) return;
+
+   const novoProduto = {
+   id: produtos.length + 1,
+   codigo: codigo,
+   designacao: designacao,
+   categoria: { designacao: selectedCategory } as Produtos['categoria'],
+   preco_venda: precoVenda,
+   imposto:
+   {
+    imposto_id:1,
+    taxa: iva
+   }};
 
   const novaLista = [novoProduto, ...produtos];
-
-  setProdutos(novaLista);
-  setFiltrados(novaLista);
-
-  setNome('');
-  setPreco('');
-  setIva('');
-  setSelectedCategory('');
-
+  // setProdutos(novaLista);
+  // setFiltrados(novaLista);
+  // setDesignacao('');
+  // setPrecoVenda('');
+  // setIva('');
+  // setSelectedCategory('');
   setVisible(false);
+   
+  const token  = await AsyncStorage.getItem("@token")
+  
+  const payload = 
+  {
+    codigo:codigo,
+    designacao:designacao,
+    categoria_id:1,
+    preco_venda: precoVenda,
+    imposto_id:1,
+    
   }
+
+   await api.post('/products',
+    payload, {
+    headers: { Authorization: `Bearer ${token}` },
+    }   
+   )
+   setLoadingProdutos(true)
+
+   const response = await api.get('/products')
+
+   setProdutos(response.data.data.data)
+   setFiltrados(response.data.data.data)
+
+   Alert.alert('Produto cadastrado com sucesso!',)
+
+  }
+  catch (err)
+  {
+    if(err instanceof Error)
+    {
+      console.log(err.message)
+    }
+  }
+  finally{
+    setLoadingProdutos(false)
+  }
+}
+  
+  useEffect(()=> {
+
+    async function loadProductData()
+    {
+        await loadProducts()
+    }
+
+    async function loadImpostoData()
+    {
+        await loadImpostos()
+    }
+
+    loadImpostoData()
+    loadProductData();
+  },[])
+
+  async function loadImpostos()
+  {
+    try{
+
+      const response = await api.get('/imposto')
+
+      setImpostos(response.data.data.data)
+      console.log('impostos:', response.data.data.data)
+
+    }
+    catch(err)
+    {
+      if(err instanceof Error)
+        console.log(err.message)
+    }
+    finally
+    {
+
+    }
+  }
+
+
+  async function loadProducts()
+  {
+    try{
+        setLoadingProdutos(true)
+
+            const response = await api.get("/products",
+               
+            )
+            const produtosAPI = response.data.data.data; // 
+
+             
+            setProdutos(response.data.data.data)
+            setFiltrados(response.data.data.data)
+            console.log("produtos da base: ", response.data.data.data)
+
+            console.log(JSON.stringify(produtosAPI, null, 2));
+        }
+
+        catch(err)
+        {
+            console.log(err)
+        }
+
+        finally
+        {
+            setLoadingProdutos(false)
+        }
+    }
 
   return (
 
@@ -232,8 +339,15 @@ const total = precoNum + (precoNum * ivaNum / 100);
           <Dialog.Content>
             <View>
               <View style={styles.dialogContentStyle}>
+                <Text style={styles.dialogTextStyle}> Código:</Text>
+                <TextInput  value={codigo} onChangeText={setCodigo}
+                style={styles.TextFieldStyling}/>
+              </View>
+
+
+              <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}> Nome:</Text>
-                <TextInput  value={nome} onChangeText={setNome}
+                <TextInput  value={designacao} onChangeText={setDesignacao}
                 style={styles.TextFieldStyling}/>
               </View>
 
@@ -254,7 +368,7 @@ const total = precoNum + (precoNum * ivaNum / 100);
 
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}> Preço:</Text>
-                <TextInput value={preco} onChangeText={setPreco}
+                <TextInput value={precoVenda} onChangeText={setPrecoVenda}
                 keyboardType='numeric'
                 style={styles.TextFieldStyling}/>
               </View>
@@ -265,11 +379,24 @@ const total = precoNum + (precoNum * ivaNum / 100);
                  value={iva} onChangeText={setIva}
                  keyboardType='numeric'
                 style={styles.TextFieldStyling}/>
+                 {/* <Select
+                    label="Imposto"
+                    placeholder="Selecione o imposto"
+                     options ={impostos.map(imposto =>
+                    ({
+                        label:imposto.designacao,
+                        value: (imposto.imposto_id).toLocaleString()
+                    }))}
+                    selectedValue={selectedCategory}
+                    onValueChange={setSelectedCategory}
+                /> */}
+
+
               </View>
 
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}>
-                   Total: MZN {" "} {total.toFixed(2)}
+                   Total: MZN {""} {formatMoney(total)}
                 </Text>
                
               </View>
@@ -280,7 +407,7 @@ const total = precoNum + (precoNum * ivaNum / 100);
           <Dialog.Actions style={{flexDirection:'row',
             alignItems:'center'}}>
 
-            <Button onPress={() => {console.log('OK')
+            <Button onPress={() => {
               adicionarProduto()
             }}>
               <View style={{flexDirection:'row',
@@ -334,20 +461,27 @@ const total = precoNum + (precoNum * ivaNum / 100);
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Lista de produtos */}
-        {filtrados.length > 0 ? (
-          filtrados.map((produto) => (
+       {
+         loadingProdutos?
+         
+          (<View style = {styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.blue}/>
+          </View>
+          ):
+            filtrados.length > 0 ? (
+            filtrados.map((produto,index) => (
             <ProdutoItem
-              key={produto.id}
+              key={index}
               produto={produto}
               onPress={() => handleProdutoPress(produto)}
             />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Nenhum produto encontrado</Text>
-          </View>
-        )}
+             ))
+            ): (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>Nenhum produto encontrado</Text>
+              </View>
+          )
+        }
 
         <View style={{ height: 16 }} />
       </ScrollView>
@@ -391,7 +525,17 @@ const total = precoNum + (precoNum * ivaNum / 100);
   );
 };
 
-// ─── Estilos ──────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+// // ─── Estilos ──────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -590,8 +734,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#eff3fd',
     color:'#000',
     flex: 1
-  }
+  },
+
+  loadingContainer:
+  {
+    flex:1,
+    alignItems:"center",
+    justifyContent:"center",
+    backgroundColor: '#F2F2F7',
+
+
+    },
   
 });
 
 export default ProdutosScreen;
+

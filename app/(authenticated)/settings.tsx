@@ -1,6 +1,7 @@
 import { colors } from '@/constants/theme';
-import { useAuth } from '@/routes/routes';
+import { useContexto } from '@/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from 'expo-router';
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -18,13 +19,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 
- import { AuthContext } from "@/contexts/AuthProvider";
-import { useContext } from "react";
-
+ 
 const ConfigScreen = () => {
  
   const NAV_ITEMS = [
@@ -36,44 +33,35 @@ const ConfigScreen = () => {
 ];
   const [activeNav, setActiveNav] = useState(4);
   const router = useRouter()
-  const { signOut } = useAuth();
+  //const { signOut } = useContexto();
+  //const { user } = useAuth();
+  const { user,signOut} = useContexto();
+  
+ 
 
-  const [usuario, setUsuario] = useState({
-    nome: 'Kayron Cassamo',
-    senha: '400123456',
-  });
-
+  console.log("usuario now", user)
+  console.log("usuario nome", user?.user.name)
   
   const [notificacoes, setNotificacoes] = useState(true);
   const [temaEscuro, setTemaEscuro] = useState(false);
-  const { user } = useContext(AuthContext);
+ 
 
   const [modalUsuario, setModalUsuario] = useState(false);
-  const [nome, setNome] = useState(usuario.nome);
-  const [senha, setSenha] = useState(usuario.senha);
+  const [nome, setNome] = useState("");
+  const [senha, setSenha] = useState("");
   const [showSenha, setShowSenha] = useState(false)
 
  
   
 
   const salvarUsuario = () => {
-    setUsuario({ nome, senha });
+    //setUsuario({ nome, senha });
     setModalUsuario(false);
   };
 
   const Item = ({ label, value, onPress, toggle, onToggle }:any) => (
     <TouchableOpacity style={styles.item} onPress={onPress} disabled={toggle}>
-      {/* <View>
-        <Text style={styles.label}>{label}</Text>
-        {value && <Text style={styles.value}>{value}</Text>}
-      </View>
-
-      {toggle ? (
-        <Switch value={value} onValueChange={onToggle} />
-      ) : (
-        <Text style={styles.arrow}>›</Text>
-      )} */}
-
+    
       {toggle ? (
           <View style={{flexDirection:'row',
             alignItems:'center'
@@ -172,7 +160,7 @@ const ConfigScreen = () => {
 
         <Item
           label="Dados do usuário"
-          value={`${usuario.nome} `}
+          value={`${user?.user.name} `}
           onPress={() => setModalUsuario(true)}
         />
 
@@ -210,7 +198,7 @@ const ConfigScreen = () => {
 
           <TextInput
             placeholder="Nome"
-            value={nome}
+            value={user?.user.name}
             onChangeText={setNome}
             style={styles.input}
           />

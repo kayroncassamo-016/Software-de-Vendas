@@ -15,13 +15,15 @@ export default function RootLayout() {
       <PaperProvider>
       <Stack
         screenOptions={{
-         
           animation: 'fade',
         }}>  
+        
+        <Stack.Screen name="index" options={{headerShown: false}}/> 
+        <Stack.Screen name="login/login" options={{headerShown: false}}/> 
         <Stack.Screen name="(authenticated)/settings" options={
           { headerShown: false   }}/>
       
-        <Stack.Screen name="login/login" options={{headerShown: false}}/> 
+       
         
         <Stack.Screen name="(authenticated)/produtos" options={
           {headerShown: false    }}/>

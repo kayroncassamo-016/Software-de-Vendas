@@ -1,6 +1,8 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useContexto } from "@/contexts/AuthContext";
+import { api } from "@/services/api";
+import { useRouter } from "expo-router";
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ScrollView,
   StatusBar,
@@ -11,14 +13,45 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DashBoard () {
+ 
+  const [loadingProductNumber, SetLoadingProductNumber] = useState(false)
+
+  useEffect(() => {
+  async function loadStats() {
+    loadingProductStats()
+  }
+
+  loadStats();
+}, []);
+
+
+  async function loadingProductStats()
+  {
+    try{
+
+        SetLoadingProductNumber(true)
+        const res =  await api.get("/products");
+        setTotalProdutos(res.data.data.data.length);
+
+    }
+    catch (err)
+    {
+      if (err instanceof Error)
+        console.log(err.message)
+    }
+    finally
+    {
+      SetLoadingProductNumber(false)
+
+    }
+  }
   
- const router = useRouter()
+  const router = useRouter()
+  const [totalProdutos, setTotalProdutos] = useState(0);
 
- const {name} = useLocalSearchParams<{
+  const {user} = useContexto()
 
-        name:string,
-    }>();
-   const [activeNav, setActiveNav] = useState(2);
+  const [activeNav, setActiveNav] = useState(2);
   
    function navigatePage(pageIndex:number)
   {
@@ -94,7 +127,7 @@ export default function DashBoard () {
 
      
       <View style={styles.header}>
-        <Text style={styles.greeting}>Bom dia, {name}</Text>
+        <Text style={styles.greeting}>Bom dia, {user?.user.name}</Text>
         <Text style={styles.subtitle}>Facturação — Abril 2026</Text>
       </View>
 
@@ -132,10 +165,27 @@ export default function DashBoard () {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Produtos totais</Text>
-          <Text style={styles.value}>25</Text>       
-          <Text style={styles.positive}>19 activos</Text>
-          <Text style={styles.neutral}>+2 novos</Text>
-          <Text style={styles.danger}>6 inactivos</Text>
+          {/* <Text style={styles.value}> */}
+
+            {
+              loadingProductNumber?
+              (
+                 <Text style={{
+                  fontStyle:"italic",
+                  fontSize:10
+                 }}>
+                     Carregando...
+                  </Text>
+              ):
+              (
+                <Text style={styles.value}>{totalProdutos}</Text>
+              )
+            }
+            
+          {/* // </Text>        */}
+          <Text style={styles.positive}>x activos</Text>
+          <Text style={styles.neutral}>+y novos</Text>
+          <Text style={styles.danger}>z inactivos</Text>
 
         </View>
 
