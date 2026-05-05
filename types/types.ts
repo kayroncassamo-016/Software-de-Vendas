@@ -16,23 +16,32 @@ export interface Produtos
   codigo:string,
   designacao: string;
   preco_venda: string;
-  categoria: {
-    categoria_id:number,
-    descricao:string,
-    designacao: string;
-  } | null;
+  categoria_id:number,
+  imposto_id:number,
+//   categoria: {
+//     categoria_id:number,
+//     descricao:string,
+//     designacao: string;
+//   } | null;
 //   imposto: {
 //     imposto_id:number,
 //     taxa: string;
 //   } | null;
-
+  categoria: Categoria,
   imposto: Imposto
+}
+
+export interface Categoria
+{
+    id:number,
+    descricao:string,
+    designacao: string;
 }
 
 export interface Imposto
 {
 
-    imposto_id:number,
+    id:number,
     codigo: string,
     taxa:string,
     designacao:string

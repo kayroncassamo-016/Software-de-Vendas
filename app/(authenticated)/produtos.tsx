@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  KeyboardAvoidingView,
   // SafeAreaView,
   ScrollView,
   StatusBar,
@@ -16,13 +17,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
-import { Imposto, Produtos } from '@/types/types';
+import { Categoria, Imposto, Produtos } from '@/types/types';
 import { Button, Dialog, Portal } from 'react-native-paper';
 
 const { width } = Dimensions.get('window');
@@ -133,11 +134,21 @@ const [activeNav, setActiveNav] = useState(3);
 const [produtos, setProdutos] = useState<Produtos[]>([]);
 const [loadingProdutos,setLoadingProdutos] = useState(false)
 const [filtrados, setFiltrados] = useState<Produtos[]>([]);
-const [categorias, setCategorias] =  useState([])
+const [produtoSeleccionado, setProdutoSeleccionado] = useState<Produtos|null>(null)
+
+const [categorias, setCategorias] =  useState<Categoria[]>([])
+const [selectedCategory, setSelectedCategory] = useState<string>('');
+const [selectedCategoryId, setSelectedCategoryId] = useState<number>();
+
 const [impostos, setImpostos] =  useState<Imposto[]>([])
+const [selectedImposto, setSelectedImposto] = useState<string>('');
+const [selectedImpostoId, setSelectedImpostoId] = useState<number>();
+const [selectedImpostoTaxa, setSelectedImpostoTaxa] = useState<number>(0);
+const [TextAreaEnabled, setTextAreaEnabled] = useState<Boolean>(false)
 
 const router = useRouter()
-const [visible, setVisible] = useState(false);
+const [visibleFormCadastro, setVisibleFormCadastro] = useState(false);
+const [visibleDetalhesPtoduto, setVisibleDetalhesProduto] = useState(false);
 
 const [designacao, setDesignacao] = useState('');
 const [precoVenda, setPrecoVenda] = useState('');
@@ -146,13 +157,12 @@ const [codigo, setCodigo] = useState('');
 
 
 const [categories,setCategories] = useState(CATEGORIAS_CONFIG)
-const [selectedCategory, setSelectedCategory] = useState<string>('');
 
 
 const precoNum = parseFloat(precoVenda) || 0;
-const ivaNum = parseFloat(iva) || 0;
+const taxa = selectedImpostoTaxa
+const total = precoNum + (precoNum * taxa / 100);
 
-const total = precoNum + (precoNum * ivaNum / 100);
 
   function navigatePage(pageIndex:number)
   {
@@ -182,8 +192,10 @@ const total = precoNum + (precoNum * ivaNum / 100);
     }
   };
 
-  const handleProdutoPress = (produto: Produtos): void => {
-    alert(`Produto: ${produto.designacao}`);
+  const handleProdutoPress = (produto: Produtos) => 
+  {
+    setVisibleDetalhesProduto(true)
+
   };
 
   async function adicionarProduto () 
@@ -213,17 +225,17 @@ const total = precoNum + (precoNum * ivaNum / 100);
   // setPrecoVenda('');
   // setIva('');
   // setSelectedCategory('');
-  setVisible(false);
+  setVisibleFormCadastro(false);
    
   const token  = await AsyncStorage.getItem("@token")
   
   const payload = 
   {
     codigo:codigo,
-    designacao:designacao,
-    categoria_id:1,
+    designacao: designacao,
+    categoria_id: selectedCategoryId,
     preco_venda: precoVenda,
-    imposto_id:1,
+    imposto_id:selectedImpostoId,
     
   }
 
@@ -246,14 +258,69 @@ const total = precoNum + (precoNum * ivaNum / 100);
   {
     if(err instanceof Error)
     {
-      console.log(err.message)
+      console.log('Erro ao adicionar produto: ',err.message)
     }
   }
   finally{
     setLoadingProdutos(false)
   }
 }
+
+ useEffect(() => 
+  {
+    if (selectedCategory) {
+
+
+    const categoriaEncontrada = categorias.find(
+      (categoria) =>
+        selectedCategory.trim().toLowerCase() ===
+        categoria.designacao.trim().toLowerCase()
+    );
+
+    if (categoriaEncontrada) {
+      console.log("encontrei category");
+      setSelectedCategoryId(categoriaEncontrada.id);
+      
+      console.log("encontrei categoryId", categoriaEncontrada.id);
+    }
+  }
+
+
+  if (selectedImposto) {
+     
+
+    const impostoEncontrado = impostos.find(
+      (imposto) =>
+        selectedImposto.trim().toLowerCase() ===
+        imposto.designacao.trim().toLowerCase()
+    );
+
+    if (impostoEncontrado) {
+      setSelectedImpostoId(impostoEncontrado.id);
+
+      setSelectedImpostoTaxa(parseFloat(impostoEncontrado.taxa))
+
+      console.log("encontrei impostoId", impostoEncontrado.id);
+    }
+  }
+
+  },[selectedCategory,selectedImposto])
+
+
+  useEffect(() => 
+    {
+      if (selectedImpostoId === 4)
+      {
+        setTextAreaEnabled(true)
+      }
+      else 
+      {
+        setTextAreaEnabled(false)
+      }
   
+  },[selectedImpostoId])
+
+    
   useEffect(()=> {
 
     async function loadProductData()
@@ -266,8 +333,14 @@ const total = precoNum + (precoNum * ivaNum / 100);
         await loadImpostos()
     }
 
+    async function loadCategoriaData()
+    {
+        await loadCategorias()
+    }
+
     loadImpostoData()
     loadProductData();
+    loadCategoriaData()
   },[])
 
   async function loadImpostos()
@@ -290,6 +363,28 @@ const total = precoNum + (precoNum * ivaNum / 100);
 
     }
   }
+
+   async function loadCategorias()
+   {
+    try{
+
+      const response = await api.get('/categoria')
+
+      setCategorias(response.data.data.data)
+      console.log('categorias:', response.data.data.data)
+
+    }
+    catch(err)
+    {
+      if(err instanceof Error)
+        console.log(err.message)
+    }
+    finally
+    {
+
+    }
+  }
+  
 
 
   async function loadProducts()
@@ -323,21 +418,62 @@ const total = precoNum + (precoNum * ivaNum / 100);
 
   return (
 
-
+    
     <SafeAreaView style={styles.safe}>
+      {/* Portal para renderizar detalhes de cada produto */}
+       <Portal>
+         <Dialog visible={visibleDetalhesPtoduto} 
+          onDismiss={()=>setVisibleDetalhesProduto(false)}
+           style={{ backgroundColor: '#fff' }}> 
+              <Dialog.Title style={{color: colors.blue, fontSize:14,
+                textAlign:'center',
+                fontWeight:'bold' }}>
+           
+                Detalhes do produto
+              </Dialog.Title>
+
+         
+          <Dialog.Content>
+           
+              <Text>{produtoSeleccionado?.designacao}</Text>
+          </Dialog.Content>
+
+          <Dialog.Actions style={{flexDirection:'row',
+            alignItems:'center'}}>
+
+              <Button>Editar</Button>
+
+           
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+      
+      {/* Portal para cadastrar dados de um produto */}
 
       <Portal>
-        <Dialog visible={visible} onDismiss={()=>setVisible(false)}
-           style={{ backgroundColor: '#fff' }}>
-          <Dialog.Title style={{color:'#000', fontSize:14,
-            textAlign:'center',
-            fontWeight:'bold'
-          }}>
+        <Dialog visible={visibleFormCadastro} 
+        onDismiss={()=>setVisibleFormCadastro(false)}
+           style={{ backgroundColor: '#fff' }}> 
+           
+          <KeyboardAvoidingView
+           behavior={"padding"}
+          >
+              <Dialog.Title style={{color: colors.blue, fontSize:14,
+                textAlign:'center',
+                fontWeight:'bold'
+            }}>
             Adicione um novo produto ou serviço
-          </Dialog.Title>
+              </Dialog.Title>
 
+         
           <Dialog.Content>
+            
+            <ScrollView
+            style={{ maxHeight: 450, paddingHorizontal:3}}
+            
+             showsVerticalScrollIndicator={false}>
             <View>
+
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}> Código:</Text>
                 <TextInput  value={codigo} onChangeText={setCodigo}
@@ -357,9 +493,9 @@ const total = precoNum + (precoNum * ivaNum / 100);
                 <Select
                     label="Categorias"
                     placeholder="Selecione a categoria"
-                    options ={Object.keys(categories).map((key) => ({
-                      label: key,
-                      value: key
+                    options ={categorias.map(categoria => ({
+                      label: categoria.designacao,
+                      value: categoria.designacao
                     }))}
                     selectedValue={selectedCategory}
                     onValueChange={setSelectedCategory}
@@ -375,34 +511,46 @@ const total = precoNum + (precoNum * ivaNum / 100);
 
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}> IVA:</Text>
-                <TextInput
-                 value={iva} onChangeText={setIva}
-                 keyboardType='numeric'
-                style={styles.TextFieldStyling}/>
-                 {/* <Select
-                    label="Imposto"
+               
+                 <Select
+                    label="Impostos"
                     placeholder="Selecione o imposto"
                      options ={impostos.map(imposto =>
                     ({
                         label:imposto.designacao,
-                        value: (imposto.imposto_id).toLocaleString()
+                        value: imposto.designacao
                     }))}
-                    selectedValue={selectedCategory}
-                    onValueChange={setSelectedCategory}
-                /> */}
-
-
+                    selectedValue={selectedImposto}
+                    onValueChange={setSelectedImposto}
+                />
               </View>
+              
+              { TextAreaEnabled &&
+              ( <TextInput
+               multiline
+               placeholder="Digite aqui o motivo da isenção do imposto ..."
+               style={{
+                fontStyle:'italic',
+                borderWidth: 1,
+                borderRadius:8,
+                borderColor: '#ccc',
+                padding: 10,
+                height: 100,
+                textAlignVertical: 'top'
+              }} /> ) }
+                
 
-              <View style={styles.dialogContentStyle}>
-                <Text style={styles.dialogTextStyle}>
+               </View>
+              </ScrollView>
+
+              <View style={[{marginTop:5},styles.dialogContentStyle]}>
+                <Text style={styles.dialogTextStyle}
+                >
                    Total: MZN {""} {formatMoney(total)}
                 </Text>
                
               </View>
-
-            </View>
-            
+          
           </Dialog.Content>
           <Dialog.Actions style={{flexDirection:'row',
             alignItems:'center'}}>
@@ -419,7 +567,7 @@ const total = precoNum + (precoNum * ivaNum / 100);
               </View>
             </Button>
 
-            <Button onPress={() => setVisible(false)}
+            <Button onPress={() => setVisibleFormCadastro(false)}
               style={{paddingTop:2}}>
                 <Text style={{color:colors.blue,
                   fontWeight:'bold'
@@ -429,8 +577,10 @@ const total = precoNum + (precoNum * ivaNum / 100);
             </Button>
            
           </Dialog.Actions>
+           </KeyboardAvoidingView>
         </Dialog>
       </Portal>
+    
     
 
 
@@ -459,7 +609,7 @@ const total = precoNum + (precoNum * ivaNum / 100);
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
        {
          loadingProdutos?
@@ -473,7 +623,10 @@ const total = precoNum + (precoNum * ivaNum / 100);
             <ProdutoItem
               key={index}
               produto={produto}
-              onPress={() => handleProdutoPress(produto)}
+              onPress={() => {
+                setVisibleDetalhesProduto(true)
+                setProdutoSeleccionado(produto)
+              }}
             />
              ))
             ): (
@@ -489,7 +642,7 @@ const total = precoNum + (precoNum * ivaNum / 100);
       {/* FAB - Novo Produto */}
       <TouchableOpacity 
         style={styles.fab}
-        onPress={() => setVisible(true)}
+        onPress={() => setVisibleFormCadastro(true)}
         activeOpacity={0.8}
       >
         <Text style={styles.fabText}>+ Novo Produto</Text>
@@ -587,10 +740,10 @@ const styles = StyleSheet.create({
   // ScrollView
   scroll: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+     backgroundColor: '#F2F2F7', 
   },
   scrollContent: {
-    padding: 14,
+    padding: 20,
   },
 
   // Produto card
