@@ -15,20 +15,19 @@ export interface Produtos
   id: number;
   codigo:string,
   designacao: string;
-  preco_venda: string;
+  preco_venda_liquido_1: string;
+  preco_venda_iliquido_1: string;
   categoria_id:number,
+  familia_id:number,
+  marca_id:number,
   imposto_id:number,
-//   categoria: {
-//     categoria_id:number,
-//     descricao:string,
-//     designacao: string;
-//   } | null;
-//   imposto: {
-//     imposto_id:number,
-//     taxa: string;
-//   } | null;
+  motivo_isencao_id:number,
+  
   categoria: Categoria,
   imposto: Imposto
+  tipo:Tipo,
+  marca:Marca,
+  familia:Familia
 }
 
 export interface Categoria
@@ -44,6 +43,38 @@ export interface Imposto
     id:number,
     codigo: string,
     taxa:string,
+    designacao:string
+
+}
+
+export interface Familia
+{
+    id:number,
+    codigo: string,
+    designacao:string
+
+}
+
+export interface Marca
+{
+    id:number,
+    codigo: string,
+    nome:string
+}
+
+export interface Tipo
+{
+
+    id:number,
+    codigo: string,
+    designacao:string
+
+}
+
+export interface Motivo_Isencao
+{
+    id:number,
+    codigo: string,
     designacao:string
 
 }

@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     {
         // width:"100%",
         width:"72%" ,
-        paddingBottom:8
+        paddingBottom:25// da proxima, qualquer coisa , vem aqui, ok?
     },
     label:
     {
@@ -210,3 +210,4 @@ const styles = StyleSheet.create({
     }
 
 })
+

@@ -23,7 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
-import { Categoria, Imposto, Produtos } from '@/types/types';
+import { Categoria, Familia, Imposto, Marca, Motivo_Isencao, Produtos, Tipo } from '@/types/types';
 import { Button, Dialog, Portal } from 'react-native-paper';
 
 const { width } = Dimensions.get('window');
@@ -93,7 +93,7 @@ const ProdutoItem: React.FC<ProdutoItemProps> = ({ produto, onPress }) => {
   //   ? (produto.preco_venda * produto.imposto?.taxa/100 + produto.preco_custo).toFixed(2) 
   //   : produto.preco_custo.toString();
 
-  const precoVenda = parseFloat(produto.preco_venda) || 0;
+  const precoVenda = parseFloat(produto.preco_venda_liquido_1) || 0;
   const taxaIVA = parseFloat(produto.imposto?.taxa ?? "0") || 0;
  
   const precoComIVA = taxaIVA
@@ -113,10 +113,11 @@ const ProdutoItem: React.FC<ProdutoItemProps> = ({ produto, onPress }) => {
       <View style={styles.produtoRight}>
         <Text style={styles.produtoPreco}>
           {/* {produto. preco_venda.toLocaleString()} MT */}
-          {formatMoney(produto.preco_venda)  + ' MT'}
+          {formatMoney(produto.preco_venda_liquido_1)  + ' MT'}
         </Text>
         <Text style={styles.produtoIVA}>
-          {produto.imposto?.taxa ? `+ IVA ${formatPercent(produto.imposto?.taxa)} (${precoComIVA} MT)` : 'Sem IVA'}
+          {/* {produto.imposto?.taxa ? `IVA ${formatPercent(produto.imposto?.taxa)} (${precoComIVA} MT)` : 'Sem IVA'} */}
+          {produto.imposto?.taxa ? `IVA ${formatPercent(produto.imposto?.taxa)} `:'Sem IVA'}
         </Text>
       </View>
     </TouchableOpacity>
@@ -136,9 +137,31 @@ const [loadingProdutos,setLoadingProdutos] = useState(false)
 const [filtrados, setFiltrados] = useState<Produtos[]>([]);
 const [produtoSeleccionado, setProdutoSeleccionado] = useState<Produtos|null>(null)
 
+
+
+
 const [categorias, setCategorias] =  useState<Categoria[]>([])
 const [selectedCategory, setSelectedCategory] = useState<string>('');
 const [selectedCategoryId, setSelectedCategoryId] = useState<number>();
+
+
+const [tipos, setTipos] =  useState<Tipo[]>([])
+const [selectedTipo, setSelectedTipo] = useState<string>('');
+const [selectedTipoId, setSelectedTipoId] = useState<number>();
+
+const [familias, setFamilias] =  useState<Familia[]>([])
+const [selectedFamily, setSelectedFamily] = useState<string>('');
+const [selectedFamilyId, setSelectedFamilyId] = useState<number>();
+
+const [marcas, setMarcas] =  useState<Marca[]>([])
+const [selectedMarca, setSelectedMarca] = useState<string>('');
+const [selectedMarcaId, setSelectedMarcaId] = useState<number>();
+
+const [motivosIsencao, setMotivosIsencao] =  useState<Motivo_Isencao[]>([])
+const [selectedMotivoIsencao, setSelectedMotivoIsencao] = useState<string>('');
+const [selectedMotivoIsencaoId, setSelectedMotivoIsencaoId] = useState<number>();
+
+
 
 const [impostos, setImpostos] =  useState<Imposto[]>([])
 const [selectedImposto, setSelectedImposto] = useState<string>('');
@@ -156,12 +179,16 @@ const [iva, setIva] = useState('');
 const [codigo, setCodigo] = useState('');
 
 
-const [categories,setCategories] = useState(CATEGORIAS_CONFIG)
+const [precoL, setPrecoLiquido] = useState('')
+const [precoIL, setPrecoIliquido] = useState('')
+
 
 
 const precoNum = parseFloat(precoVenda) || 0;
 const taxa = selectedImpostoTaxa
-const total = precoNum + (precoNum * taxa / 100);
+// const total = precoNum + (precoNum * taxa / 100);
+
+const total = precoL
 
 
   function navigatePage(pageIndex:number)
@@ -204,14 +231,14 @@ const total = precoNum + (precoNum * taxa / 100);
     try
     {
 
-    if (!designacao || !selectedCategory || !precoVenda) return;
+    if (!designacao || !selectedCategory || !precoL) return;
 
    const novoProduto = {
    id: produtos.length + 1,
    codigo: codigo,
    designacao: designacao,
    categoria: { designacao: selectedCategory } as Produtos['categoria'],
-   preco_venda: precoVenda,
+   preco_venda: precoL,
    imposto:
    {
     imposto_id:1,
@@ -234,7 +261,20 @@ const total = precoNum + (precoNum * taxa / 100);
     codigo:codigo,
     designacao: designacao,
     categoria_id: selectedCategoryId,
-    preco_venda: precoVenda,
+    preco_venda_liquido_1: precoL,
+    preco_venda_iliquido_1: precoIL,
+    preco_venda_liquido_2: 0,
+    preco_venda_iliquido_2: 0,
+    preco_venda_liquido_3: 0,
+    preco_venda_iliquido_3: 0,
+    preco_venda_liquido_4: 0,
+    preco_venda_iliquido_4: 0,
+    preco_venda_liquido_5: 0,
+    preco_venda_iliquido_5: 0,
+    marca_id: selectedMarcaId,
+    familia_id: selectedFamilyId,
+    tipo_produto_id: selectedTipoId,
+    motivo_isencao_id:selectedMotivoIsencaoId,
     imposto_id:selectedImpostoId,
     
   }
@@ -304,8 +344,122 @@ const total = precoNum + (precoNum * taxa / 100);
     }
   }
 
-  },[selectedCategory,selectedImposto])
+  if (selectedFamily) {
 
+
+    const categoriaEncontrada = categorias.find(
+      (categoria) =>
+        selectedCategory.trim().toLowerCase() ===
+        categoria.designacao.trim().toLowerCase()
+    );
+
+    if (categoriaEncontrada) {
+      console.log("encontrei category");
+      setSelectedCategoryId(categoriaEncontrada.id);
+      
+      console.log("encontrei categoryId", categoriaEncontrada.id);
+    }
+  }
+
+
+  if (selectedMarca) {
+
+
+    const marcaEncontrada = marcas.find(
+      (marca) =>
+        selectedMarca.trim().toLowerCase() ===
+        marca.nome.trim().toLowerCase()
+    );
+
+    if (marcaEncontrada) {
+      console.log("encontrei a marca");
+      setSelectedMarcaId(marcaEncontrada.id);
+      
+      console.log("encontrei marcaId", marcaEncontrada.id);
+    }
+  }
+
+  if (selectedFamily) {
+
+
+    const familiaEncontrada = familias.find(
+      (family) =>
+        selectedFamily.trim().toLowerCase() ===
+        family.designacao.trim().toLowerCase()
+    );
+
+    if (familiaEncontrada) {
+     
+      setSelectedFamilyId(familiaEncontrada.id);
+      
+      console.log("encontrei familyId", familiaEncontrada.id);
+    }
+  }
+
+  if (selectedTipo) {
+
+
+    const tipoEncontrado = tipos.find(
+      (tipo) =>
+        selectedTipo.trim().toLowerCase() ===
+        tipo.designacao.trim().toLowerCase()
+    );
+
+    if (tipoEncontrado) {
+     
+      setSelectedTipoId(tipoEncontrado.id);
+      
+      console.log("encontrei tipoId", tipoEncontrado.id);
+    }
+  }
+
+  if (selectedMotivoIsencao) {
+
+
+    const motivoEncontrado = motivosIsencao.find(
+      (motivo) =>
+        selectedMotivoIsencao.trim().toLowerCase() ===
+        motivo.designacao.trim().toLowerCase()
+    );
+
+    if (motivoEncontrado) {
+     
+      setSelectedMotivoIsencaoId(motivoEncontrado.id);
+      
+      console.log("encontrei motivoId", motivoEncontrado.id);
+    }
+  }
+
+
+  },[selectedCategory,selectedImposto,
+    selectedMarca,selectedTipo,selectedFamily,selectedMotivoIsencao])
+
+
+
+  useEffect(() => {
+  if (precoL) {
+    setPrecoIliquido(
+      ((parseFloat(precoL) - parseFloat(precoL) * taxa/100).toFixed(2)).toString()
+    )
+  }
+}, [selectedImpostoTaxa]);
+
+useEffect(()=> {
+
+    if(!precoL)
+    {
+      setPrecoIliquido('')
+    }
+
+},[precoL])
+
+ useEffect(()=> 
+  {
+    if(!precoIL)
+    {
+      setPrecoLiquido('')
+    }
+  },[precoIL])
 
   useEffect(() => 
     {
@@ -323,25 +477,104 @@ const total = precoNum + (precoNum * taxa / 100);
     
   useEffect(()=> {
 
-    async function loadProductData()
+    async function loadData()
     {
         await loadProducts()
-    }
-
-    async function loadImpostoData()
-    {
         await loadImpostos()
-    }
-
-    async function loadCategoriaData()
-    {
         await loadCategorias()
+        await loadFamilias()
+        await loadTipos()
+        await loadMarcas()
+        await loadMotivosIsencao()
     }
 
-    loadImpostoData()
-    loadProductData();
-    loadCategoriaData()
+    loadData()
   },[])
+
+ async function loadMotivosIsencao()
+  {
+    try{
+
+      const response = await api.get('/motivoisencao')
+
+      setMotivosIsencao(response.data.data.data)
+
+    }
+    catch(err)
+    {
+      if(err instanceof Error)
+        console.log(err.message)
+    }
+    finally
+    {
+
+    }
+  }
+
+
+  async function loadMarcas()
+  {
+    try{
+
+      const response = await api.get('/marca')
+
+      setMarcas(response.data.data.data)
+      // console.log('impostos:', response.data.data.data)
+
+    }
+    catch(err)
+    {
+      if(err instanceof Error)
+        console.log(err.message)
+    }
+    finally
+    {
+
+    }
+  }
+
+
+  async function loadFamilias()
+  {
+    try{
+
+      const response = await api.get('/familia')
+
+      setFamilias(response.data.data.data)
+      // console.log('impostos:', response.data.data.data)
+
+    }
+    catch(err)
+    {
+      if(err instanceof Error)
+        console.log(err.message)
+    }
+    finally
+    {
+
+    }
+  }
+
+  async function loadTipos()
+  {
+    try{
+
+      const response = await api.get('/tipo')
+
+      setTipos(response.data.data.data)
+      // console.log('impostos:', response.data.data.data)
+
+    }
+    catch(err)
+    {
+      if(err instanceof Error)
+        console.log(err.message)
+    }
+    finally
+    {
+
+    }
+  }
 
   async function loadImpostos()
   {
@@ -350,7 +583,7 @@ const total = precoNum + (precoNum * taxa / 100);
       const response = await api.get('/imposto')
 
       setImpostos(response.data.data.data)
-      console.log('impostos:', response.data.data.data)
+      // console.log('impostos:', response.data.data.data)
 
     }
     catch(err)
@@ -371,7 +604,7 @@ const total = precoNum + (precoNum * taxa / 100);
       const response = await api.get('/categoria')
 
       setCategorias(response.data.data.data)
-      console.log('categorias:', response.data.data.data)
+      // console.log('categorias:', response.data.data.data)
 
     }
     catch(err)
@@ -400,9 +633,9 @@ const total = precoNum + (precoNum * taxa / 100);
              
             setProdutos(response.data.data.data)
             setFiltrados(response.data.data.data)
-            console.log("produtos da base: ", response.data.data.data)
+             console.log("produtos da base: ", response.data.data.data)
 
-            console.log(JSON.stringify(produtosAPI, null, 2));
+            // console.log(JSON.stringify(produtosAPI, null, 2));
         }
 
         catch(err)
@@ -456,7 +689,7 @@ const total = precoNum + (precoNum * taxa / 100);
            style={{ backgroundColor: '#fff' }}> 
            
           <KeyboardAvoidingView
-           behavior={"padding"}
+           behavior={"height"}
           >
               <Dialog.Title style={{color: colors.blue, fontSize:14,
                 textAlign:'center',
@@ -503,14 +736,37 @@ const total = precoNum + (precoNum * taxa / 100);
               </View>
 
               <View style={styles.dialogContentStyle}>
-                <Text style={styles.dialogTextStyle}> Preço:</Text>
-                <TextInput value={precoVenda} onChangeText={setPrecoVenda}
+                <Text style={styles.dialogTextStyle}> Preço líquido:</Text>
+                <TextInput value={precoL} 
+                onChangeText={ (text) => {
+                  setPrecoLiquido(text)
+                  
+                  setPrecoIliquido(((parseFloat(text) - parseFloat(text)*taxa/100).toFixed(2)).toString())
+
+                   }
+                }
+
                 keyboardType='numeric'
                 style={styles.TextFieldStyling}/>
               </View>
 
               <View style={styles.dialogContentStyle}>
-                <Text style={styles.dialogTextStyle}> IVA:</Text>
+                <Text style={styles.dialogTextStyle}> Preço ilíquido:</Text>
+                <TextInput value={precoIL} onChangeText={(text) =>{
+                  
+                  setPrecoIliquido(text)
+
+                  setPrecoLiquido(((parseFloat(text) + parseFloat(text)*taxa/100).toFixed(2)).toString())
+           
+                }}
+                keyboardType='numeric'
+                style={styles.TextFieldStyling}/>
+              </View>
+
+              <View style={styles.dialogContent}>
+                <Text style={[styles.dialogTextStyle
+                  ,{paddingRight:45}
+                ]}> IVA:</Text>
                
                  <Select
                     label="Impostos"
@@ -526,26 +782,101 @@ const total = precoNum + (precoNum * taxa / 100);
               </View>
               
               { TextAreaEnabled &&
-              ( <TextInput
-               multiline
-               placeholder="Digite aqui o motivo da isenção do imposto ..."
-               style={{
-                fontStyle:'italic',
-                borderWidth: 1,
-                borderRadius:8,
-                borderColor: '#ccc',
-                padding: 10,
-                height: 100,
-                textAlignVertical: 'top'
-              }} /> ) }
+              // ( <TextInput
+              //  multiline
+              //  placeholder="Digite aqui o motivo da isenção do imposto ..."
+              //  style={{
+              //   fontStyle:'italic',
+              //   borderWidth: 1,
+              //   borderRadius:8,
+              //   borderColor: '#ccc',
+              //   padding: 10,
+              //   height: 100,
+              //   textAlignVertical: 'top'
+              // }} /> ) 
+               
+              <View style={styles.dialogContent}>
+                   
+                  <View style={{flexDirection:'column'}}>
+                    <Text style={styles.dialogTextIsencao}> 
+                      Isenção:
+                    </Text>
+                    <Text style={styles.dialogTextIsencao}>
+                      de IVA
+                    </Text>
+                  </View>
+              <Select
+                    label="Motivo de isenção"
+                    placeholder="Qual o motivo da isenção ?"
+                    options ={motivosIsencao.map(m => ({
+                      label: m.designacao,
+                      value: m.designacao
+                    }))}
+                    selectedValue={selectedMotivoIsencao}
+                    onValueChange={setSelectedMotivoIsencao}
+                />
+                 </View>
+
+              }
                 
+                <View style={styles.dialogContent}>
+                <Text style={[styles.dialogTextStyle
+                  , {paddingRight:30}
+                ]}> Marca:</Text>
+                
+                <Select
+                    label="Marcas"
+                    placeholder="Selecione a marca"
+                    options ={marcas.map(marca => ({
+                      label: marca.nome,
+                      value: marca.nome
+                    }))}
+                    selectedValue={selectedMarca}
+                    onValueChange={setSelectedMarca}
+                />
+                </View>
+
+                 <View style={styles.dialogContent}>
+                <Text style={[styles.dialogTextStyle,
+                   ,{paddingRight:40}
+                ]}> Tipo:</Text>
+                
+                <Select
+                    label="Tipo"
+                    placeholder="Selecione o tipo"
+                    options ={tipos.map(tipo => ({
+                      label: tipo.designacao,
+                      value: tipo.designacao
+                    }))}
+                    selectedValue={selectedTipo}
+                    onValueChange={setSelectedTipo}
+                />
+                </View>
+
+
+              <View style={styles.dialogContent}>
+                <Text style={[styles.dialogTextStyle,
+                   ,{paddingRight:25}
+                ]}> Família:</Text>
+                
+                <Select
+                    label="Famílias"
+                    placeholder="Selecione a família"
+                    options ={familias.map(familia => ({
+                      label: familia.designacao,
+                      value: familia.designacao
+                    }))}
+                    selectedValue={selectedFamily}
+                    onValueChange={setSelectedFamily}
+                />
+              </View>
 
                </View>
               </ScrollView>
 
               <View style={[{marginTop:5},styles.dialogContentStyle]}>
-                <Text style={styles.dialogTextStyle}
-                >
+                <Text style={styles.dialogTextStyle}>
+
                    Total: MZN {""} {formatMoney(total)}
                 </Text>
                
@@ -871,11 +1202,25 @@ const styles = StyleSheet.create({
      fontWeight:'bold',
      color:'#000'
   },
+  dialogTextIsencao:
+  {
+     paddingRight:10,
+     fontWeight:'bold',
+     color:'#4ef097'
+  },
   dialogContentStyle:
   {
     flexDirection: 'row',
     alignItems:'center',
     marginBottom:10
+  }, 
+
+  dialogContent:
+  {
+    flexDirection: 'row',
+    alignItems:'center',
+    marginBottom:2
+    
   }, 
   
   TextFieldStyling:
@@ -903,3 +1248,7 @@ const styles = StyleSheet.create({
 
 export default ProdutosScreen;
 
+
+
+
+// php artisan serve --host=192.168.0.53 --port=8000
