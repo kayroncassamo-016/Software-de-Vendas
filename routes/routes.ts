@@ -1,8 +1,8 @@
+import { api } from "@/services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from "react";
-
-import { api } from "@/services/api";
 import { LoginResponse, Produtos, User } from "../types/types";
 
 
@@ -53,6 +53,8 @@ export  function useAuth()
         catch(err)
         {
             console.log(err)
+            setSigned(false);
+            setUser(undefined);
         }
 
         finally{
@@ -94,11 +96,28 @@ export  function useAuth()
             setUser(responsee.data)
         }
 
-        catch(err )
+        catch(err)
         {
-            if(err instanceof Error)
-                 console.log("Erro: ",err.message)
-            throw err
+            // if(err instanceof Error)
+            //      console.log("Erro: ",err.message)
+            // throw err
+
+       if (axios.isAxiosError(err))
+        {
+        // Login inválido
+            if (err.response?.status === 401)
+            {
+                throw new Error("INVALID_CREDENTIALS");
+            }
+
+        // Sem internet
+            if (!err.response)
+            {
+                throw new Error("NETWORK_ERROR");
+            }
+        }
+
+    throw new Error("SERVER_ERROR");
         }
     }
 

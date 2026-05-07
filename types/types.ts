@@ -25,7 +25,7 @@ export interface Produtos
   
   categoria: Categoria,
   imposto: Imposto
-  tipo:Tipo,
+  tipo_produto:Tipo,
   marca:Marca,
   familia:Familia
 }
@@ -64,7 +64,6 @@ export interface Marca
 
 export interface Tipo
 {
-
     id:number,
     codigo: string,
     designacao:string

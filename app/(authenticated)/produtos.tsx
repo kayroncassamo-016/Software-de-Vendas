@@ -25,6 +25,7 @@ import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
 import { Categoria, Familia, Imposto, Marca, Motivo_Isencao, Produtos, Tipo } from '@/types/types';
 import { Button, Dialog, Portal } from 'react-native-paper';
+import { EditarProdutoForm } from '../components/Produtos/EditarProduto';
 
 const { width } = Dimensions.get('window');
 
@@ -117,7 +118,9 @@ const ProdutoItem: React.FC<ProdutoItemProps> = ({ produto, onPress }) => {
         </Text>
         <Text style={styles.produtoIVA}>
           {/* {produto.imposto?.taxa ? `IVA ${formatPercent(produto.imposto?.taxa)} (${precoComIVA} MT)` : 'Sem IVA'} */}
-          {produto.imposto?.taxa ? `IVA ${formatPercent(produto.imposto?.taxa)} `:'Sem IVA'}
+          {produto.imposto?.taxa ? 
+           produto.imposto.codigo ==="ISE"? 'Isento':
+          `IVA ${formatPercent(produto.imposto?.taxa)} `:'Sem IVA'}
         </Text>
       </View>
     </TouchableOpacity>
@@ -171,7 +174,8 @@ const [TextAreaEnabled, setTextAreaEnabled] = useState<Boolean>(false)
 
 const router = useRouter()
 const [visibleFormCadastro, setVisibleFormCadastro] = useState(false);
-const [visibleDetalhesPtoduto, setVisibleDetalhesProduto] = useState(false);
+const [visibleDetalhesProduto, setVisibleDetalhesProduto] = useState(false);
+const [visibleEditarProduto, setVisibleEditarProduto] = useState(false);
 
 const [designacao, setDesignacao] = useState('');
 const [precoVenda, setPrecoVenda] = useState('');
@@ -271,10 +275,10 @@ const total = precoL
     preco_venda_iliquido_4: 0,
     preco_venda_liquido_5: 0,
     preco_venda_iliquido_5: 0,
-    marca_id: selectedMarcaId,
-    familia_id: selectedFamilyId,
-    tipo_produto_id: selectedTipoId,
-    motivo_isencao_id:selectedMotivoIsencaoId,
+    marca_id: selectedMarcaId ||undefined,
+    familia_id: selectedFamilyId ||undefined,
+    tipo_produto_id: selectedTipoId ||undefined,
+    motivo_isencao_id:selectedMotivoIsencaoId||undefined,
     imposto_id:selectedImpostoId,
     
   }
@@ -415,6 +419,7 @@ const total = precoL
 
   if (selectedMotivoIsencao) {
 
+    console.log("motivo de isencao.")
 
     const motivoEncontrado = motivosIsencao.find(
       (motivo) =>
@@ -617,8 +622,6 @@ useEffect(()=> {
 
     }
   }
-  
-
 
   async function loadProducts()
   {
@@ -633,9 +636,9 @@ useEffect(()=> {
              
             setProdutos(response.data.data.data)
             setFiltrados(response.data.data.data)
-             console.log("produtos da base: ", response.data.data.data)
+             //console.log("produtos da base: ", response.data.data.data)
 
-            // console.log(JSON.stringify(produtosAPI, null, 2));
+             console.log(JSON.stringify(produtosAPI, null, 2));
         }
 
         catch(err)
@@ -649,33 +652,150 @@ useEffect(()=> {
         }
     }
 
-  return (
+ 
 
+  return (
+    
     
     <SafeAreaView style={styles.safe}>
       {/* Portal para renderizar detalhes de cada produto */}
        <Portal>
-         <Dialog visible={visibleDetalhesPtoduto} 
+         <Dialog visible={visibleDetalhesProduto} 
           onDismiss={()=>setVisibleDetalhesProduto(false)}
            style={{ backgroundColor: '#fff' }}> 
+
               <Dialog.Title style={{color: colors.blue, fontSize:14,
                 textAlign:'center',
                 fontWeight:'bold' }}>
-           
                 Detalhes do produto
               </Dialog.Title>
 
          
-          <Dialog.Content>
-           
-              <Text>{produtoSeleccionado?.designacao}</Text>
+            <Dialog.Content>
+              
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Código:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                  {produtoSeleccionado?.codigo}
+                </Text>
+              </View>
+
+
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Nome:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                  {produtoSeleccionado?.designacao||""}
+                </Text>
+              </View>
+
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Preço líquido 1:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                  {formatMoney(produtoSeleccionado?.preco_venda_liquido_1) + ' MT'}
+                </Text>
+              </View>
+
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Preço ilíquido 1:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                  {formatMoney(
+                    produtoSeleccionado?.preco_venda_iliquido_1) + ' MT'}
+                </Text>
+              </View>
+
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Categoria:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                  {produtoSeleccionado?.categoria.designacao}
+                </Text>
+              </View>
+
+               <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Imposto:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                  {produtoSeleccionado?.imposto.designacao}
+                </Text>
+              </View>
+               
+               <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Marca:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                  {produtoSeleccionado?.marca?
+                    (
+                        produtoSeleccionado.marca.nome
+                    ):
+                    (
+                      <Text> "N/A"</Text>
+                    )
+                
+                  }
+                </Text>
+              </View>
+
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Tipo:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                   {produtoSeleccionado?.tipo_produto?
+                    (
+                        produtoSeleccionado?.tipo_produto.designacao
+                    ):
+                    (
+                     <Text> "N/A"</Text>
+                    )
+                   } 
+                </Text>
+              </View>
+
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Família:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                   {produtoSeleccionado?.familia?
+                    (
+                      produtoSeleccionado?.familia?.designacao
+                    ):
+                    (
+                        <Text> "N/A"</Text>
+                    ) 
+                  } 
+                </Text>
+              </View>
+
+              
           </Dialog.Content>
 
           <Dialog.Actions style={{flexDirection:'row',
             alignItems:'center'}}>
 
-              <Button>Editar</Button>
-
+              <Button
+              onPress={() => {
+              setVisibleDetalhesProduto(false)
+              setVisibleEditarProduto(true)
+              }}>
+                <View style={{flexDirection:'row',
+                justifyContent:'space-around', alignItems:'center'}}> 
+                <Text style={{color:colors.blue,
+                  fontWeight:'bold'
+                }}>Editar</Text> 
+              </View>
+              </Button>
            
           </Dialog.Actions>
         </Dialog>
@@ -911,9 +1031,13 @@ useEffect(()=> {
            </KeyboardAvoidingView>
         </Dialog>
       </Portal>
-    
-    
 
+      {/* Portal para Editar o produto */}
+      
+       <EditarProdutoForm 
+        visible = {visibleEditarProduto} 
+        setVisible = {setVisibleEditarProduto}
+        produto={produtoSeleccionado} />
 
 
     <StatusBar barStyle="light-content" backgroundColor="#185FA5" />

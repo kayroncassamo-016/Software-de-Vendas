@@ -24,7 +24,7 @@ export default function Home() {
   const [senha, setSenha] = useState("");
   const [email, setEmail] = useState("");
   const [loading,setLoading] = useState(false)
-  const [errorMessage,setErrorMessage] = useState(false);
+  const [errorMessage,setErrorMessage] = useState('');
 
   const { signIn } = useContexto();
   
@@ -40,14 +40,41 @@ export default function Home() {
         {
            setLoading(true)
            await signIn(email,senha)
-           setErrorMessage(false)
+          // setErrorMessage(false)
         }
 
-        catch(err)
-        {
-           setErrorMessage(true)
-            //Alert.alert("Erro", "Erro ao fazer login!")
+        // catch (err:any)
+        // {
+        //     Alert.alert("Erro", "Erro ao fazer login!")
+        //     if (err.message === "INVALID_CREDENTIALS")
+        //     {
+        //         setErrorMessage("Email/senha inválidos. Introduza novamente");
+        //         return;
+        //     }
+        //   setErrorMessage("Erro ao fazer login.");
             
+        // }
+
+        catch (err:any)
+        {   
+            switch(err.message)
+            {
+              case "INVALID_CREDENTIALS":
+                  setErrorMessage("Email/senha inválidos. Introduza novamente.");
+                  break;
+
+              case "NETWORK_ERROR":
+                  setErrorMessage("Sem conexão com o servidor. Verifique a sua conexão.");
+                  break;
+
+              case "SERVER_ERROR":
+                  setErrorMessage("Erro interno do servidor.");
+                  break;
+
+              default:
+                  setErrorMessage("Erro inesperado ao fazer login.");
+                  break;
+            }
         }
 
         finally
@@ -83,7 +110,7 @@ export default function Home() {
             onChangeText={(text) =>
             {
               setEmail(text),
-              setErrorMessage(false)
+              setErrorMessage('')
             }
             }
         />
@@ -99,7 +126,7 @@ export default function Home() {
             onChangeText={(text) =>
             {
               setSenha(text),
-              setErrorMessage(false)
+              setErrorMessage('')
             }}
             />
 
@@ -115,10 +142,10 @@ export default function Home() {
         </View>
         {/* Renderizacao condicional aqui caso o email/senha incorrectos */}
 
-        {errorMessage && (
+        {!!errorMessage && (
           <View>
              <Text style={styles.error}>
-                Email/senha incorrectos. Digite novamente!
+                 {errorMessage}
             </Text>
           </View>
         )}

@@ -1,4 +1,4 @@
-export function formatMoney(value: string | number): string {
+export function formatMoney(value: string | number|undefined): string {
   const num = Number(value) || 0;
 
   return num.toLocaleString('pt-MZ', {

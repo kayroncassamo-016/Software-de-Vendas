@@ -36,6 +36,23 @@ export default function Index ()
 
    },[loading,signed,router])
 
+//    useEffect(() => {
+
+//     if (loading) return;
+
+//     const inAuthGroup = segments[0] === "(authenticated)";
+
+//     if (signed && !inAuthGroup) {
+//         router.replace("/(authenticated)/dashboard");
+//         return;
+//     }
+
+//     if (!signed && inAuthGroup) {
+//         router.replace("/login/login");
+//         return;
+//     }
+
+//     }, [loading, signed, segments,router]);
 
    if(loading)
    {
