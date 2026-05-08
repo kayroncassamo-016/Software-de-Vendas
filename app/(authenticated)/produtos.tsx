@@ -2,7 +2,7 @@ import { Select } from '@/components/project/Select';
 import { formatMoney, formatPercent } from '@/utils/format';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from 'expo-router';
-import { Cog, Grid2X2, Handshake, Package, Plus, ShoppingBag } from 'lucide-react-native';
+import { Cog, Grid2X2, Handshake, Package, Plus, ShoppingBag, Trash } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 
 import {
@@ -25,6 +25,7 @@ import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
 import { Categoria, Familia, Imposto, Marca, Motivo_Isencao, Produtos, Tipo } from '@/types/types';
 import { Button, Dialog, Portal } from 'react-native-paper';
+import { DeletarProduto } from '../components/Produtos/DeletarProduto';
 import { EditarProdutoForm } from '../components/Produtos/EditarProduto';
 
 const { width } = Dimensions.get('window');
@@ -164,7 +165,7 @@ const [motivosIsencao, setMotivosIsencao] =  useState<Motivo_Isencao[]>([])
 const [selectedMotivoIsencao, setSelectedMotivoIsencao] = useState<string>('');
 const [selectedMotivoIsencaoId, setSelectedMotivoIsencaoId] = useState<number>();
 
-
+const [tipoFiltro, setTipoFiltro] = useState<string>('produto');
 
 const [impostos, setImpostos] =  useState<Imposto[]>([])
 const [selectedImposto, setSelectedImposto] = useState<string>('');
@@ -176,6 +177,7 @@ const router = useRouter()
 const [visibleFormCadastro, setVisibleFormCadastro] = useState(false);
 const [visibleDetalhesProduto, setVisibleDetalhesProduto] = useState(false);
 const [visibleEditarProduto, setVisibleEditarProduto] = useState(false);
+const [visibleDeletarProduto, setVisibleDeletarProduto] = useState(false);
 
 const [designacao, setDesignacao] = useState('');
 const [precoVenda, setPrecoVenda] = useState('');
@@ -186,6 +188,17 @@ const [codigo, setCodigo] = useState('');
 const [precoL, setPrecoLiquido] = useState('')
 const [precoIL, setPrecoIliquido] = useState('')
 
+const [precoL_2, setPrecoLiquido_2] = useState('')
+const [precoIL_2, setPrecoIliquido_2] = useState('')
+
+const [precoL_3, setPrecoLiquido_3] = useState('')
+const [precoIL_3, setPrecoIliquido_3] = useState('')
+
+const [precoL_4, setPrecoLiquido_4] = useState('')
+const [precoIL_4, setPrecoIliquido_4] = useState('')
+
+const [precoL_5, setPrecoLiquido_5] = useState('')
+const [precoIL_5, setPrecoIliquido_5] = useState('')
 
 
 const precoNum = parseFloat(precoVenda) || 0;
@@ -221,14 +234,12 @@ const total = precoL
       );
       setFiltrados(filtered);
     }
-  };
+     
 
-  const handleProdutoPress = (produto: Produtos) => 
-  {
-    setVisibleDetalhesProduto(true)
 
   };
 
+  
   async function adicionarProduto () 
   {
 
@@ -237,25 +248,20 @@ const total = precoL
 
     if (!designacao || !selectedCategory || !precoL) return;
 
-   const novoProduto = {
-   id: produtos.length + 1,
-   codigo: codigo,
-   designacao: designacao,
-   categoria: { designacao: selectedCategory } as Produtos['categoria'],
-   preco_venda: precoL,
-   imposto:
-   {
-    imposto_id:1,
-    taxa: iva
-   }};
+  //  const novoProduto = {
+  //  id: produtos.length + 1,
+  //  codigo: codigo,
+  //  designacao: designacao,
+  //  categoria: { designacao: selectedCategory } as Produtos['categoria'],
+  //  preco_venda: precoL,
+  //  imposto:
+  //  {
+  //   imposto_id:1,
+  //   taxa: iva
+  //  }};
 
-  const novaLista = [novoProduto, ...produtos];
-  // setProdutos(novaLista);
-  // setFiltrados(novaLista);
-  // setDesignacao('');
-  // setPrecoVenda('');
-  // setIva('');
-  // setSelectedCategory('');
+  // const novaLista = [novoProduto, ...produtos];
+
   setVisibleFormCadastro(false);
    
   const token  = await AsyncStorage.getItem("@token")
@@ -652,7 +658,7 @@ useEffect(()=> {
         }
     }
 
- 
+
 
   return (
     
@@ -664,11 +670,29 @@ useEffect(()=> {
           onDismiss={()=>setVisibleDetalhesProduto(false)}
            style={{ backgroundColor: '#fff' }}> 
 
-              <Dialog.Title style={{color: colors.blue, fontSize:14,
-                textAlign:'center',
-                fontWeight:'bold' }}>
-                Detalhes do produto
-              </Dialog.Title>
+              {/* <Dialog.Title style={{color: colors.blue, fontSize:14,
+                fontWeight:'bold', }}> */}
+                <View
+                 style={{
+                  flexDirection:'row',
+                  justifyContent:'space-between'
+                  }}> 
+                 
+                  <Text style={{color:colors.blue,fontWeight:'bold',
+                    fontSize:14, flex:1, textAlign:'center'}}>
+                 
+                    Detalhes do produto
+                  </Text>
+
+                  <TouchableOpacity style={{paddingRight:20}}
+                  onPress={() => setVisibleDeletarProduto(true)}>
+                    <Trash color={'#FF0000'}/>
+                  </TouchableOpacity>
+
+                </View>
+              
+               
+              {/* </Dialog.Title> */}
 
          
             <Dialog.Content>
@@ -739,7 +763,7 @@ useEffect(()=> {
                         produtoSeleccionado.marca.nome
                     ):
                     (
-                      <Text> "N/A"</Text>
+                      <Text> N/A</Text>
                     )
                 
                   }
@@ -756,7 +780,7 @@ useEffect(()=> {
                         produtoSeleccionado?.tipo_produto.designacao
                     ):
                     (
-                     <Text> "N/A"</Text>
+                     <Text> N/A</Text>
                     )
                    } 
                 </Text>
@@ -772,7 +796,7 @@ useEffect(()=> {
                       produtoSeleccionado?.familia?.designacao
                     ):
                     (
-                        <Text> "N/A"</Text>
+                        <Text> N/A</Text>
                     ) 
                   } 
                 </Text>
@@ -856,7 +880,7 @@ useEffect(()=> {
               </View>
 
               <View style={styles.dialogContentStyle}>
-                <Text style={styles.dialogTextStyle}> Preço líquido:</Text>
+                <Text style={styles.dialogTextStyle}> Preço líquido 1:</Text>
                 <TextInput value={precoL} 
                 onChangeText={ (text) => {
                   setPrecoLiquido(text)
@@ -871,7 +895,7 @@ useEffect(()=> {
               </View>
 
               <View style={styles.dialogContentStyle}>
-                <Text style={styles.dialogTextStyle}> Preço ilíquido:</Text>
+                <Text style={styles.dialogTextStyle}> Preço ilíquido 1:</Text>
                 <TextInput value={precoIL} onChangeText={(text) =>{
                   
                   setPrecoIliquido(text)
@@ -1037,7 +1061,24 @@ useEffect(()=> {
        <EditarProdutoForm 
         visible = {visibleEditarProduto} 
         setVisible = {setVisibleEditarProduto}
-        produto={produtoSeleccionado} />
+        loading = {loadingProdutos}
+        setLoading = {setLoadingProdutos}
+        produto={produtoSeleccionado} 
+        setProdutos = {setProdutos}
+        setFiltrados = {setFiltrados}
+        />
+
+         {/* Portal para Deletar o produto */}
+
+         <DeletarProduto
+          produto = {produtoSeleccionado}
+          visible = {visibleDeletarProduto}
+          setVisible = {setVisibleDeletarProduto}
+          setProdutos={ setProdutos}
+          setFiltrados = {setFiltrados}
+         // setLoading = {setLoadingProdutos}
+          setVisibleDetalhesProduto = {setVisibleDetalhesProduto}
+          />
 
 
     <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
@@ -1059,6 +1100,7 @@ useEffect(()=> {
           value={searchText}
           onChangeText={handleSearch}
         />
+        
       </View>
 
       <ScrollView
@@ -1182,6 +1224,15 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   searchInput: {
+    // backgroundColor: '#fff',
+    // borderRadius: 12,
+    // borderWidth: 0.5,
+    // borderColor: '#E5E5EA',
+    // paddingHorizontal: 14,
+    // paddingVertical: 11,
+    // fontSize: 13,
+    // color: '#1C1C1E',
+
     backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 0.5,
@@ -1190,6 +1241,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     fontSize: 13,
     color: '#1C1C1E',
+    marginTop: 10,
   },
 
   // ScrollView

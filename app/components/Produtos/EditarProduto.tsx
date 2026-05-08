@@ -2,40 +2,46 @@ import { Select } from '@/components/project/Select';
 import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
 import {
-    Categoria,
-    Familia,
-    Imposto,
-    Marca,
-    Motivo_Isencao,
-    Produtos,
-    Tipo
+  Categoria,
+  Familia,
+  Imposto,
+  Marca,
+  Motivo_Isencao,
+  Produtos,
+  Tipo
 } from '@/types/types';
 import { formatMoney } from '@/utils/format';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  KeyboardAvoidingView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 
+import { Alert } from 'react-native';
 import { Button, Dialog, Portal } from 'react-native-paper';
-
 
 
 interface ProdutoProps
 {
+ produto:Produtos|null 
  visible: boolean
- produto:Produtos|null
  setVisible: React.Dispatch<React.SetStateAction<boolean>>;
+ loading: boolean
+ setLoading : React.Dispatch<React.SetStateAction<boolean>>;
+ setProdutos: React.Dispatch<React.SetStateAction<Produtos[]>>;
+ setFiltrados: React.Dispatch<React.SetStateAction<Produtos[]>>;
 }
 
 
 
 //chavetas em volta do produtoseleccionado para desestruturacao, para pegar a propriedade produto seleccionado
-export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
+export function EditarProdutoForm({produto,visible,setVisible,
+  loading,setLoading,setProdutos,setFiltrados}:ProdutoProps)
 {
     
 
@@ -78,8 +84,7 @@ export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
     // if (produto) {
     //     setCodigo(produto.codigo ?? '');
     //     setDesignacao(produto.designacao ?? '');
-    //     setPrecoLiquido(produto.preco_venda_liquido_1 ?? '');
-    //     setPrecoIliquido(produto.preco_venda_iliquido_1 ?? '');
+         
     // }
     // }, [produto]);
 
@@ -87,7 +92,8 @@ export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
   if (produto) {
     setDesignacao(produto.designacao);
     setCodigo(produto.codigo);
-
+    setPrecoLiquido(parseFloat(produto.preco_venda_liquido_1).toFixed(2) ?? '');
+    setPrecoIliquido(parseFloat(produto.preco_venda_iliquido_1).toFixed(2) ?? '');
     setSelectedCategory(produto.categoria?.designacao ?? '');
     setSelectedTipo(produto.tipo_produto?.designacao ?? '');
     setSelectedMarca(produto.marca?.nome ?? '');
@@ -276,7 +282,7 @@ export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
         }
         catch(err)
         {
-          if(err instanceof Error)
+          if (err instanceof Error)
             console.log(err.message)
         }
         finally
@@ -393,13 +399,67 @@ export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
       }
 
 
+     async function ActualizarProduto()
+     {
+      const payload = 
+      {
+       
+        designacao: designacao,
+        categoria_id: selectedCategoryId,
+        preco_venda_liquido_1: precoL,
+        preco_venda_iliquido_1: precoIL,
+        preco_venda_liquido_2: 0,
+        preco_venda_iliquido_2: 0,
+        preco_venda_liquido_3: 0,
+        preco_venda_iliquido_3: 0,
+        preco_venda_liquido_4: 0,
+        preco_venda_iliquido_4: 0,
+        preco_venda_liquido_5: 0,
+        preco_venda_iliquido_5: 0,
+        marca_id: selectedMarcaId ||undefined,
+        familia_id: selectedFamilyId ||undefined,
+        tipo_produto_id: selectedTipoId ||undefined,
+        motivo_isencao_id:selectedMotivoIsencaoId??'',
+        imposto_id:selectedImpostoId,
+        
+      }
+       
+        const token  = await AsyncStorage.getItem("@token")
+        
+        try
+        {
+          setVisible(false)
+          setLoading(true)  
+          
+           //console.log('id eh este ',produto?.id)
 
+           await api.put(`/products/${produto?.id}`,
+            payload, {
+            headers: { Authorization: `Bearer ${token}` },
+            } 
+          )
+        
 
+          const response = await api.get('/products')
+           setProdutos(response.data.data.data)
+           setFiltrados(response.data.data.data)
 
+          Alert.alert('Produto actualizado com sucesso!',)
 
+        }
 
+        catch (err:any)
+        {
+            console.log('Erro ao actualizar produto: ',err.response?.data)
+        }
 
+        finally
+        {
+           setLoading(false)
+        }
+        
 
+     }
 
 
 
@@ -437,8 +497,14 @@ export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
 
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}> Código:</Text>
-                <TextInput  value={produto?.codigo} onChangeText={setCodigo}
-                style={styles.TextFieldStyling}/>
+                <TextInput  value={codigo} onChangeText={setCodigo}
+                  editable={false}
+                  style={[styles.TextFieldStyling,
+                    {
+                    backgroundColor: '#dcdcdc',
+                    color: '#666'
+                    }
+                  ]}/>
               </View>
 
 
@@ -464,7 +530,7 @@ export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
               </View>
 
               <View style={styles.dialogContentStyle}>
-                <Text style={styles.dialogTextStyle}> Preço líquido:</Text>
+                <Text style={styles.dialogTextStyle}>Preço líquido 1:</Text>
                 <TextInput value={precoL} 
                 onChangeText={ (text) => {
                   setPrecoLiquido(text)
@@ -479,7 +545,7 @@ export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
               </View>
 
               <View style={styles.dialogContentStyle}>
-                <Text style={styles.dialogTextStyle}> Preço ilíquido:</Text>
+                <Text style={styles.dialogTextStyle}>Preço ilíquido 1:</Text>
                 <TextInput value={precoIL} onChangeText={(text) =>{
                   
                   setPrecoIliquido(text)
@@ -602,13 +668,14 @@ export function EditarProdutoForm({produto,visible,setVisible}:ProdutoProps)
             alignItems:'center'}}>
 
             <Button onPress={() => {
-            //   ActualizarProduto()
+               ActualizarProduto()
             }}>
               <View style={{flexDirection:'row',
                 justifyContent:'space-around', alignItems:'center'}}> 
                 <Text style={{color:colors.blue,
-                  fontWeight:'bold'
-                }}>Actualizar</Text> 
+                  fontWeight:'bold'}}>
+                    Actualizar
+                </Text> 
               </View>
             </Button>
 
