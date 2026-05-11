@@ -98,6 +98,10 @@ const ConfigScreen = () => {
           if (pageIndex === 3) {
               router.push("/(authenticated)/produtos")
             }
+
+          if (pageIndex === 1) {
+              router.push("/(authenticated)/clientes")
+            }
     }
 
      async function sairDoSistema () {

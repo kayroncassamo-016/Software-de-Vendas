@@ -8,8 +8,36 @@ export interface User
     role:"admin"|"STAFF",
     }
  
-    
 }
+
+export interface Clientes
+{
+    id: number,
+    numero:number,
+    nome:string,
+    data_nascimento:string,
+    email: string,
+    tipo: string,
+    sexo:string,
+    endereco?:Endereco,
+    financeiro?: Financeiro
+}
+
+export interface Endereco
+{
+  id:number,
+  morada: string,
+  provincia:string,
+  cod_postal:string
+}
+
+export interface Financeiro
+{
+    id:number,
+    forma_pagamento:string,
+    limite_credito:string,
+}
+
 export interface Produtos
 {
   id: number;
@@ -59,7 +87,10 @@ export interface Marca
 {
     id:number,
     codigo: string,
-    nome:string
+    nome:string,
+    desconto_comercial:string,
+    data_vencimento:string,
+    limite_credito:string
 }
 
 export interface Tipo

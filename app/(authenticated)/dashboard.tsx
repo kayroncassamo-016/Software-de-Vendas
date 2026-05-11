@@ -15,16 +15,51 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function DashBoard () {
  
   const [loadingProductNumber, SetLoadingProductNumber] = useState(false)
+  const [loadingClienteNumber, SetLoadingClienteNumber] = useState(false)
+  const router = useRouter()
+  const [totalProdutos, setTotalProdutos] = useState(0);
+  const [totalClientes, setTotalClientes] = useState(0);
+
+  const {user} = useContexto()
+
+  const [activeNav, setActiveNav] = useState(2);
+
 
   useEffect(() => {
+
   async function loadStats() {
     loadingProductStats()
+    loadingClienteStats()
   }
 
   loadStats();
+   console.log("ENTROU");
+  return () => {
+    console.log("SAIU");
+  };
 }, []);
 
+async function loadingClienteStats()
+  {
+    try{
 
+        SetLoadingClienteNumber(true)
+        const res =  await api.get("/clients");
+        setTotalClientes(res.data.data.data.length);
+
+    }
+    catch (err)
+    {
+      if (err instanceof Error)
+        console.log(err.message)
+    }
+    finally
+    {
+      SetLoadingClienteNumber(false)
+
+    }
+  }
+  
   async function loadingProductStats()
   {
     try{
@@ -46,12 +81,7 @@ export default function DashBoard () {
     }
   }
   
-  const router = useRouter()
-  const [totalProdutos, setTotalProdutos] = useState(0);
 
-  const {user} = useContexto()
-
-  const [activeNav, setActiveNav] = useState(2);
   
    function navigatePage(pageIndex:number)
   {
@@ -64,6 +94,11 @@ export default function DashBoard () {
       if (pageIndex === 4) 
       {
         router.push("/(authenticated)/settings")
+      }
+
+      if (pageIndex === 1) 
+      {
+          router.push("/(authenticated)/clientes")
       }
   }
 
@@ -158,15 +193,27 @@ export default function DashBoard () {
 
       
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Clientes activos</Text>
-          <Text style={styles.value}>18</Text>
+          <Text style={styles.cardTitle}>Clientes totais</Text>
+           {
+              loadingClienteNumber?
+              (
+                 <Text style={{
+                  fontStyle:"italic",
+                  fontSize:10
+                 }}>
+                     Carregando...
+                  </Text>
+              ):
+              (
+                <Text style={styles.value}>{totalClientes}</Text>
+              )
+            }
           <Text style={styles.neutral}>+2 novos</Text>
         </View>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Produtos totais</Text>
-          {/* <Text style={styles.value}> */}
-
+          
             {
               loadingProductNumber?
               (
@@ -432,403 +479,3 @@ bottomNav: {
     marginTop: 1,
   },
 });
-
-// });
-
-// import { useLocalSearchParams } from "expo-router";
-// import React, { useState } from 'react';
-
-// import {
-//   Dimensions,
-//   SafeAreaView,
-//   ScrollView,
-//   StatusBar,
-//   StyleSheet,
-//   Text,
-//   TouchableOpacity,
-//   View,
-// } from 'react-native';
- 
-// const { width } = Dimensions.get('window');
-
-// // ─── Dados de exemplo ───────────────────────────────────────────────
-// const STATS = [
-//   { label: 'Facturado (mês)', value: '245.800 MT', trend: '↑ 12% vs março', trendUp: true },
-//   { label: 'Por receber',     value: '87.300 MT',  trend: '3 facturas pendentes', trendUp: false },
-//   { label: 'Facturas emitidas', value: '34',       trend: '↑ 8 vs março', trendUp: true },
-//   { label: 'Clientes activos',  value: '18',       trend: '+2 novos', trendUp: true },
-// ];
-
-// const CHART_DATA = [
-//   { mes: 'Out', valor: 35 },
-//   { mes: 'Nov', valor: 50 },
-//   { mes: 'Dez', valor: 45 },
-//   { mes: 'Jan', valor: 65 },
-//   { mes: 'Fev', valor: 55 },
-//   { mes: 'Mar', valor: 80 },
-//   { mes: 'Abr', valor: 100 },
-// ];
-
-// const FACTURAS = [
-//   { num: 'FT 2026/034', cliente: 'Shoprite Moçambique',    data: '22 Abr 2026', valor: '42.500 MT', estado: 'Pago' },
-//   { num: 'FT 2026/033', cliente: 'Telecomunicações Lda',   data: '20 Abr 2026', valor: '18.750 MT', estado: 'Pendente' },
-//   { num: 'FT 2026/032', cliente: 'BCI — Fomento',          data: '18 Abr 2026', valor: '95.000 MT', estado: 'Pago' },
-//   { num: 'FT 2026/031', cliente: 'Grupo Madal',            data: '15 Abr 2026', valor: '33.200 MT', estado: 'Pendente' },
-// ];
-
-// const NAV_ITEMS = [
-//   { icon: '⊞', label: 'Painel' },
-//   { icon: '◻', label: 'Facturas' },
-//   { icon: '👤', label: 'Clientes' },
-//   { icon: '☰', label: 'Produtos' },
-//   { icon: '⚙', label: 'Config.' },
-// ];
-
-// // ─── Badge de estado ─────────────────────────────────────────────────
-// function Badge({ estado }:{ estado: 'Pago' | 'Pendente' | 'Cancelado' }) {
-//   const config = {
-//     Pago:      { bg: '#EAF3DE', color: '#3B6D11' },
-//     Pendente:  { bg: '#FAEEDA', color: '#854F0B' },
-//     Cancelado: { bg: '#FCEBEB', color: '#A32D2D' },
-//   };
-//   const { bg, color } = config[estado] || config.Pago;
-//   return (
-//     <View style={[styles.badge, { backgroundColor: bg }]}>
-//       <Text style={[styles.badgeText, { color }]}>{estado}</Text>
-//     </View>
-//   );
-// }
-
-// // ─── Barra do mini gráfico ────────────────────────────────────────────
-// function BarChart() {
-//   const maxVal = Math.max(...CHART_DATA.map(d => d.valor));
-//   const barMaxHeight = 52;
-
-//   return (
-//     <View>
-//       <Text style={styles.sectionTitle}>Receita mensal (MT)</Text>
-//       <View style={styles.chartContainer}>
-//         {CHART_DATA.map((item, i) => {
-//           const isLast = i === CHART_DATA.length - 1;
-//           const height = (item.valor / maxVal) * barMaxHeight;
-//           return (
-//             <View key={item.mes} style={styles.barWrapper}>
-//               <View
-//                 style={[
-//                   styles.bar,
-//                   { height, backgroundColor: isLast ? '#185FA5' : '#B5D4F4' },
-//                 ]}
-//               />
-//               <Text style={styles.barLabel}>{item.mes}</Text>
-//             </View>
-//           );
-//         })}
-//       </View>
-//     </View>
-//   );
-// }
-
-// // ─── Item de factura ──────────────────────────────────────────────────
-// function FacturaItem({ item }:any) {
-//   return (
-//     <TouchableOpacity style={styles.facturaCard} activeOpacity={0.7}>
-//       <View style={styles.facturaLeft}>
-//         <Text style={styles.facturaNum}>{item.num}</Text>
-//         <Text style={styles.facturaCliente}>{item.cliente}</Text>
-//         <Text style={styles.facturaData}>{item.data}</Text>
-//       </View>
-//       <View style={styles.facturaRight}>
-//         <Text style={styles.facturaValor}>{item.valor}</Text>
-//         <Badge estado={item.estado} />
-//       </View>
-//     </TouchableOpacity>
-//   );
-// }
-
-// // ─── Ecrã principal ───────────────────────────────────────────────────
-// export default function DashboardScreen() {
-//   const {name} = useLocalSearchParams<{
-
-//         name:string,
-//     }>()
-
-//   const [activeNav, setActiveNav] = useState(0);
-
-//   return (
-//     <SafeAreaView style={styles.safe}>
-//       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
-
-//       {/* Header */}
-//       <View style={styles.header}>
-//         <View>
-//           <Text style={styles.headerGreeting}>Bom dia, {name}</Text>
-//           <Text style={styles.headerSub}>Facturação — Abril 2026</Text>
-//         </View>
-//         <View style={styles.avatar}>
-//           <Text style={styles.avatarText}>CA</Text>
-//         </View>
-//       </View>
-
-//       <ScrollView
-//         style={styles.scroll}
-//         contentContainerStyle={styles.scrollContent}
-//         showsVerticalScrollIndicator={false}
-//       >
-//         {/* Cards de estatísticas */}
-//         <View style={styles.statsGrid}>
-//           {STATS.map((stat, i) => (
-//             <View key={i} style={styles.statCard}>
-//               <Text style={styles.statLabel}>{stat.label}</Text>
-//               <Text style={styles.statValue}>{stat.value}</Text>
-//               <Text style={[styles.statTrend, { color: stat.trendUp ? '#1D9E75' : '#E24B4A' }]}>
-//                 {stat.trend}
-//               </Text>
-//             </View>
-//           ))}
-//         </View>
-
-//         {/* Gráfico */}
-//         <View style={styles.card}>
-//           <BarChart />
-//         </View>
-
-//         {/* Facturas recentes */}
-//         <Text style={styles.sectionTitle}>Facturas recentes</Text>
-//         {FACTURAS.map((item, i) => (
-//           <FacturaItem key={i} item={item} />
-//         ))}
-
-//         <View style={{ height: 16 }} />
-//       </ScrollView>
-
-//       {/* Bottom Navigation */}
-//       <View style={styles.bottomNav}>
-//         {NAV_ITEMS.map((nav, i) => (
-//           <TouchableOpacity
-//             key={i}
-//             style={styles.navItem}
-//             onPress={() => setActiveNav(i)}
-//             activeOpacity={0.7}
-//           >
-//             <Text style={[styles.navIcon, i === activeNav && styles.navIconActive]}>
-//               {nav.icon}
-//             </Text>
-//             <Text style={[styles.navLabel, i === activeNav && styles.navLabelActive]}>
-//               {nav.label}
-//             </Text>
-//             {i === activeNav && <View style={styles.navDot} />}
-//           </TouchableOpacity>
-//         ))}
-//       </View>
-//     </SafeAreaView>
-//   );
-// }
-
-// // ─── Estilos ──────────────────────────────────────────────────────────
-// const styles = StyleSheet.create({
-//   safe: {
-//     flex: 1,
-//     backgroundColor: '#185FA5',
-//   },
-
-//   // Header
-//   header: {
-//     backgroundColor: '#185FA5',
-//     paddingHorizontal: 16,
-//     paddingTop: 12,
-//     paddingBottom: 16,
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'flex-start',
-//   },
-//   headerGreeting: {
-//     fontSize: 18,
-//     fontWeight: '500',
-//     color: '#fff',
-//     marginBottom: 2,
-//   },
-//   headerSub: {
-//     fontSize: 12,
-//     color: 'rgba(255,255,255,0.75)',
-//   },
-//   avatar: {
-//     width: 36,
-//     height: 36,
-//     borderRadius: 18,
-//     backgroundColor: 'rgba(255,255,255,0.2)',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   avatarText: {
-//     fontSize: 13,
-//     fontWeight: '500',
-//     color: '#fff',
-//   },
-
-//   // ScrollView
-//   scroll: {
-//     flex: 1,
-//     backgroundColor: '#F2F2F7',
-//     borderTopLeftRadius: 20,
-//     borderTopRightRadius: 20,
-//   },
-//   scrollContent: {
-//     padding: 14,
-//   },
-
-//   // Stats grid
-//   statsGrid: {
-//     flexDirection: 'row',
-//     flexWrap: 'wrap',
-//     gap: 10,
-//     marginBottom: 14,
-//   },
-//   statCard: {
-//     width: (width - 42) / 2,
-//     backgroundColor: '#fff',
-//     borderRadius: 12,
-//     borderWidth: 0.5,
-//     borderColor: '#E5E5EA',
-//     padding: 12,
-//   },
-//   statLabel: {
-//     fontSize: 11,
-//     color: '#8E8E93',
-//     marginBottom: 4,
-//   },
-//   statValue: {
-//     fontSize: 18,
-//     fontWeight: '500',
-//     color: '#1C1C1E',
-//     marginBottom: 3,
-//   },
-//   statTrend: {
-//     fontSize: 11,
-//   },
-
-//   // Card genérico
-//   card: {
-//     backgroundColor: '#fff',
-//     borderRadius: 12,
-//     borderWidth: 0.5,
-//     borderColor: '#E5E5EA',
-//     padding: 14,
-//     marginBottom: 14,
-//   },
-
-//   // Gráfico
-//   sectionTitle: {
-//     fontSize: 13,
-//     fontWeight: '500',
-//     color: '#8E8E93',
-//     marginBottom: 10,
-//     marginTop: 4,
-//   },
-//   chartContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'flex-end',
-//     gap: 5,
-//     height: 68,
-//   },
-//   barWrapper: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'flex-end',
-//   },
-//   bar: {
-//     width: '100%',
-//     borderRadius: 3,
-//     marginBottom: 4,
-//   },
-//   barLabel: {
-//     fontSize: 9,
-//     color: '#8E8E93',
-//   },
-
-//   // Factura card
-//   facturaCard: {
-//     backgroundColor: '#fff',
-//     borderRadius: 12,
-//     borderWidth: 0.5,
-//     borderColor: '#E5E5EA',
-//     padding: 12,
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     marginBottom: 8,
-//   },
-//   facturaLeft: {
-//     flex: 1,
-//     gap: 3,
-//   },
-//   facturaNum: {
-//     fontSize: 11,
-//     color: '#8E8E93',
-//   },
-//   facturaCliente: {
-//     fontSize: 14,
-//     fontWeight: '500',
-//     color: '#1C1C1E',
-//   },
-//   facturaData: {
-//     fontSize: 11,
-//     color: '#8E8E93',
-//   },
-//   facturaRight: {
-//     alignItems: 'flex-end',
-//     gap: 5,
-//   },
-//   facturaValor: {
-//     fontSize: 14,
-//     fontWeight: '500',
-//     color: '#1C1C1E',
-//   },
-
-//   // Badge
-//   badge: {
-//     paddingHorizontal: 8,
-//     paddingVertical: 3,
-//     borderRadius: 99,
-//   },
-//   badgeText: {
-//     fontSize: 11,
-//     fontWeight: '500',
-//   },
-
-//   // Bottom nav
-//   bottomNav: {
-//     flexDirection: 'row',
-//     backgroundColor: '#fff',
-//     borderTopWidth: 0.5,
-//     borderTopColor: '#E5E5EA',
-//     paddingTop: 8,
-//     paddingBottom: 20,
-//   },
-//   navItem: {
-//     flex: 1,
-//     alignItems: 'center',
-//     gap: 3,
-//   },
-//   navIcon: {
-//     fontSize: 18,
-//     color: '#8E8E93',
-//   },
-//   navIconActive: {
-//     color: '#185FA5',
-//   },
-//   navLabel: {
-//     fontSize: 10,
-//     color: '#8E8E93',
-//   },
-//   navLabelActive: {
-//     color: '#185FA5',
-//     fontWeight: '500',
-//   },
-//   navDot: {
-//     width: 4,
-//     height: 4,
-//     borderRadius: 2,
-//     backgroundColor: '#185FA5',
-//     marginTop: 1,
-//   },
-// });

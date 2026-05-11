@@ -220,6 +220,11 @@ const total = precoL
       if (pageIndex === 4) {
           router.push("/(authenticated)/settings")
         }
+      
+      if (pageIndex === 1) 
+      {
+          router.push("/(authenticated)/clientes")
+      }
   }
   
   const handleSearch = (text: string): void => {
@@ -246,62 +251,48 @@ const total = precoL
     try
     {
 
-    if (!designacao || !selectedCategory || !precoL) return;
+      if (!designacao || !selectedCategory || !precoL) return;
 
-  //  const novoProduto = {
-  //  id: produtos.length + 1,
-  //  codigo: codigo,
-  //  designacao: designacao,
-  //  categoria: { designacao: selectedCategory } as Produtos['categoria'],
-  //  preco_venda: precoL,
-  //  imposto:
-  //  {
-  //   imposto_id:1,
-  //   taxa: iva
-  //  }};
+      setVisibleFormCadastro(false);
+      
+      const token  = await AsyncStorage.getItem("@token")
+      
+      const payload = 
+      {
+        codigo:codigo,
+        designacao: designacao,
+        categoria_id: selectedCategoryId,
+        preco_venda_liquido_1: precoL,
+        preco_venda_iliquido_1: precoIL,
+        preco_venda_liquido_2: 0,
+        preco_venda_iliquido_2: 0,
+        preco_venda_liquido_3: 0,
+        preco_venda_iliquido_3: 0,
+        preco_venda_liquido_4: 0,
+        preco_venda_iliquido_4: 0,
+        preco_venda_liquido_5: 0,
+        preco_venda_iliquido_5: 0,
+        marca_id: selectedMarcaId ||undefined,
+        familia_id: selectedFamilyId ||undefined,
+        tipo_produto_id: selectedTipoId ||undefined,
+        motivo_isencao_id:selectedMotivoIsencaoId||undefined,
+        imposto_id:selectedImpostoId,
+        
+      }
 
-  // const novaLista = [novoProduto, ...produtos];
+      await api.post('/products',
+        payload, {
+        headers: { Authorization: `Bearer ${token}` },
+        }   
+      )
+      setLoadingProdutos(true)
 
-  setVisibleFormCadastro(false);
-   
-  const token  = await AsyncStorage.getItem("@token")
-  
-  const payload = 
-  {
-    codigo:codigo,
-    designacao: designacao,
-    categoria_id: selectedCategoryId,
-    preco_venda_liquido_1: precoL,
-    preco_venda_iliquido_1: precoIL,
-    preco_venda_liquido_2: 0,
-    preco_venda_iliquido_2: 0,
-    preco_venda_liquido_3: 0,
-    preco_venda_iliquido_3: 0,
-    preco_venda_liquido_4: 0,
-    preco_venda_iliquido_4: 0,
-    preco_venda_liquido_5: 0,
-    preco_venda_iliquido_5: 0,
-    marca_id: selectedMarcaId ||undefined,
-    familia_id: selectedFamilyId ||undefined,
-    tipo_produto_id: selectedTipoId ||undefined,
-    motivo_isencao_id:selectedMotivoIsencaoId||undefined,
-    imposto_id:selectedImpostoId,
-    
-  }
+      const response = await api.get('/products')
 
-   await api.post('/products',
-    payload, {
-    headers: { Authorization: `Bearer ${token}` },
-    }   
-   )
-   setLoadingProdutos(true)
+      setProdutos(response.data.data.data)
+      setFiltrados(response.data.data.data)
 
-   const response = await api.get('/products')
-
-   setProdutos(response.data.data.data)
-   setFiltrados(response.data.data.data)
-
-   Alert.alert('Produto cadastrado com sucesso!',)
+      Alert.alert('Produto cadastrado com sucesso!',)
 
   }
   catch (err)
