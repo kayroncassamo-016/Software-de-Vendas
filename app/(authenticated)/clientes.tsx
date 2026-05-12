@@ -22,6 +22,7 @@ import { Clientes } from '@/types/types';
 import { AdicionarCliente } from '../components/Clientes/AdicionarCliente';
 import { DeletarCliente } from '../components/Clientes/DeletarCliente';
 import { DetalhesCliente } from '../components/Clientes/DetalhesCliente';
+import { EditarCliente } from '../components/Clientes/EditarCliente';
 
 const { width } = Dimensions.get('window');
 
@@ -111,6 +112,7 @@ const [clienteSeleccionado, setClienteSeleccionado] = useState<Clientes|null>(nu
 const [visibleFormCadastro, setVisibleFormCadastro] = useState(false)
 const [visibleDetalhesCliente, setVisibleDetalhesCliente] = useState(false)
 const [visibleDeletarCliente, setVisibleDeletarCliente] = useState(false)
+const [visibleEditarCliente, setVisibleEditarCliente] = useState(false)
 
 
 const router = useRouter()
@@ -339,6 +341,7 @@ useEffect(() =>
           setVisible={setVisibleDetalhesCliente}
           cliente={clienteSeleccionado}
           setVisibleDeletarcliente={setVisibleDeletarCliente}
+          setVisibleEditarcliente = {setVisibleEditarCliente}
           />
 
           <DeletarCliente
@@ -353,6 +356,15 @@ useEffect(() =>
           <AdicionarCliente
             visible={visibleFormCadastro}
             setVisible={setVisibleFormCadastro}
+            setLoading={setLoadingClientes}
+            setClientes = {setClientes}
+            setFiltrados = {setFiltrados}
+          />
+
+          <EditarCliente
+            cliente={clienteSeleccionado}
+            visible={visibleEditarCliente}
+            setVisible={setVisibleEditarCliente}
             setLoading={setLoadingClientes}
             setClientes = {setClientes}
             setFiltrados = {setFiltrados}

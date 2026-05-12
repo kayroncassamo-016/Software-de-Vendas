@@ -36,6 +36,8 @@ export interface Financeiro
     id:number,
     forma_pagamento:string,
     limite_credito:string,
+    desconto_comercial:string,
+    data_vencimento:string
 }
 
 export interface Produtos

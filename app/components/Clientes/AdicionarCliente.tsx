@@ -5,44 +5,52 @@ import { Clientes } from "@/types/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Plus } from "lucide-react-native";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Button, Dialog, Portal, RadioButton } from 'react-native-paper';
-
-
-
 interface AdicionarClienteProps
 {
     visible:boolean,
     setVisible:React.Dispatch<React.SetStateAction<boolean>>
     setLoading: React.Dispatch<React.SetStateAction<boolean>>
-     setClientes: React.Dispatch<React.SetStateAction<Clientes[]>>
-         setFiltrados: React.Dispatch<React.SetStateAction<Clientes[]>>
+    setClientes: React.Dispatch<React.SetStateAction<Clientes[]>>
+    setFiltrados: React.Dispatch<React.SetStateAction<Clientes[]>>
 }
 
 
 export function AdicionarCliente({visible,setVisible
     ,setLoading,setClientes,setFiltrados
 }:AdicionarClienteProps)
+
 {
     const [numero,setNumero ] = useState('')
     const [nome,setNome] = useState('')
     const [email,setEmail] = useState('')
+    const [morada,setMorada] = useState('')
+    const [provincia,setProvincia] = useState('')
+    const [limiteCredito,setLimiteCredito] = useState('')
+    const [selectedFormaPagamento,setSelectedFormaPagamento] = useState('')
+    const [descontoComercial,setDescontoComercial] = useState('')
     const tipo = ['particular','empresa']
+    const formaPagamento = ['transferência',
+      'multicaixa','crédito',]
     const [selectedTipo,setSelectedTipo]= useState('')
-    const [dataNascimento, setDataNascimento] = useState(new Date());
+    const [dataNascimento, setDataNascimento] = useState<Date|null>(null);
+    const [dataVencimento, setDataVencimento] = useState<Date|null>(null);
     const [mostrar, setMostrar] = useState(false);
+    const [showOtherData, setShowOtherData] = useState(false);
+    const [mostrarDataVencimento, setMostrarDataVencimento] = useState(false);
     const [sexo, setSexo] = useState('')
 
+       
   const onChange = (event:any, selectedDate:any) => {
     setMostrar(false);
 
@@ -50,6 +58,27 @@ export function AdicionarCliente({visible,setVisible
       setDataNascimento(selectedDate);
     }
   };
+
+   const onChangeDataVencimento = (event:any, selectedDate:any) => {
+    setMostrarDataVencimento(false);
+
+    if (selectedDate) {
+      setDataVencimento(selectedDate);
+    }
+  };
+
+  useEffect(() =>{
+
+    if(selectedTipo==="particular")
+    {
+      setShowOtherData(true)
+    }
+    else
+    {
+      setShowOtherData(false)
+    }
+
+  },[selectedTipo])
 
 
   async function handleAdicionarCliente()
@@ -62,26 +91,38 @@ export function AdicionarCliente({visible,setVisible
         nome: nome,
         email: email,
         tipo: selectedTipo,
-        data_nascimento:dataNascimento.toISOString().split('T')[0],
-        sexo:sexo
+        data_nascimento:dataNascimento?.toISOString().split('T')[0],
+        sexo:sexo,
+
+        morada:morada,
+        provincia:provincia,
+
+
+        limite_credito:limiteCredito,
+        desconto_comercial:descontoComercial,
+        forma_pagamento:selectedFormaPagamento,
+        data_vencimento: dataVencimento?.toISOString().split('T')[0],
+        
         
       }
 
     try
-    {
+    {   
+        setVisible(false)
+        setLoading(true)
+        
         await api.post('/clients',
             payload, {
             headers: { Authorization: `Bearer ${token}` },
             }   
           )
-          setLoading(true)
+       
     
           const response = await api.get('/clients')
     
           setClientes(response.data.data.data)
           setFiltrados(response.data.data.data)
         
-          setVisible(false)
 
           Alert.alert('Cliente cadastrado com sucesso!',)
     }
@@ -99,10 +140,8 @@ export function AdicionarCliente({visible,setVisible
         <Portal>
         <Dialog visible={visible} 
         onDismiss={()=> setVisible(false)}
-           style={{ backgroundColor: '#fff' }}> 
+           style={{ backgroundColor: '#fff'}}> 
            
-          <KeyboardAvoidingView
-           behavior={"height"} >
          
               <Dialog.Title style={{color: colors.blue, fontSize:14,
                 textAlign:'center',
@@ -110,14 +149,35 @@ export function AdicionarCliente({visible,setVisible
             }}>
             Adicione um novo cliente
               </Dialog.Title>
-
+          
+          {/* 
+          <KeyboardAvoidingView 
+           behavior="height"  >*/ }
          
           <Dialog.Content>
             
-            <ScrollView
-            style={{ maxHeight: 450, paddingHorizontal:3}}
-            
-             showsVerticalScrollIndicator={false}>
+            {/* <ScrollView
+            style={{maxHeight:450, paddingHorizontal:3}}
+               keyboardShouldPersistTaps="handled"
+               keyboardDismissMode="interactive"
+              automaticallyAdjustKeyboardInsets={true}
+               contentContainerStyle={{
+                 paddingBottom: 120, // IMPORTANTE
+            }}
+             showsVerticalScrollIndicator={false}> */}
+            <KeyboardAwareScrollView
+                style={{ maxHeight: 450, paddingHorizontal: 3 }}
+                keyboardShouldPersistTaps="handled"
+                enableOnAndroid={true}          // ← essencial para Android
+                enableAutomaticScroll={true}
+                // extraScrollHeight={-100}          // ← espaço extra acima do input
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                      paddingBottom: -150,
+                }}
+            >
+         
+
             <View>
 
               <View style={styles.dialogContentStyle}>
@@ -141,6 +201,18 @@ export function AdicionarCliente({visible,setVisible
               </View>
 
               <View style={styles.dialogContentStyle}>
+                <Text style={styles.dialogTextStyle}> Morada:</Text>
+                <TextInput  value={morada} onChangeText={setMorada}
+                style={styles.TextFieldStyling}/>
+              </View>
+
+              <View style={styles.dialogContent}>
+                <Text style={styles.dialogTextStyle}> Província:</Text>
+                <TextInput  value={provincia} onChangeText={setProvincia}
+                style={styles.TextFieldStyling}/>
+              </View>
+
+              <View style={styles.dialogContent}>
                 <Text style={styles.dialogTextStyle}>Tipo:</Text>
                 
                 <Select
@@ -154,13 +226,15 @@ export function AdicionarCliente({visible,setVisible
                     onValueChange={setSelectedTipo}
                 />
               </View>
-
+              
+              {showOtherData && 
+               <View>
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}>Data de nascimento:</Text>
                 
                 <TextInput editable={false}
                 style={styles.TextFieldStyling}
-                >{dataNascimento.toLocaleDateString()} </TextInput>
+                >{dataNascimento?.toLocaleDateString()??''} </TextInput>
                       
                         <TouchableOpacity
                             style={{
@@ -178,7 +252,7 @@ export function AdicionarCliente({visible,setVisible
                          
                         {mostrar && (
                             <DateTimePicker
-                            value={dataNascimento}
+                            value={dataNascimento || new Date()}
                             mode="date"
                             display="default"
                             maximumDate={new Date()}
@@ -207,52 +281,99 @@ export function AdicionarCliente({visible,setVisible
                         </View>
                     </View>
                 </RadioButton.Group>
+                </View>
+              </View>
+                      }
+              <View style={styles.dialogContent}>
+               
+                    <View style={[styles.dialogTextStyle
+                    ,{paddingRight:4}
+                  ]}>
+                       <Text style={{fontWeight:'bold'}}>Forma de</Text> 
+                       <Text style={{fontWeight:'bold'}}>pagamento:</Text>
+                    </View>
+                   
+           
+                <Select
+                    label="Tipo"
+                    placeholder="Selecione a forma de pagamento"
+                    options ={formaPagamento.map(formaPag => ({
+                      label: formaPag,
+                      value: formaPag
+                    }))}
+                    selectedValue={selectedFormaPagamento}
+                    onValueChange={setSelectedFormaPagamento}
+                />
               </View>
 
-              <View style={styles.dialogContent}>
+              <View style={styles.dialogContentStyle}>
                 <Text style={[styles.dialogTextStyle
-                  ,{paddingRight:45}
-                ]}>
-                    
+                  ,{paddingRight:10}
+                ]} >
+                  Limite de crédito:
                 </Text>
-               
+
+                <TextInput keyboardType="numeric"
+                value={limiteCredito} 
+                onChangeText={setLimiteCredito}
+                style={styles.TextFieldStyling}/>
 
               </View>
               
           
                 <View style={styles.dialogContent}>
                 <Text style={[styles.dialogTextStyle
-                  , {paddingRight:30}
-                ]}> 
-
+                  , {paddingRight:10}
+                ]}
+                > 
+                  Desconto comercial:
                 </Text>
-        
-               
+                
+                 <TextInput keyboardType="numeric"  
+                  value={descontoComercial} 
+                  onChangeText={setDescontoComercial}
+                  style={styles.TextFieldStyling}/>
                 </View>
+                
+                <View style={[{paddingTop:10},styles.dialogContentStyle]}>
+                <Text style={styles.dialogTextStyle}>Data de vencimento:</Text>
+                
+                <TextInput editable={false}
+                style={styles.TextFieldStyling}
+                >{dataVencimento?.toLocaleDateString()??''} </TextInput>
+                      
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor:'#e2e2e2',
+                                position:'absolute',
+                                right:3,
+                                top:20,
+                                borderRadius:8,
+                                paddingHorizontal:10,
+                                paddingBottom:5
+                            }}
+                            onPress={() => setMostrarDataVencimento(true)}>
+                            <Text>...</Text>
 
-                 <View style={styles.dialogContent}>
-                <Text style={[styles.dialogTextStyle,
-                   ,{paddingRight:40}
-                ]}> 
-                
-                </Text>
-                
-                </View>
-
-
-              <View style={styles.dialogContent}>
-                <Text style={[styles.dialogTextStyle,
-                   ,{paddingRight:25}
-                ]}> 
-                
-                </Text>
-                
-                
-              </View>
+                         </TouchableOpacity>
+                         
+                        {mostrarDataVencimento && (
+                            <DateTimePicker
+                            value={dataVencimento|| new Date()}
+                            mode="date"
+                            display="default"
+                            minimumDate={new Date()}
+                            onChange={onChangeDataVencimento}
+                            />
+                        )}
+                  </View>
+             
 
                </View>
-              </ScrollView>
+              {/* </ScrollView>   */}
+              </KeyboardAwareScrollView>
           </Dialog.Content>
+          {/* </KeyboardAvoidingView> */}
           
           <Dialog.Actions style={{flexDirection:'row',
             alignItems:'center', marginTop:5}}>
@@ -279,7 +400,7 @@ export function AdicionarCliente({visible,setVisible
             </Button>
            
           </Dialog.Actions>
-           </KeyboardAvoidingView>
+            {/* </KeyboardAvoidingView> */}
         </Dialog>
       </Portal>
     )

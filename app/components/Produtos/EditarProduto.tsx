@@ -80,26 +80,19 @@ export function EditarProdutoForm({produto,visible,setVisible,
 
 
 
-    // useEffect(() => {
-    // if (produto) {
-    //     setCodigo(produto.codigo ?? '');
-    //     setDesignacao(produto.designacao ?? '');
-         
-    // }
-    // }, [produto]);
 
     useEffect(() => {
-  if (produto) {
-    setDesignacao(produto.designacao);
-    setCodigo(produto.codigo);
-    setPrecoLiquido(parseFloat(produto.preco_venda_liquido_1).toFixed(2) ?? '');
-    setPrecoIliquido(parseFloat(produto.preco_venda_iliquido_1).toFixed(2) ?? '');
-    setSelectedCategory(produto.categoria?.designacao ?? '');
-    setSelectedTipo(produto.tipo_produto?.designacao ?? '');
-    setSelectedMarca(produto.marca?.nome ?? '');
-    setSelectedFamily(produto.familia?.designacao ?? '');
-    setSelectedImposto(produto.imposto?.designacao ?? '');
-  }
+      if (produto) {
+        setDesignacao(produto.designacao);
+        setCodigo(produto.codigo);
+        setPrecoLiquido(parseFloat(produto.preco_venda_liquido_1).toFixed(2) ?? '');
+        setPrecoIliquido(parseFloat(produto.preco_venda_iliquido_1).toFixed(2) ?? '');
+        setSelectedCategory(produto.categoria?.designacao ?? '');
+        setSelectedTipo(produto.tipo_produto?.designacao ?? '');
+        setSelectedMarca(produto.marca?.nome ?? '');
+        setSelectedFamily(produto.familia?.designacao ?? '');
+        setSelectedImposto(produto.imposto?.designacao ?? '');
+      }
 }, [produto]);
     
      useEffect(() => 

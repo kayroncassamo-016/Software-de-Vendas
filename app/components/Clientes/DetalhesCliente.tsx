@@ -1,15 +1,14 @@
 import { Clientes } from "@/types/types";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 import { colors } from "@/constants/theme";
 import { Trash } from "lucide-react-native";
-import { useState } from "react";
 import { Button, Dialog, Portal } from 'react-native-paper';
 
 
@@ -19,14 +18,14 @@ interface DetalhesClienteProps
     setVisible: React.Dispatch<React.SetStateAction<boolean>>
     cliente: Clientes|null
     setVisibleDeletarcliente:React.Dispatch<React.SetStateAction<boolean>>
+    setVisibleEditarcliente:React.Dispatch<React.SetStateAction<boolean>>
+    
 }
 
 export function DetalhesCliente({visible,setVisible,
-    cliente, setVisibleDeletarcliente}:DetalhesClienteProps)
+    cliente, setVisibleDeletarcliente,setVisibleEditarcliente}:DetalhesClienteProps)
 {
-    const [visibleEditarCliente,setVisibleEditarCliente] = useState(false)
-    // const [visibleDeletarCliente,setVisibleDeletarCliente] = useState(false)
-
+  
 
     return (
         
@@ -98,14 +97,20 @@ export function DetalhesCliente({visible,setVisible,
 
               <View style={{flexDirection:'row',paddingTop:5}}>
                 <Text style={{fontWeight:'bold'}}>
-                  Endereço:
+                  Morada:
                 </Text>
                 <Text style={{paddingLeft:5}}>
-                     {cliente?.endereco?.morada}
-                        {"\n"}
-                   Província de {cliente?.endereco?.provincia}
+                     {cliente?.endereco?.morada??'N/A'}
                 </Text>
-               
+              </View>
+
+                <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Província:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                     {cliente?.endereco?.provincia??'N/A'}
+                </Text>
               </View>
 
               <View style={{flexDirection:'row',paddingTop:5}}>
@@ -122,7 +127,7 @@ export function DetalhesCliente({visible,setVisible,
                   Código postal:
                 </Text>
                 <Text style={{paddingLeft:5}}>
-                  {cliente?.endereco?.cod_postal}
+                  {cliente?.endereco?.cod_postal??'N/A'}
                 </Text>
               </View>
              
@@ -133,7 +138,7 @@ export function DetalhesCliente({visible,setVisible,
                       Data de nascimento:
                     </Text>
                     <Text style={{paddingLeft:5}}>
-                        {cliente?.data_nascimento}
+                        {cliente?.data_nascimento??'N/A'}
                     </Text>
                 </View>
               }
@@ -155,7 +160,7 @@ export function DetalhesCliente({visible,setVisible,
                   Forma de pagamento:
                 </Text>
                 <Text style={{paddingLeft:5}}>
-                    {cliente?.financeiro?.forma_pagamento}
+                    {cliente?.financeiro?.forma_pagamento??'N/A'}
                 </Text>
               </View>
                
@@ -164,7 +169,7 @@ export function DetalhesCliente({visible,setVisible,
                    Limite de crédito:
                 </Text>
                 <Text style={{paddingLeft:5}}>
-                    {cliente?.financeiro?.limite_credito}
+                    {cliente?.financeiro?.limite_credito??'N/A'}
                 </Text>
               </View>
 
@@ -173,7 +178,16 @@ export function DetalhesCliente({visible,setVisible,
                   Desconto comercial:
                 </Text>
                 <Text style={{paddingLeft:5}}>
-                    {cliente?.financeiro?.limite_credito}
+                    {cliente?.financeiro?.desconto_comercial??'N/A'}
+                </Text>
+              </View>
+
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Data de vencimento:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                    {cliente?.financeiro?.data_vencimento??'N/A'}
                 </Text>
               </View>
                      
@@ -186,7 +200,7 @@ export function DetalhesCliente({visible,setVisible,
               <Button
               onPress={() => {
               setVisible(false)
-              setVisibleEditarCliente(true)
+              setVisibleEditarcliente(true)
               }}>
                 <View style={{flexDirection:'row',
                 justifyContent:'space-around', alignItems:'center'}}> 
