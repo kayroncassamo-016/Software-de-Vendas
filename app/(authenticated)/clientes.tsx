@@ -191,12 +191,6 @@ const ClienteItem = ({ cliente, onPress}:clienteItemProps) => {
 
   };
 
-  
-  async function adicionarcliente () 
-  {
-  
-  }
-
 useEffect(() =>
 {
     async function loadData()

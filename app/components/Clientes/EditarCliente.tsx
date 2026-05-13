@@ -8,16 +8,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Button, Dialog, Portal, RadioButton } from 'react-native-paper';
-interface AdicionarClienteProps
+interface EditarClienteProps
 {
     visible:boolean,
     setVisible:React.Dispatch<React.SetStateAction<boolean>>
@@ -30,7 +30,7 @@ interface AdicionarClienteProps
 
 export function EditarCliente({visible,setVisible
     ,setLoading,setClientes,setFiltrados,cliente
-}:AdicionarClienteProps)
+}:EditarClienteProps)
 
 {
     const [numero,setNumero ] = useState('')
@@ -46,7 +46,7 @@ export function EditarCliente({visible,setVisible
       'multicaixa','crédito',]
     const [selectedTipo,setSelectedTipo]= useState('')
     const [dataNascimento, setDataNascimento] = useState(new Date());
-    const [dataVencimento, setDataVencimento] = useState(new Date());
+    const [dataVencimento, setDataVencimento] = useState<Date|null>(null);
     const [mostrar, setMostrar] = useState(false);
     const [showOtherData, setShowOtherData] = useState(false);
     const [mostrarDataVencimento, setMostrarDataVencimento] = useState(false);
@@ -83,7 +83,17 @@ export function EditarCliente({visible,setVisible
         setSelectedTipo(cliente.tipo);
         setDescontoComercial(cliente.financeiro?.desconto_comercial??'')
         setDataNascimento(new Date(cliente.data_nascimento))
-        setDataVencimento(new Date((cliente.financeiro?.data_vencimento??'')))
+        //setDataVencimento(new Date((cliente.financeiro?.data_vencimento??'')))
+
+        if (cliente.financeiro?.data_vencimento)
+        {
+          setDataVencimento(new Date((cliente.financeiro?.data_vencimento??'')))
+        }
+        else{
+          setDataVencimento(null)
+          
+        }
+      
         setSexo(cliente.sexo)
         //setMostrar(true)
         //setMostrarDataVencimento(true)
@@ -119,21 +129,22 @@ export function EditarCliente({visible,setVisible
 
     const payload = 
       {
+
         numero:numero,
         nome: nome,
         email: email,
-        tipo: selectedTipo,
-        data_nascimento:dataNascimento.toISOString().split('T')[0],
+        tipo: selectedTipo??'',
+        data_nascimento:dataNascimento?.toISOString().split('T')[0]??'',
         sexo:sexo,
 
         
-          morada:morada,
-          provincia:provincia,
+          morada:morada??'',
+          provincia:provincia??'',
        
-          limite_credito:limiteCredito,
-          desconto_comercial:descontoComercial,
-          forma_pagamento:selectedFormaPagamento,
-          data_vencimento: dataVencimento.toISOString().split('T')[0],
+          limite_credito:limiteCredito??'',
+          desconto_comercial:descontoComercial??'',
+          forma_pagamento:selectedFormaPagamento??'',
+          data_vencimento: dataVencimento?.toISOString().split('T')[0]??'',
         
         
       }
@@ -216,7 +227,12 @@ export function EditarCliente({visible,setVisible
                 <Text style={styles.dialogTextStyle}> Número:</Text>
                 <TextInput value={numero} onChangeText={setNumero}
                 keyboardType='numeric' editable={false}
-                style={styles.TextFieldStyling}/>
+                style={[styles.TextFieldStyling,
+                  { 
+                    backgroundColor: '#dcdcdc',
+                    color: '#666'
+                  }
+                ]}/>
               </View>
 
 
@@ -266,7 +282,7 @@ export function EditarCliente({visible,setVisible
                 
                 <TextInput editable={false}
                 style={styles.TextFieldStyling}
-                >{dataNascimento.toLocaleDateString()} </TextInput>
+               value={dataNascimento? dataNascimento.toLocaleDateString(): ''}/>
                       
                         <TouchableOpacity
                             style={{
@@ -372,7 +388,9 @@ export function EditarCliente({visible,setVisible
                 
                 <TextInput editable={false}
                 style={styles.TextFieldStyling}
-                >{dataVencimento.toLocaleDateString()} </TextInput>
+                value={dataVencimento? 
+              dataVencimento.toLocaleDateString() : '' }/>
+             
                       
                         <TouchableOpacity
                             style={{
@@ -391,7 +409,7 @@ export function EditarCliente({visible,setVisible
                          
                         {mostrarDataVencimento && (
                             <DateTimePicker
-                            value={dataVencimento}
+                            value={dataVencimento||new Date()}
                             mode="date"
                             display="default"
                             minimumDate={new Date()}

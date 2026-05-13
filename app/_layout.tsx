@@ -33,6 +33,9 @@ export default function RootLayout() {
 
         <Stack.Screen name="(authenticated)/clientes" options={
           {headerShown: false    }}/>
+
+         <Stack.Screen name="(authenticated)/vendas" options={
+          {headerShown: false    }}/>
       
         <Stack.Screen name="register/index" options={{headerShown: true,
             headerTitle: '',

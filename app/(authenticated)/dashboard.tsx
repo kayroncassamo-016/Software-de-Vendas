@@ -100,6 +100,11 @@ async function loadingClienteStats()
       {
           router.push("/(authenticated)/clientes")
       }
+
+      if (pageIndex === 0) 
+      {
+          router.push("/(authenticated)/vendas")
+      }
   }
 
    
