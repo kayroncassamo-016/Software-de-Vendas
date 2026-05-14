@@ -11,6 +11,7 @@ export  function useAuth()
     const [signed,setSigned] = useState(false)
     const [loading,setLoading] = useState(true)
     const [user,setUser] = useState<User>()
+    const [networkError,setNetworkError] = useState(false)
     const [produtos, setProdutos] = useState<Produtos>()
     const router = useRouter();
     
@@ -33,12 +34,9 @@ export  function useAuth()
             console.log(storedToken)
             console.log(storedUser)
             setLoading(true)
+            setNetworkError(false)
 
-            // if(storedToken && storedUser)
-            // {
-            //     setUser(JSON.parse(storedUser))
-            //      setSigned(true);
-            // }
+
 
             if (storedToken) {
                 const response = await api.get('/me', {
@@ -55,6 +53,8 @@ export  function useAuth()
             console.log(err)
             setSigned(false);
             setUser(undefined);
+            setNetworkError(true)
+
         }
 
         finally{
@@ -73,39 +73,40 @@ export  function useAuth()
             )
             console.log(response.data)
 
-            router.push({
-                pathname:"/(authenticated)/dashboard",
-                 params:{name:response.data.user.name.toString()}
-            })
-            setSigned(true)
-
+            // router.push({
+            //     pathname:"/(authenticated)/dashboard",
+            //      params:{name:response.data.user.name.toString()}
+            // })
+            // setSigned(true)
+            
              
             
             const {token, ...userData} = response.data
+
+            await AsyncStorage.setItem("@token", token)
+            await AsyncStorage.setItem("@user", 
+                JSON.stringify(userData))
 
             const responsee = await api.get('/me',
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 })
 
-            await AsyncStorage.setItem("@token", token)
-            await AsyncStorage.setItem("@user", 
-                JSON.stringify(userData))
-            
-            
+              router.push({
+                pathname:"/(authenticated)/dashboard",
+                 params:{name:response.data.user.name.toString()}
+            })
+            setSigned(true)
+
             setUser(responsee.data)
         }
 
-        catch(err)
+        catch(err:any)
         {
-            // if(err instanceof Error)
-            //      console.log("Erro: ",err.message)
-            // throw err
+            console.log(err.response)
+            console.log(axios.isAxiosError(err))
 
-       if (axios.isAxiosError(err))
-        {
-        // Login inválido
-            if (err.response?.status === 401)
+            if (err.response?.status === 401|| err.response?.status === 422)
             {
                 throw new Error("INVALID_CREDENTIALS");
             }
@@ -113,12 +114,15 @@ export  function useAuth()
         // Sem internet
             if (!err.response)
             {
+                 setNetworkError(true)
                 throw new Error("NETWORK_ERROR");
             }
+        
+         throw new Error("SERVER_ERROR");
         }
-
-    throw new Error("SERVER_ERROR");
-        }
+        
+  
+        //}
     }
 
 
@@ -151,6 +155,8 @@ export  function useAuth()
     return {
         user,
         signed,
+        networkError,
+        loadStorageData,
         loading,
         signIn,
         signOut,

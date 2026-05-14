@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from 'expo-router';
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -204,11 +205,15 @@ useEffect(() =>
 
   async function loadClientes()
   {
+    const token  = await AsyncStorage.getItem("@token")
+
     try{
         setLoadingClientes(true)
 
             const response = await api.get("/clients",
-               
+               {
+               headers: { Authorization: `Bearer ${token}` },
+            }   
             )
             const clientesAPI = response.data.data.data; // 
 

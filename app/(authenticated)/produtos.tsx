@@ -623,10 +623,14 @@ useEffect(()=> {
   async function loadProducts()
   {
     try{
+         const token  = await AsyncStorage.getItem("@token")
+
         setLoadingProdutos(true)
 
             const response = await api.get("/products",
-               
+                {
+               headers: { Authorization: `Bearer ${token}` },
+            }   
             )
             const produtosAPI = response.data.data.data; // 
 

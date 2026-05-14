@@ -1,16 +1,18 @@
- 
-import React, { useState } from 'react';
+ import { api } from '@/services/api';
+import { Clientes, Produtos } from '@/types/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 // Definir tipos
@@ -35,32 +37,105 @@ interface Produto {
 
 export default function VendasScreen() {
 
-  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
+  const [clienteSelecionado, setClienteSelecionado] = useState<Clientes | null>(null);
   const [itens, setItens] = useState<Item[]>([]);
   const [nomeProduto, setNomeProduto] = useState('');
   const [quantidade, setQuantidade] = useState('1');
   const [preco, setPreco] = useState('');
   const [searchText, setSearchText] = useState<string>('');
-  const [filtrados, setFiltrados] = useState<Cliente[]>([]);
-  const [clienteS, setClientes] = useState<Cliente[]>([]);
+  const [filtrados, setFiltrados] = useState<Clientes[]>([]);
+  const [clientes, setClientes] = useState<Clientes[]>([]);
+  const [produtos, setProdutos] = useState<Produtos[]>([]);
   
 
   // Clientes disponíveis
-  const clientes: Cliente[] = [
-    { id: 1, nome: 'Shoprite Moçambique', nuit: '400987321' },
-    { id: 2, nome: 'BCI — Fomento', nuit: '400112233' },
-    { id: 3, nome: 'Telecomunicações Lda', nuit: '400123456' },
-    { id: 4, nome: 'Grupo Madal', nuit: '400556677' },
-  ];
+  // const clientes: Cliente[] = [
+  //   { id: 1, nome: 'Shoprite Moçambique', nuit: '400987321' },
+  //   { id: 2, nome: 'BCI — Fomento', nuit: '400112233' },
+  //   { id: 3, nome: 'Telecomunicações Lda', nuit: '400123456' },
+  //   { id: 4, nome: 'Grupo Madal', nuit: '400556677' },
+  // ];
 
   // Produtos disponíveis
-  const produtos: Produto[] = [
-    { id: 1, nome: 'Consultoria em TI', preco: 6000 },
-    { id: 2, nome: 'Licença Software ERP', preco: 4500 },
-    { id: 3, nome: 'Suporte técnico / hora', preco: 750 },
-    { id: 4, nome: 'Instalação de Rede LAN', preco: 25000 },
-    { id: 5, nome: 'Manutenção mensal', preco: 3200 },
-  ];
+  // const produtos: Produto[] = [
+  //   { id: 1, nome: 'Consultoria em TI', preco: 6000 },
+  //   { id: 2, nome: 'Licença Software ERP', preco: 4500 },
+  //   { id: 3, nome: 'Suporte técnico / hora', preco: 750 },
+  //   { id: 4, nome: 'Instalação de Rede LAN', preco: 25000 },
+  //   { id: 5, nome: 'Manutenção mensal', preco: 3200 },
+  // ];
+
+  useEffect(()=> {
+    async function loadData()
+    {
+       await loadClientes ()
+       await loadProducts()
+    }
+    loadData()
+  },[])
+
+
+
+  async function loadClientes()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+
+      try {
+      
+            const response = await api.get("/clients",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+            }   
+            )
+            const clientesAPI = response.data.data.data; // 
+
+             
+            setClientes(response.data.data.data)
+            setFiltrados(response.data.data.data)
+             //console.log("clientes da base: ", response.data.data.data)
+
+             console.log(JSON.stringify(clientesAPI, null, 2));
+        }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+
+        finally
+        {
+           
+        }
+    }
+
+    async function loadProducts()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+
+      try {
+      
+            const response = await api.get("/products",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+            }   
+            )
+
+            setProdutos(response.data.data.data)
+             //console.log("clientes da base: ", response.data.data.data)
+
+        }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+
+        finally
+        {
+           
+        }
+    }
+
 
   const IVA_PERCENTUAL = 17;
 
@@ -171,26 +246,32 @@ export default function VendasScreen() {
         <Text style={styles.headerSubtitle}>Criar venda</Text>
       </View>
 
-        <View style={styles.searchContainer}>
+
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+
+        {/* SELECÇÃO DE CLIENTE */}
+        <View style={{flexDirection:'row',alignItems:'center'}}>
+             <Text style={[styles.sectionTitle,{
+                paddingTop:10,
+                
+             }]}>
+              Clientes recentes
+             </Text>
+             <View style={styles.searchContainer}>
                <TextInput
                  style={styles.searchInput}
                  placeholder="🔍 Pesquisar cliente..."
                  placeholderTextColor="#AEAEB2"
                  value={searchText}
-                 onChangeText={handleSearch}
-               />
-               
+                 onChangeText={handleSearch}  />
              </View>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-
-        {/* SELECÇÃO DE CLIENTE */}
-        <Text style={styles.sectionTitle}>Cliente</Text>
+         </View>
 
         {clienteSelecionado ? (
           <View style={styles.clienteSelecionado}>
             <View>
               <Text style={styles.clienteNome}>{clienteSelecionado.nome}</Text>
-              <Text style={styles.clienteNuit}>NUIT: {clienteSelecionado.nuit}</Text>
+              <Text style={styles.clienteNuit}>Email: {clienteSelecionado.email}</Text>
             </View>
             <TouchableOpacity
               onPress={() => setClienteSelecionado(null)}
@@ -201,7 +282,7 @@ export default function VendasScreen() {
           </View>
         ) : (
           <FlatList
-            data={clientes}
+            data={filtrados.slice(0,4)}
             keyExtractor={(item) => item.id.toString()}
             scrollEnabled={false}
             renderItem={({ item }) => (
@@ -211,7 +292,7 @@ export default function VendasScreen() {
               >
                 <View>
                   <Text style={styles.clienteItemNome}>{item.nome}</Text>
-                  <Text style={styles.clienteItemNuit}>NUIT: {item.nuit}</Text>
+                  <Text style={styles.clienteItemNuit}>Email: {item.email}</Text>
                 </View>
                 <Text style={styles.arrow}>›</Text>
               </TouchableOpacity>
@@ -260,16 +341,16 @@ export default function VendasScreen() {
         {/* PRODUTOS SUGERIDOS */}
         <Text style={styles.subLabel}>Produtos recentes:</Text>
         <View style={styles.produtosRapidos}>
-          {produtos.slice(0, 3).map((prod) => (
+          {produtos.slice(0, 4).map((prod) => (
             <TouchableOpacity
               key={prod.id}
               style={styles.produtoRapido}
               onPress={() => {
-                setNomeProduto(prod.nome);
-                setPreco(prod.preco.toString());
+                setNomeProduto(prod.designacao);
+                setPreco(prod.preco_venda_liquido_1);
               }}
             >
-              <Text style={styles.produtoRapidoText}>{prod.nome}</Text>
+              <Text style={styles.produtoRapidoText}>{prod.designacao}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -609,9 +690,12 @@ const styles = StyleSheet.create({
   },
    searchContainer: {
     backgroundColor: '#F2F2F7',
-    paddingHorizontal: 14,
+    //paddingHorizontal: 14,
+    paddingLeft:12,
     paddingTop: 12,
     paddingBottom: 10,
+    flex:1,
+    
   },
   searchInput: {
 

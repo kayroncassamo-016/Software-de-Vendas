@@ -10,6 +10,18 @@ export interface User
  
 }
 
+export interface LoginResponse
+{ 
+    token: string,
+    user:
+    {
+    id:string,
+    name:string,
+    email:string,
+    role:"admin"|"STAFF",
+    }
+}
+
 export interface Clientes
 {
     id: number,
@@ -113,14 +125,3 @@ export interface Motivo_Isencao
 
 
 
-export interface LoginResponse
-{ 
-    token: string,
-    user:
-    {
-    id:string,
-    name:string,
-    email:string,
-    role:"admin"|"STAFF",
-    }
-}

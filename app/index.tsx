@@ -1,21 +1,26 @@
 import { colors } from '@/constants/theme'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
-
 import { useContexto } from '@/contexts/AuthContext'
 import { useRouter, useSegments } from 'expo-router'
+import { WifiOff } from 'lucide-react-native'
 import { useEffect } from 'react'
+import {
+    ActivityIndicator, StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native'
 
 export default function Index ()
 {
 
-    const {loading,signed} = useContexto()
+    const {loading,signed,networkError, loadStorageData} = useContexto()
     const segments = useSegments()
     const router = useRouter()
-
+  
 
    useEffect(()=>{
     
-    if(loading)
+    if(loading || networkError)
         return
 
     const inAuthGroup = segments[0] === "(authenticated)"
@@ -28,48 +33,76 @@ export default function Index ()
     else if(signed && !inAuthGroup)
     {
         router.replace("/(authenticated)/dashboard")
+     
     }
     else if(!signed)
     {
         router.replace("/login/login")
+
     }
 
-   },[loading,signed,router])
+   },[loading,signed,router,networkError])
 
-//    useEffect(() => {
 
-//     if (loading) return;
+    if (networkError)
+    {
+        return (
+            <View style={styles.container}>
 
-//     const inAuthGroup = segments[0] === "(authenticated)";
+                <WifiOff
+                    size={50}
+                    color="red"
+                />
 
-//     if (signed && !inAuthGroup) {
-//         router.replace("/(authenticated)/dashboard");
-//         return;
-//     }
+                <Text style={{
+                    fontWeight:'bold',
+                    fontSize:18,
+                    marginTop:10
+                }}>
+                    Está offline
+                </Text>
 
-//     if (!signed && inAuthGroup) {
-//         router.replace("/login/login");
-//         return;
-//     }
+                <Text style={{
+                    color:'#555',
+                    textAlign:'center',
+                    marginTop:10,
+                    paddingHorizontal:20
+                }}>
+                    Verifique a sua ligação com a internet
+                    e tente novamente.
+                </Text>
 
-//     }, [loading, signed, segments,router]);
+                <TouchableOpacity
+                    style={styles.button}
+                     onPress={() => loadStorageData()}>
+            
+                    <Text style={{color:'#fff',textAlign:'center'}}>
+                        Tentar novamente
+                    </Text>
+                </TouchableOpacity>
 
-   if(loading)
-   {
-    return (
+            </View>
+        )
+    }
+
+      if (loading) 
+      {
+           return (
+            <View style={styles.container}>
+                <ActivityIndicator size="large" color={colors.blue}/>
+            </View>
+            )
+ 
+       }
+    
+
+     return (
+
         <View style={styles.container}>
             <ActivityIndicator size="large" color={colors.blue}/>
         </View>
-    )
-   }
 
-    return (
-
-        <View style={styles.container}>
-            <ActivityIndicator size="large" color={colors.blue}/>
-        </View>
-
-    )
+     )
 }
 
 const styles = StyleSheet.create({
@@ -79,5 +112,16 @@ const styles = StyleSheet.create({
         justifyContent:"center",
         alignItems:"center",
         backgroundColor:'#fff'
+    },
+    button:
+    {
+        backgroundColor:colors.blue,
+        color:'#fff',
+        paddingVertical: 10,
+        paddingHorizontal:10,
+        borderRadius: 10,
+        marginTop:10,
+        width:'75%'
+
     }
 })

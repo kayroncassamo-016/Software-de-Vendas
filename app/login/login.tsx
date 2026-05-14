@@ -36,24 +36,13 @@ export default function Home() {
             Alert.alert("Atenção", "Preencha todos os campos!")
             return
       }
+
       try
         {
            setLoading(true)
            await signIn(email,senha)
-          // setErrorMessage(false)
         }
 
-        // catch (err:any)
-        // {
-        //     Alert.alert("Erro", "Erro ao fazer login!")
-        //     if (err.message === "INVALID_CREDENTIALS")
-        //     {
-        //         setErrorMessage("Email/senha inválidos. Introduza novamente");
-        //         return;
-        //     }
-        //   setErrorMessage("Erro ao fazer login.");
-            
-        // }
 
         catch (err:any)
         {   
