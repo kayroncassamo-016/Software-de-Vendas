@@ -44,8 +44,8 @@ async function loadingClienteStats()
     try{
 
         SetLoadingClienteNumber(true)
-        const res =  await api.get("/clients");
-        setTotalClientes(res.data.data.data.length);
+        const res =  await api.get("/clientes");
+        setTotalClientes(res.data.data.length);
 
     }
     catch (err)

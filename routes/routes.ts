@@ -39,7 +39,7 @@ export  function useAuth()
 
 
             if (storedToken) {
-                const response = await api.get('/me', {
+                const response = await api.get('/auth/me', {
                     headers: { Authorization: `Bearer ${storedToken}` }
                 });
 
@@ -65,7 +65,7 @@ export  function useAuth()
     async function signIn (email:string, password:string)
     {
         try {
-            const response = await api.post<LoginResponse>('/login',
+            const response = await api.post<LoginResponse>('/auth/login',
                 {
                     email:email,
                     password:password
@@ -87,7 +87,7 @@ export  function useAuth()
             await AsyncStorage.setItem("@user", 
                 JSON.stringify(userData))
 
-            const responsee = await api.get('/me',
+            const responsee = await api.get('/auth/me',
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 })

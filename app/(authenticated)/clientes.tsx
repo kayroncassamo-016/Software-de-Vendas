@@ -5,7 +5,6 @@ import React, { useEffect, useState } from 'react';
 
 import {
   ActivityIndicator,
-  Dimensions,
   // SafeAreaView,
   ScrollView,
   StatusBar,
@@ -24,9 +23,6 @@ import { AdicionarCliente } from '../components/Clientes/AdicionarCliente';
 import { DeletarCliente } from '../components/Clientes/DeletarCliente';
 import { DetalhesCliente } from '../components/Clientes/DetalhesCliente';
 import { EditarCliente } from '../components/Clientes/EditarCliente';
-
-const { width } = Dimensions.get('window');
-
 
 
 
@@ -80,15 +76,6 @@ const BadgeTipoCliente = ({tipo} :any) => {
     )
   }
 
-
-  
-  // return (
-  //   <View style={[styles.tagCategoria, { backgroundColor: config.bg }]}>
-  //     <Text style={[styles.tagCategoriaText, { color: config.color }]}>
-  //       {categoria?.designacao}
-  //     </Text>
-  //   </View>
-  // );
 };
 
 interface clienteItemProps
@@ -210,17 +197,17 @@ useEffect(() =>
     try{
         setLoadingClientes(true)
 
-            const response = await api.get("/clients",
+            const response = await api.get("/clientes",
                {
                headers: { Authorization: `Bearer ${token}` },
             }   
             )
-            const clientesAPI = response.data.data.data; // 
+            const clientesAPI = response.data.data; // 
 
              
-            setClientes(response.data.data.data)
-            setFiltrados(response.data.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
+            setClientes(response.data.data)
+            setFiltrados(response.data.data)
+             console.log("clientes da base: ", response.data.data)
 
              console.log(JSON.stringify(clientesAPI, null, 2));
         }
@@ -249,7 +236,7 @@ useEffect(() =>
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Clientes</Text>
-          <Text style={styles.headerSub}>{filtrados.length} Clientes no catálogo</Text>
+          <Text style={styles.headerSub}>{filtrados?.length || 0} Clientes no catálogo</Text>
         </View>
       </View>
 

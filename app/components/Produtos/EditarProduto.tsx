@@ -376,8 +376,8 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
           const response = await api.get('/categoria')
     
-          setCategorias(response.data.data.data)
-          // console.log('categorias:', response.data.data.data)
+          setCategorias(response.data.data)
+         console.log('categorias:', response.data.data)
     
         }
         catch(err)

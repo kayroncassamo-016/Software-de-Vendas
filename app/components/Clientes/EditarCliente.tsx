@@ -153,17 +153,17 @@ export function EditarCliente({visible,setVisible
     {    setVisible(false)
         setLoading(true)
 
-        await api.put(`/clients/${cliente?.id}`,
+        await api.put(`/clientes/${cliente?.id}`,
             payload, {
             headers: { Authorization: `Bearer ${token}` },
             }   
           )
       
     
-          const response = await api.get('/clients')
+          const response = await api.get('/clientes')
     
-          setClientes(response.data.data.data)
-          setFiltrados(response.data.data.data)
+          setClientes(response.data.data)
+          setFiltrados(response.data.data)
         
      
 

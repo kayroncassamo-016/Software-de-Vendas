@@ -1,10 +1,12 @@
- import { api } from '@/services/api';
+ import { Select } from '@/components/project/Select';
+import { api } from '@/services/api';
 import { Clientes, Produtos } from '@/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -12,15 +14,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-
 // Definir tipos
-interface Cliente {
-  id: number;
-  nome: string;
-  nuit: string;
-}
+
 
 interface Item {
   id: number;
@@ -29,11 +26,6 @@ interface Item {
   preco: number;
 }
 
-interface Produto {
-  id: number;
-  nome: string;
-  preco: number;
-}
 
 export default function VendasScreen() {
 
@@ -43,27 +35,16 @@ export default function VendasScreen() {
   const [quantidade, setQuantidade] = useState('1');
   const [preco, setPreco] = useState('');
   const [searchText, setSearchText] = useState<string>('');
+  const [searchTextProdutos, setSearchTextProdutos] = useState<string>('');
   const [filtrados, setFiltrados] = useState<Clientes[]>([]);
   const [clientes, setClientes] = useState<Clientes[]>([]);
   const [produtos, setProdutos] = useState<Produtos[]>([]);
+  const [filtradosProdutos, setFiltradosProdutos] = useState<Produtos[]>([]);
+  const [selectedTipoDocumento, setSelectedTipoDocumento] = useState('');
+  //const [TipoDocumento, setTipoDocumento] = useState([]);
   
-
-  // Clientes disponíveis
-  // const clientes: Cliente[] = [
-  //   { id: 1, nome: 'Shoprite Moçambique', nuit: '400987321' },
-  //   { id: 2, nome: 'BCI — Fomento', nuit: '400112233' },
-  //   { id: 3, nome: 'Telecomunicações Lda', nuit: '400123456' },
-  //   { id: 4, nome: 'Grupo Madal', nuit: '400556677' },
-  // ];
-
-  // Produtos disponíveis
-  // const produtos: Produto[] = [
-  //   { id: 1, nome: 'Consultoria em TI', preco: 6000 },
-  //   { id: 2, nome: 'Licença Software ERP', preco: 4500 },
-  //   { id: 3, nome: 'Suporte técnico / hora', preco: 750 },
-  //   { id: 4, nome: 'Instalação de Rede LAN', preco: 25000 },
-  //   { id: 5, nome: 'Manutenção mensal', preco: 3200 },
-  // ];
+  const TipoDocumento = ['Factura','Nota de devolução',
+    'Guia de transporte','Recibo','Orçamento']
 
   useEffect(()=> {
     async function loadData()
@@ -74,24 +55,57 @@ export default function VendasScreen() {
     loadData()
   },[])
 
+   async function loadDocumentos()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+
+      try {
+      
+            const response = await api.get("/clientes",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+            }   
+            )
+            const clientesAPI = response.data.data; // 
+
+             
+            setClientes(response.data.data)
+            setFiltrados(response.data.data)
+             //console.log("clientes da base: ", response.data.data.data)
+
+             console.log(JSON.stringify(clientesAPI, null, 2));
+        }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+
+        finally
+        {
+           
+        }
+    }
 
 
+
+   
   async function loadClientes()
   {
     const token  = await AsyncStorage.getItem("@token")
 
       try {
       
-            const response = await api.get("/clients",
+            const response = await api.get("/clientes",
                {
                headers: { Authorization: `Bearer ${token}` },
             }   
             )
-            const clientesAPI = response.data.data.data; // 
+            const clientesAPI = response.data.data; // 
 
              
-            setClientes(response.data.data.data)
-            setFiltrados(response.data.data.data)
+            setClientes(response.data.data)
+            setFiltrados(response.data.data)
              //console.log("clientes da base: ", response.data.data.data)
 
              console.log(JSON.stringify(clientesAPI, null, 2));
@@ -121,6 +135,7 @@ export default function VendasScreen() {
             )
 
             setProdutos(response.data.data.data)
+            setFiltradosProdutos(response.data.data.data)
              //console.log("clientes da base: ", response.data.data.data)
 
         }
@@ -208,9 +223,19 @@ export default function VendasScreen() {
       );
       setFiltrados(filtered);
     }
-     
+  };
 
-
+    const handleSearchProdutos = (text: string): void => {
+    setSearchTextProdutos(text);
+    if (text === '') {
+      setFiltradosProdutos(produtos)
+    } else {
+      const filtered = produtos.filter(
+        (p) =>
+          p.designacao.toLowerCase().includes(text.toLowerCase()) 
+      );
+      setFiltradosProdutos(filtered);
+    }
   };
 
 
@@ -246,11 +271,25 @@ export default function VendasScreen() {
         <Text style={styles.headerSubtitle}>Criar venda</Text>
       </View>
 
+      <KeyboardAvoidingView behavior='padding' style={{flex:1}}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+           <View style={{gap:3}}>
+              <Text style={styles.dialogTextStyle}>Tipo de documento:</Text>
+                  <Select
+                    label=""
+                    placeholder="Selecione o tipo de documento"
+                    options ={TipoDocumento.map(tipo => ({
+                      label: tipo,
+                      value: tipo
+                    }))}
+                    selectedValue={selectedTipoDocumento}
+                    onValueChange={setSelectedTipoDocumento}
+                  />
+            </View>
 
         {/* SELECÇÃO DE CLIENTE */}
-        <View style={{flexDirection:'row',alignItems:'center'}}>
+         <View style={{flexDirection:'row',alignItems:'center'}}>
              <Text style={[styles.sectionTitle,{
                 paddingTop:10,
                 
@@ -339,9 +378,19 @@ export default function VendasScreen() {
         </View>
 
         {/* PRODUTOS SUGERIDOS */}
-        <Text style={styles.subLabel}>Produtos recentes:</Text>
+        <View style={{flexDirection:'row',alignItems:'center'}}>
+          <Text style={[styles.subLabel,{paddingTop:10}]}>Produtos recentes:</Text>
+            <View style={styles.searchContainer}>
+               <TextInput
+                 style={styles.searchInput}
+                 placeholder="🔍 Pesquisar produto..."
+                 placeholderTextColor="#AEAEB2"
+                 value={searchTextProdutos}
+                 onChangeText={handleSearchProdutos}  />
+            </View>
+        </View>
         <View style={styles.produtosRapidos}>
-          {produtos.slice(0, 4).map((prod) => (
+          {filtradosProdutos.slice(0, 4).map((prod) => (
             <TouchableOpacity
               key={prod.id}
               style={styles.produtoRapido}
@@ -402,6 +451,7 @@ export default function VendasScreen() {
 
         <View style={{ height: 30 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -409,7 +459,13 @@ export default function VendasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#185FA5',
+   // backgroundColor: '#185FA5',
+  },
+   dialogTextStyle:
+  {
+     paddingRight:10,
+     fontWeight:'bold',
+     color:'#8E8E93'
   },
   header: {
     backgroundColor: '#185FA5',

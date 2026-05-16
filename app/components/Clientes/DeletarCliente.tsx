@@ -43,15 +43,15 @@ export const DeletarCliente = ({visible,setVisible,cliente
 
      setLoadingDelete(true)
 
-     await api.delete(`/clients/${cliente?.id}`,
+     await api.delete(`/clientes/${cliente?.id}`,
      {
         headers: { Authorization: `Bearer ${token}` },
      })
      //setLoading(true)  
-     const response = await api.get('/clients')
+     const response = await api.get('/clientes')
     
-     setClientes(response.data.data.data)
-     setFiltrados(response.data.data.data)
+     setClientes(response.data.data)
+     setFiltrados(response.data.data)
      
        
      Alert.alert('Cliente deletado com sucesso!',)

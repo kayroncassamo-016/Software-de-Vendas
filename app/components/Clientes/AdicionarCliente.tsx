@@ -111,17 +111,17 @@ export function AdicionarCliente({visible,setVisible
         setVisible(false)
         setLoading(true)
         
-        await api.post('/clients',
+        await api.post('/clientes',
             payload, {
             headers: { Authorization: `Bearer ${token}` },
             }   
           )
        
     
-          const response = await api.get('/clients')
+          const response = await api.get('/clientes')
     
-          setClientes(response.data.data.data)
-          setFiltrados(response.data.data.data)
+          setClientes(response.data.data)
+          setFiltrados(response.data.data)
         
 
           Alert.alert('Cliente cadastrado com sucesso!',)
