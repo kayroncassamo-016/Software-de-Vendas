@@ -225,6 +225,11 @@ const total = precoL
       {
           router.push("/(authenticated)/clientes")
       }
+  
+      if (pageIndex === 0) 
+      {
+          router.push("/(authenticated)/vendas")
+      }
   }
   
   const handleSearch = (text: string): void => {
@@ -499,7 +504,8 @@ useEffect(()=> {
 
       const response = await api.get('/motivoisencao')
 
-      setMotivosIsencao(response.data.data.data)
+      setMotivosIsencao(response.data.data)
+      //console.log('motivo de isencao: ', response.data.data)
 
     }
     catch(err)
@@ -520,8 +526,8 @@ useEffect(()=> {
 
       const response = await api.get('/marca')
 
-      setMarcas(response.data.data.data)
-      // console.log('impostos:', response.data.data.data)
+      setMarcas(response.data.data)
+      // console.log('marcas:', response.data.data)
 
     }
     catch(err)
@@ -542,8 +548,8 @@ useEffect(()=> {
 
       const response = await api.get('/familia')
 
-      setFamilias(response.data.data.data)
-      // console.log('impostos:', response.data.data.data)
+      setFamilias(response.data.data)
+      //console.log('familia:', response.data.data)
 
     }
     catch(err)
@@ -563,8 +569,8 @@ useEffect(()=> {
 
       const response = await api.get('/tipo')
 
-      setTipos(response.data.data.data)
-      // console.log('impostos:', response.data.data.data)
+      setTipos(response.data.data)
+      // console.log('tipo:', response.data.data)
 
     }
     catch(err)
@@ -584,8 +590,8 @@ useEffect(()=> {
 
       const response = await api.get('/imposto')
 
-      setImpostos(response.data.data.data)
-      // console.log('impostos:', response.data.data.data)
+      setImpostos(response.data.data)
+      // console.log('impostos:', response.data.data)
 
     }
     catch(err)
@@ -1185,7 +1191,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
    // backgroundColor: '#185FA5',
-   backgroundColor: '#f4f6f9',
+   backgroundColor: '#e4e4e4',
    
   },
 

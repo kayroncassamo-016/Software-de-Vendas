@@ -102,6 +102,11 @@ const ConfigScreen = () => {
           if (pageIndex === 1) {
               router.push("/(authenticated)/clientes")
             }
+
+          if (pageIndex === 0) 
+          {
+                router.push("/(authenticated)/vendasForm")
+          }
     }
 
      async function sairDoSistema () {
@@ -144,7 +149,7 @@ const ConfigScreen = () => {
 
   return (
     <SafeAreaView style={[styles.safe,
-       { backgroundColor: temaEscuro ? '#292828' : '#f4f6f9' }
+       { backgroundColor: temaEscuro ? '#292828' : '#e4e4e4' }
     ]}>
       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
 

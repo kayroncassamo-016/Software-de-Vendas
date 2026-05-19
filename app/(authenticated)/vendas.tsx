@@ -1,759 +1,460 @@
- import { Select } from '@/components/project/Select';
-import { api } from '@/services/api';
-import { Clientes, Produtos } from '@/types/types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from 'expo-router';
+import { Cog, Grid2X2, Handshake, Package, Plus, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
+
 import {
-  Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    // SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-// Definir tipos
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { colors } from '@/constants/theme';
+import { api } from '@/services/api';
+import { Vendas } from '@/types/types';
 
 
-interface Item {
-  id: number;
-  nome: string;
-  quantidade: number;
-  preco: number;
+
+const NAV_ITEMS = [
+  { icon: ShoppingBag , label: 'Vendas' },
+    {icon:Handshake,label:'Clientes'},
+    { icon: Grid2X2, label: 'Painel' },
+    { icon: Package, label: 'Produtos' },
+    { icon: Cog, label: 'Config.' },
+];
+
+ //─── Badge de cliente ─────────────────────────────────────────────
+const BadgeEstadoVenda = ({estado} :any) => {
+  
+  if (estado === 'CONFIRMADO')
+  {
+    return (
+      <Text style ={{
+        backgroundColor: '#b9fcce',
+        color:'#3fa04c',
+        paddingHorizontal:5,
+        paddingVertical:2,
+        borderRadius:20,
+        fontSize:11,
+        fontWeight:500
+      }}
+      >
+        {estado}
+      
+      </Text>
+    )
+  }
+  else if (estado === 'CANCELADO')
+  {
+      return (
+      <Text style ={{
+        
+        backgroundColor: '#f58d8d',
+        color:'#8d3131',
+        padding:1,
+        borderRadius:20,
+        fontSize:11,
+        paddingHorizontal:5,
+        paddingVertical:2,
+        fontWeight:500
+      }}
+      >
+        {estado}
+      
+      </Text>
+      )
+   } 
+    else if (estado ==='RASCUNHO')
+    {
+      return (
+      <Text style ={{
+        
+        backgroundColor: '#ffe2b6',
+        color:'#966f34',
+        padding:1,
+        borderRadius:20,
+        fontSize:11,
+        paddingHorizontal:5,
+        paddingVertical:2,
+        fontWeight:500
+      }}
+      >
+        {estado}
+      
+      </Text>
+    )
+  }
+
+};
+
+interface clienteItemProps
+{
+    venda: Vendas
+    onPress : () => void
 }
 
 
-export default function VendasScreen() {
 
-  const [clienteSelecionado, setClienteSelecionado] = useState<Clientes | null>(null);
-  const [itens, setItens] = useState<Item[]>([]);
-  const [nomeProduto, setNomeProduto] = useState('');
-  const [quantidade, setQuantidade] = useState('1');
-  const [preco, setPreco] = useState('');
-  const [searchText, setSearchText] = useState<string>('');
-  const [searchTextProdutos, setSearchTextProdutos] = useState<string>('');
-  const [filtrados, setFiltrados] = useState<Clientes[]>([]);
-  const [clientes, setClientes] = useState<Clientes[]>([]);
-  const [produtos, setProdutos] = useState<Produtos[]>([]);
-  const [filtradosProdutos, setFiltradosProdutos] = useState<Produtos[]>([]);
-  const [selectedTipoDocumento, setSelectedTipoDocumento] = useState('');
-  //const [TipoDocumento, setTipoDocumento] = useState([]);
+
+// ─── Ecrã de clientes ──────────────────────────────────────────────
+export default function VendasList ()  {
+
+const [searchText, setSearchText] = useState<string>('');
+const [activeNav, setActiveNav] = useState(0);
+
+const [vendas, setVendas] = useState<Vendas[]>([]);
+const [loadingClientes,setLoadingClientes] = useState(false)
+const [filtrados, setFiltrados] = useState<Vendas[]>([]);
+const [vendaSeleccionada, setVendaSeleccionada] = useState<Vendas|null>(null)
+const [visibleFormCadastro, setVisibleFormCadastro] = useState(false)
+const [visibleDetalhesCliente, setVisibleDetalhesCliente] = useState(false)
+const [visibleDeletarCliente, setVisibleDeletarCliente] = useState(false)
+const [visibleEditarCliente, setVisibleEditarCliente] = useState(false)
+
+
+const router = useRouter()
+
+
+
+const VendaItem = ({ venda, onPress}:clienteItemProps) => {
+
+
+  return (
+    <TouchableOpacity 
+      style={styles.clienteCard}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.clienteLeft}>
+        <Text style={styles.clienteNome}>{venda.nome_doc}</Text>
+        {/* <BadgeTipoCliente tipo = {cliente.tipo}/> */}
+        
+        <Text style ={{
+          color:'#838282'
+        }}>
+          {venda.ano_serie}
+        </Text>
+      </View>
+
+      <View style={''}>
+          {/* {cliente.tipo} */}
+          <BadgeEstadoVenda estado = {venda.estado}/>
+      </View>
+    </TouchableOpacity>
+    
+  );
+};
+
+  function navigatePage(pageIndex:number)
+  {
+      setActiveNav(pageIndex)
+      
+      if (pageIndex === 2) 
+      {
+          router.push("/(authenticated)/dashboard")
+      }
+
+       
+      if (pageIndex === 4) 
+      {
+          router.push("/(authenticated)/settings")
+      }
+
+       if (pageIndex === 3) 
+       {
+            router.push("/(authenticated)/produtos")
+       }
+
+       if (pageIndex === 1) 
+       {
+            router.push("/(authenticated)/clientes")
+       }
+
+       
+  }
   
-  const TipoDocumento = ['Factura','Nota de devolução',
-    'Guia de transporte','Recibo','Orçamento']
-
-  useEffect(()=> {
-    async function loadData()
-    {
-       await loadClientes ()
-       await loadProducts()
-    }
-    loadData()
-  },[])
-
-   async function loadDocumentos()
-  {
-    const token  = await AsyncStorage.getItem("@token")
-
-      try {
-      
-            const response = await api.get("/clientes",
-               {
-               headers: { Authorization: `Bearer ${token}` },
-            }   
-            )
-            const clientesAPI = response.data.data; // 
-
-             
-            setClientes(response.data.data)
-            setFiltrados(response.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
-
-             console.log(JSON.stringify(clientesAPI, null, 2));
-        }
-
-        catch(err:any)
-        {
-            console.log(err.response)
-        }
-
-        finally
-        {
-           
-        }
-    }
-
-
-
-   
-  async function loadClientes()
-  {
-    const token  = await AsyncStorage.getItem("@token")
-
-      try {
-      
-            const response = await api.get("/clientes",
-               {
-               headers: { Authorization: `Bearer ${token}` },
-            }   
-            )
-            const clientesAPI = response.data.data; // 
-
-             
-            setClientes(response.data.data)
-            setFiltrados(response.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
-
-             console.log(JSON.stringify(clientesAPI, null, 2));
-        }
-
-        catch(err:any)
-        {
-            console.log(err.response)
-        }
-
-        finally
-        {
-           
-        }
-    }
-
-    async function loadProducts()
-  {
-    const token  = await AsyncStorage.getItem("@token")
-
-      try {
-      
-            const response = await api.get("/products",
-               {
-               headers: { Authorization: `Bearer ${token}` },
-            }   
-            )
-
-            setProdutos(response.data.data.data)
-            setFiltradosProdutos(response.data.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
-
-        }
-
-        catch(err:any)
-        {
-            console.log(err.response)
-        }
-
-        finally
-        {
-           
-        }
-    }
-
-
-  const IVA_PERCENTUAL = 17;
-
-  // Adicionar item à venda
-  const adicionarItem = () => {
-    if (!nomeProduto || !preco) {
-      Alert.alert('Erro', 'Preenche o nome e preço do produto');
-      return;
-    }
-
-    const novoItem: Item = {
-      id: Date.now(),
-      nome: nomeProduto,
-      quantidade: parseInt(quantidade) || 1,
-      preco: parseFloat(preco),
-    };
-
-    setItens([...itens, novoItem]);
-    setNomeProduto('');
-    setQuantidade('1');
-    setPreco('');
-  };
-
-  // Remover item
-  const removerItem = (id: number) => {
-    setItens(itens.filter(item => item.id !== id));
-  };
-
-  // Calcular totais
-  const calcularTotais = () => {
-    const subtotal = itens.reduce((acc, item) => acc + (item.quantidade * item.preco), 0);
-    const iva = (subtotal * IVA_PERCENTUAL) / 100;
-    const total = subtotal + iva;
-
-    return { subtotal, iva, total };
-  };
-
-  const { subtotal, iva, total } = calcularTotais();
-
-  // Confirmar venda
-  const confirmarVenda = () => {
-    if (!clienteSelecionado) {
-      Alert.alert('Erro', 'Selecciona um cliente');
-      return;
-    }
-
-    if (itens.length === 0) {
-      Alert.alert('Erro', 'Adiciona pelo menos um item');
-      return;
-    }
-
-    Alert.alert(
-      'Factura criada',
-      `Cliente: ${clienteSelecionado.nome}\nTotal: ${total.toFixed(2)} MT`,
-      [
-        { text: 'Fechar', style: 'cancel' },
-        { text: 'Enviar PDF', onPress: () => console.log('Enviando PDF...') },
-      ]
-    );
-  };
-
-    const handleSearch = (text: string): void => {
+  const handleSearch = (text: string): void => {
     setSearchText(text);
+   
     if (text === '') {
-      setFiltrados(clientes)
+      
+        setFiltrados(vendas)
+   
     } else {
-      const filtered = clientes.filter(
+      const filtered = vendas.filter(
         (c) =>
-          c.nome.toLowerCase().includes(text.toLowerCase()) 
+          c.nome_doc.toLowerCase().includes(text.toLowerCase()) ||
+          c.estado.toLowerCase().includes(text.toLowerCase())
       );
       setFiltrados(filtered);
     }
+     
+
+
   };
 
-    const handleSearchProdutos = (text: string): void => {
-    setSearchTextProdutos(text);
-    if (text === '') {
-      setFiltradosProdutos(produtos)
-    } else {
-      const filtered = produtos.filter(
-        (p) =>
-          p.designacao.toLowerCase().includes(text.toLowerCase()) 
-      );
-      setFiltradosProdutos(filtered);
+useEffect(() =>
+{
+    async function loadData()
+    {
+        await loadVendas()
     }
-  };
+
+     loadData()
+   
+},[])
+
+  async function loadVendas()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+
+    try{
+        setLoadingClientes(true)
+
+            const response = await api.get("/documentos",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+               }   
+            )
+            const vendasAPI = response.data.data.data; // 
+
+             
+            setVendas(response.data.data.data)
+            setFiltrados(response.data.data.data)
+             
+
+             console.log(JSON.stringify(vendasAPI, null, 2));
+        }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+
+        finally
+        {
+            setLoadingClientes(false)
+        }
+    }
+
+    function AbrirVendasForm()
+    {
+        router.push('/(authenticated)/vendasForm')
+    }
 
 
-
-  // Renderizar item da lista
-  const renderItem = ({ item }: { item: Item }) => (
-    <View style={styles.itemRow}>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemNome}>{item.nome}</Text>
-        <Text style={styles.itemDetalhes}>
-          {item.quantidade} × {item.preco.toFixed(2)} MT
-        </Text>
-      </View>
-      <View style={styles.itemRight}>
-        <Text style={styles.itemTotal}>{(item.quantidade * item.preco).toFixed(2)} MT</Text>
-        <TouchableOpacity
-          onPress={() => removerItem(item.id)}
-          style={styles.btnRemover}
-        >
-          <Text style={styles.btnRemoverText}>✕</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
+    
+    
+    <SafeAreaView style={styles.safe}>
+
+    <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Nova Factura</Text>
-        <Text style={styles.headerSubtitle}>Criar venda</Text>
+        <View style={{flexDirection:'row',
+            justifyContent:'space-between',
+            
+            
+            }}>
+          <View>
+            <Text style={styles.headerTitle}>Vendas</Text>
+            <Text style={styles.headerSub}>{filtrados?.length || 0} Vendas no catálogo</Text>
+          </View>
+
+          <TouchableOpacity onPress={() => AbrirVendasForm()}
+            style={{paddingTop:10}}>
+            <Plus color={'#fff'} fontWeight={900}/>
+          </TouchableOpacity>
+        
+        </View>
       </View>
 
-      <KeyboardAvoidingView behavior='padding' style={{flex:1}}>
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="🔍 Pesquisar venda..."
+          placeholderTextColor="#AEAEB2"
+          value={searchText}
+          onChangeText={handleSearch}
+        />
+        
+      </View>
 
-           <View style={{gap:3}}>
-              <Text style={styles.dialogTextStyle}>Tipo de documento:</Text>
-                  <Select
-                    label=""
-                    placeholder="Selecione o tipo de documento"
-                    options ={TipoDocumento.map(tipo => ({
-                      label: tipo,
-                      value: tipo
-                    }))}
-                    selectedValue={selectedTipoDocumento}
-                    onValueChange={setSelectedTipoDocumento}
-                  />
-            </View>
-
-        {/* SELECÇÃO DE CLIENTE */}
-         <View style={{flexDirection:'row',alignItems:'center'}}>
-             <Text style={[styles.sectionTitle,{
-                paddingTop:10,
-                
-             }]}>
-              Clientes recentes
-             </Text>
-             <View style={styles.searchContainer}>
-               <TextInput
-                 style={styles.searchInput}
-                 placeholder="🔍 Pesquisar cliente..."
-                 placeholderTextColor="#AEAEB2"
-                 value={searchText}
-                 onChangeText={handleSearch}  />
-             </View>
-         </View>
-
-        {clienteSelecionado ? (
-          <View style={styles.clienteSelecionado}>
-            <View>
-              <Text style={styles.clienteNome}>{clienteSelecionado.nome}</Text>
-              <Text style={styles.clienteNuit}>Email: {clienteSelecionado.email}</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setClienteSelecionado(null)}
-              style={styles.btnMudar}
-            >
-              <Text style={styles.btnMudarText}>Mudar</Text>
-            </TouchableOpacity>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
+      >
+       {
+         loadingClientes?
+         
+          (<View style = {styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.blue}/>
           </View>
-        ) : (
-          <FlatList
-            data={filtrados.slice(0,4)}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.clienteItem}
-                onPress={() => setClienteSelecionado(item)}
-              >
-                <View>
-                  <Text style={styles.clienteItemNome}>{item.nome}</Text>
-                  <Text style={styles.clienteItemNuit}>Email: {item.email}</Text>
-                </View>
-                <Text style={styles.arrow}>›</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )}
-
-        {/* ADICIONAR ITENS */}
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Itens da Factura</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.inputLabel}>Nome do Produto / Serviço</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: Consultoria em TI"
-            value={nomeProduto}
-            onChangeText={setNomeProduto}
-          />
-
-          <Text style={styles.inputLabel}>Quantidade</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="1"
-            value={quantidade}
-            onChangeText={setQuantidade}
-            keyboardType="numeric"
-          />
-
-          <Text style={styles.inputLabel}>Preço Unitário (MT)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="0.00"
-            value={preco}
-            onChangeText={setPreco}
-            keyboardType="decimal-pad"
-          />
-
-          <TouchableOpacity
-            style={styles.btnAdicionar}
-            onPress={adicionarItem}
-          >
-            <Text style={styles.btnAdicionarText}>+ Adicionar Item</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* PRODUTOS SUGERIDOS */}
-        <View style={{flexDirection:'row',alignItems:'center'}}>
-          <Text style={[styles.subLabel,{paddingTop:10}]}>Produtos recentes:</Text>
-            <View style={styles.searchContainer}>
-               <TextInput
-                 style={styles.searchInput}
-                 placeholder="🔍 Pesquisar produto..."
-                 placeholderTextColor="#AEAEB2"
-                 value={searchTextProdutos}
-                 onChangeText={handleSearchProdutos}  />
-            </View>
-        </View>
-        <View style={styles.produtosRapidos}>
-          {filtradosProdutos.slice(0, 4).map((prod) => (
-            <TouchableOpacity
-              key={prod.id}
-              style={styles.produtoRapido}
+          ):
+            filtrados.length > 0 ? (
+            filtrados.map((venda,index) => (
+            <VendaItem
+              key={index}
+              venda={venda}
               onPress={() => {
-                setNomeProduto(prod.designacao);
-                setPreco(prod.preco_venda_liquido_1);
+                 setVisibleDetalhesCliente(true)
+                 setVendaSeleccionada(venda)
               }}
-            >
-              <Text style={styles.produtoRapidoText}>{prod.designacao}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* LISTA DE ITENS */}
-        {itens.length > 0 && (
-          <View>
-            <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Itens Adicionados</Text>
-            <FlatList
-              data={itens}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-              renderItem={renderItem}
             />
-          </View>
-        )}
+             ))
+            ): (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>Nenhuma venda encontrada</Text>
+              </View>
+          )
+        }
 
-        {/* TOTAIS */}
-        <View style={styles.totaisCard}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal:</Text>
-            <Text style={styles.totalValue}>{subtotal.toFixed(2)} MT</Text>
-          </View>
-
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>IVA (17%):</Text>
-            <Text style={styles.totalValue}>{iva.toFixed(2)} MT</Text>
-          </View>
-
-          <View style={[styles.totalRow, styles.totalFinal]}>
-            <Text style={styles.totalLabelFinal}>Total:</Text>
-            <Text style={styles.totalValueFinal}>{total.toFixed(2)} MT</Text>
-          </View>
-        </View>
-
-        {/* BOTÕES DE ACÇÃO */}
-        <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.btnSecundario}>
-            <Text style={styles.btnSecundarioText}>Guardar Rascunho</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.btnPrimario}
-            onPress={confirmarVenda}
-          >
-            <Text style={styles.btnPrimarioText}>Confirmar Factura</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ height: 30 }} />
+        <View style={{ height: 16 }} />
       </ScrollView>
-      </KeyboardAvoidingView>
+
+      {/* FAB - Novo cliente */}
+      {/* <TouchableOpacity 
+        style={styles.fab}
+         onPress={() => setVisibleFormCadastro(true)}
+        activeOpacity={0.8}>
+      
+        <Text style={styles.fabText}>+ Novo cliente</Text>
+      </TouchableOpacity> */}
+
+      
+      <View style={styles.bottomNav}>
+        {NAV_ITEMS.map((nav, i) => 
+        {
+          const Icon = nav.icon
+        return (
+          
+          <TouchableOpacity
+            key={i}
+            style={styles.navItem}
+            onPress={() => {
+              navigatePage(i)
+              
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.navIcon, i === 0 && styles.navIconActive]}>
+              <Icon color={'#5c5b5b'}/>
+            </Text>
+            <Text style={[styles.navLabel, i === 0 && styles.navLabelActive]}>
+              {nav.label}
+            </Text>
+            {i === 0 && <View style={styles.navDot} />}
+          </TouchableOpacity>
+        )})}
+      </View>
+
+          {/*Detalhes do cliente seleccionado*/}
+          {/* <DetalhesCliente
+          visible={visibleDetalhesCliente}
+          setVisible={setVisibleDetalhesCliente}
+          cliente={clienteSeleccionado}
+          setVisibleDeletarcliente={setVisibleDeletarCliente}
+          setVisibleEditarcliente = {setVisibleEditarCliente}
+          />
+
+          <DeletarCliente
+            visible={visibleDeletarCliente}
+            setVisible = {setVisibleDeletarCliente}
+            cliente = {clienteSeleccionado}
+            setClientes = {setClientes}
+            setFiltrados = {setFiltrados}
+            setVisibleDetalhesCliente = {setVisibleDetalhesCliente}
+          />
+
+          <AdicionarCliente
+            visible={visibleFormCadastro}
+            setVisible={setVisibleFormCadastro}
+            setLoading={setLoadingClientes}
+            setClientes = {setClientes}
+            setFiltrados = {setFiltrados}
+          />
+
+          <EditarCliente
+            cliente={clienteSeleccionado}
+            visible={visibleEditarCliente}
+            setVisible={setVisibleEditarCliente}
+            setLoading={setLoadingClientes}
+            setClientes = {setClientes}
+            setFiltrados = {setFiltrados}
+          /> */}
+          
+
     </SafeAreaView>
   );
-}
+};
 
+
+
+
+
+
+
+// // ─── Estilos ──────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
    // backgroundColor: '#185FA5',
+   backgroundColor: '#e4e4e4',
+   borderBottomWidth: 2,
   },
-   dialogTextStyle:
-  {
-     paddingRight:10,
-     fontWeight:'bold',
-     color:'#8E8E93'
-  },
+
+  // Header
   header: {
     backgroundColor: '#185FA5',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 14,
+    // borderBottomLeftRadius: 10,
+    // borderBottomRightRadius: 10,
+   
+    borderRadius:12,
+    marginHorizontal:5
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '500',
     color: '#fff',
     marginBottom: 2,
+    borderRadius:4,
+    marginHorizontal:10
   },
-  headerSubtitle: {
+  headerSub: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.75)',
   },
-  scroll: {
-    flex: 1,
+
+  // Search container
+  searchContainer: {
     backgroundColor: '#F2F2F7',
-  },
-  scrollContent: {
-    padding: 14,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
-    marginTop: 12,
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  subLabel: {
-    fontSize: 11,
-    color: '#8E8E93',
-    marginTop: 10,
-    marginLeft: 4,
-    marginBottom: 8,
-  },
-
-  // Cliente
-  clienteSelecionado: {
-    backgroundColor: '#EAF3DE',
-    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  clienteNome: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#3B6D11',
-    marginBottom: 2,
-  },
-  clienteNuit: {
-    fontSize: 12,
-    color: '#3B6D11',
-    opacity: 0.7,
-  },
-  btnMudar: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#3B6D11',
-    borderRadius: 8,
-  },
-  btnMudarText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#fff',
-  },
-  clienteItem: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: '#E5E5EA',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    marginBottom: 6,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  clienteItemNome: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1C1C1E',
-    marginBottom: 2,
-  },
-  clienteItemNuit: {
-    fontSize: 11,
-    color: '#8E8E93',
-  },
-  arrow: {
-    fontSize: 18,
-    color: '#8E8E93',
-  },
-
-  // Formulário de itens
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: '#E5E5EA',
-    padding: 14,
-    marginBottom: 10,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#8E8E93',
-    marginBottom: 6,
-    marginTop: 8,
-  },
-  input: {
-    backgroundColor: '#F2F2F7',
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: '#E5E5EA',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#1C1C1E',
-  },
-  btnAdicionar: {
-    backgroundColor: '#185FA5',
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginTop: 14,
-    alignItems: 'center',
-  },
-  btnAdicionarText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#fff',
-  },
-
-  // Produtos rápidos
-  produtosRapidos: {
-    gap: 8,
-  },
-  produtoRapido: {
-    backgroundColor: '#E6F1FB',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  produtoRapidoText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#185FA5',
-  },
-
-  // Itens adicionados
-  itemRow: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: '#E5E5EA',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 6,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemNome: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#1C1C1E',
-    marginBottom: 3,
-  },
-  itemDetalhes: {
-    fontSize: 11,
-    color: '#8E8E93',
-  },
-  itemRight: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  itemTotal: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#185FA5',
-  },
-  btnRemover: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FCEBEB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnRemoverText: {
-    fontSize: 14,
-    color: '#E24B4A',
-  },
-
-  // Totais
-  totaisCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: '#E5E5EA',
-    padding: 14,
-    marginTop: 16,
-    marginBottom: 16,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    paddingBottom: 10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E5E5EA',
-  },
-  totalLabel: {
-    fontSize: 13,
-    color: '#8E8E93',
-  },
-  totalValue: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#1C1C1E',
-  },
-  totalFinal: {
-    borderBottomWidth: 0,
-    marginBottom: 0,
-    paddingBottom: 0,
-  },
-  totalLabelFinal: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1C1C1E',
-  },
-  totalValueFinal: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#185FA5',
-  },
-
-  // Botões de acção
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  btnSecundario: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 0.5,
-    borderColor: '#185FA5',
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  btnSecundarioText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#185FA5',
-  },
-  btnPrimario: {
-    flex: 1,
-    backgroundColor: '#185FA5',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  btnPrimarioText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#fff',
-  },
-   searchContainer: {
-    backgroundColor: '#F2F2F7',
-    //paddingHorizontal: 14,
-    paddingLeft:12,
     paddingTop: 12,
     paddingBottom: 10,
-    flex:1,
-    
   },
   searchInput: {
+    // backgroundColor: '#fff',
+    // borderRadius: 12,
+    // borderWidth: 0.5,
+    // borderColor: '#E5E5EA',
+    // paddingHorizontal: 14,
+    // paddingVertical: 11,
+    // fontSize: 13,
+    // color: '#1C1C1E',
 
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -766,4 +467,188 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
-});
+  // ScrollView
+  scroll: {
+    flex: 1,
+     backgroundColor: '#F2F2F7', 
+  },
+  scrollContent: {
+    padding: 20,
+  },
+
+  // cliente card
+  clienteCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: '#E5E5EA',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  clienteLeft: {
+    flex: 1,
+    gap: 6,
+  },
+  clienteNome: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1C1C1E',
+  },
+  clienteRight: {
+    alignItems: 'flex-end',
+    gap: 3,
+  },
+  clientePreco: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#185FA5',
+  },
+  clienteIVA: {
+    fontSize: 11,
+    color: '#8E8E93',
+  },
+
+  // Categoria tag
+  tagCategoria: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 99,
+    alignSelf: 'flex-start',
+  },
+  tagCategoriaText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 15,
+    color: '#8E8E93',
+  },
+
+  // FAB
+  fab: {
+    position: 'absolute',
+    bottom: 130,
+    right: 16,
+    backgroundColor: '#185FA5',
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#185FA5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#fff',
+  },
+
+  // Bottom nav
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderTopWidth: 0.5,
+    borderTopColor: '#E5E5EA',
+    paddingTop: 8,
+    paddingBottom: 20,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+  },
+  navIcon: {
+    fontSize: 18,
+    color: '#8E8E93',
+  },
+  navIconActive: {
+    color: '#185FA5',
+  },
+  navLabel: {
+    fontSize: 10,
+    color: '#8E8E93',
+  },
+  navLabelActive: {
+    color: '#185FA5',
+    fontWeight: '500',
+  },
+  navDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#185FA5',
+    marginTop: 1,
+  },
+  dialogTextStyle:
+  {
+     paddingRight:10,
+     fontWeight:'bold',
+     color:'#000'
+  },
+  dialogTextIsencao:
+  {
+     paddingRight:10,
+     fontWeight:'bold',
+     color:'#4ef097'
+  },
+  dialogContentStyle:
+  {
+    flexDirection: 'row',
+    alignItems:'center',
+    marginBottom:10
+  }, 
+
+  dialogContent:
+  {
+    flexDirection: 'row',
+    alignItems:'center',
+    marginBottom:2
+    
+  }, 
+  
+  TextFieldStyling:
+  {
+    marginTop:2,
+    borderRadius:8,
+    borderWidth:1,
+    borderColor: '#7c7c7c6c',
+    backgroundColor: '#eff3fd',
+    color:'#000',
+    flex: 1
+  },
+
+  loadingContainer:
+  {
+    flex:1,
+    alignItems:"center",
+    justifyContent:"center",
+    backgroundColor: '#F2F2F7',
+
+  },
+
+}) 
+
+;
+
+
+
+
+
+
+

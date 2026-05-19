@@ -123,5 +123,16 @@ export interface Motivo_Isencao
 
 }
 
+export interface Vendas
+{
+    id: number,
+    valor_pago: string,
+    contribuinte: string,
+    nome_doc: string,
+    ano_serie: string,
+    estado: string,
+    total_doc: string
+    produtos:Produtos
+}
 
 

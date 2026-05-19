@@ -159,6 +159,11 @@ const ClienteItem = ({ cliente, onPress}:clienteItemProps) => {
        {
             router.push("/(authenticated)/produtos")
        }
+
+      if (pageIndex === 0) 
+      {
+          router.push("/(authenticated)/vendas")
+      }
        
   }
   
@@ -372,7 +377,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
    // backgroundColor: '#185FA5',
-   backgroundColor: '#f4f6f9',
+   backgroundColor: '#e4e4e4',
    borderBottomWidth: 2,
   },
 

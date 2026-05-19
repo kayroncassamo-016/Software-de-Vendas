@@ -31,7 +31,7 @@ export  function useAuth()
             const storedToken = await AsyncStorage.getItem("@token")
             const storedUser = await AsyncStorage.getItem("@user")
 
-            console.log(storedToken)
+            console.log('stored token: ',storedToken)
             console.log(storedUser)
             setLoading(true)
             setNetworkError(false)

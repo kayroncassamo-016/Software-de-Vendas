@@ -270,7 +270,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
           const response = await api.get('/motivoisencao')
     
-          setMotivosIsencao(response.data.data.data)
+          setMotivosIsencao(response.data.data)
     
         }
         catch(err)
@@ -291,7 +291,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
           const response = await api.get('/marca')
     
-          setMarcas(response.data.data.data)
+          setMarcas(response.data.data)
           // console.log('impostos:', response.data.data.data)
     
         }
@@ -313,7 +313,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
           const response = await api.get('/familia')
     
-          setFamilias(response.data.data.data)
+          setFamilias(response.data.data)
           // console.log('impostos:', response.data.data.data)
     
         }
@@ -334,7 +334,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
           const response = await api.get('/tipo')
     
-          setTipos(response.data.data.data)
+          setTipos(response.data.data)
           // console.log('impostos:', response.data.data.data)
     
         }
@@ -355,7 +355,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
           const response = await api.get('/imposto')
     
-          setImpostos(response.data.data.data)
+          setImpostos(response.data.data)
           // console.log('impostos:', response.data.data.data)
     
         }
