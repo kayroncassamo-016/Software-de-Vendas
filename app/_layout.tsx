@@ -5,7 +5,9 @@ import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { TouchableOpacity } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
+
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -13,6 +15,7 @@ export default function RootLayout() {
   const theme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
 
   return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
     <AuthProvider>
       <PaperProvider>
       <Stack
@@ -44,7 +47,6 @@ export default function RootLayout() {
              headerTintColor:'#5c5b5b',
              headerStyle: {
                   backgroundColor: '#e4e4e4',
-            
                },
 
               headerLeft: () => (
@@ -61,6 +63,35 @@ export default function RootLayout() {
 
           }}/>
 
+
+           <Stack.Screen name="components/Vendas/AbrirRascunho" options={
+          {  headerShown: true,
+             headerTitle:'Voltar',
+             animation:'slide_from_right',
+            
+             headerTintColor:'#5c5b5b',
+             headerStyle: {
+                  backgroundColor: '#e4e4e4',
+               },
+
+              headerLeft: () => (
+                <TouchableOpacity
+                  onPress={() => router.replace('/(authenticated)/vendas')}
+                >
+                  <Ionicons
+                    name="arrow-back"
+                    size={24}
+                    color="#5c5b5b"
+                  />
+                </TouchableOpacity>
+              ),
+
+          }}/>
+
+
+
+
+
            <Stack.Screen name="(authenticated)/vendas" options={
           {headerShown: false}}/>
       
@@ -76,5 +107,6 @@ export default function RootLayout() {
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
      </PaperProvider>
     </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

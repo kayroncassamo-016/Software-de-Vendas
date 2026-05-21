@@ -1,6 +1,6 @@
  import { Select } from '@/components/project/Select';
 import { api } from '@/services/api';
-import { Clientes, Fornecedores, Produtos } from '@/types/types';
+import { Clientes, Fornecedores, Produtos, Vendas } from '@/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 
@@ -19,7 +19,8 @@ import {
   View
 } from 'react-native';
 // Definir tipos
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+//import { Item } from 'react-native-paper/lib/typescript/components/Drawer/Drawer';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Item {
@@ -31,8 +32,9 @@ interface Item {
   preco: number;
 }
 
+export default function AbrirRascunho() 
 
-export default function VendasScreen() {
+{
 
   const [clienteSelecionado, setClienteSelecionado] = useState<Clientes | null>(null);
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState<Fornecedores | null>(null);
@@ -55,27 +57,120 @@ export default function VendasScreen() {
   const [filtradosProdutos, setFiltradosProdutos] = useState<Produtos[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedores[]>([]);
   const [filtradosFornecedores, setFiltradosFornecedores] = useState<Fornecedores[]>([]);
-  const [selectedTipoDocumento, setSelectedTipoDocumento] = useState('');
+  const [selectedTipoDocumento, setSelectedTipoDocumento] = useState<string>('');
   const [selectedNomeDocumento, setSelectedNomeDocumento] = useState('');
   const [selectedCondicaoPagamento, setSelectedCondicaoPagamento] = useState('');
   const [selectedMetodoPagamento, setSelectedMetodoPagamento] = useState('');
   const [loadingGuardarRascunho, setLoadingGuardarRascunho] = useState(false)
   const [activeNav, setActiveNav] = useState(0);
+
+  const [venda,setVenda] = useState<Vendas|null>(null)
   const router = useRouter()
 
   // const TipoDocumento = ['Factura','Nota de devolução',
   //   'Guia de transporte','Recibo','Orçamento']
 
-  const TipoDocumento = ['VD','NE',]
-  const nomeDocumento =['Venda a dinheiro', 'Nota de entrada']
+  const TipoDocumento = ['VD','NE',
+     ]
+  const nomeDocumento = ['Venda a dinheiro', 'Nota de entrada']
 
-  const condicoesPagamento =['Pronto pagamento','Pagamento em 15 dias'
+  const condicoesPagamento = ['Pronto pagamento','Pagamento em 15 dias'
     ,'Pagamento em 30 dias'
   ]
-  const metodoPagamento =['Numerário','Transferência móvel','POS', 'Depósito'
-  ]
+
+  const metodoPagamento = ['Numerário','Transferência móvel',]
+  
+
+
+   const {id} = useLocalSearchParams()
+
+   useEffect(()=>{
+     
+    async function loadData()
+    {
+        await loadVenda()
+    }
+
+    loadData()
+
+   },[id])
+
+   useEffect(() => {
+
+    setSelectedTipoDocumento(venda?.tipo_doc ?? '');
+    setSelectedNomeDocumento(venda?.nome_doc ?? '');
+    setNrContribuinte(venda?.contribuinte ?? '');
+    setSelectedCondicaoPagamento(venda?.condicao_pagamento ?? '');
+    setIdSelectedProduto(venda?.produto_id?? 0)
+    // setSelectedMetodoPagamento(venda?.pagamentos.find
+    //   (pagamento => ))
+
+    setSelectedMetodoPagamento('')//Comecar daqui mesmo
+
+    const clienteSeleccionado = clientes.find
+    (cliente => cliente.id === venda?.cliente_id)
+
+    setClienteSelecionado(clienteSeleccionado??null)
+    
+    const fornecedorSelecionado = fornecedores.find 
+    (fornecedor => fornecedor.id === venda?.fornecedor_id)
+
+    setFornecedorSelecionado(fornecedorSelecionado??null)
+
+
+ setItens(
+    (venda?.linhas || []).map(l => {
+      const produto = produtos.find(p => p.id === l.produto_id);
+
+      return {
+        id: l.id,
+        produto_id: l.produto_id,
+        nome: produto?.designacao ?? 'Produto não encontrado',
+        quantidade: Number(l.qtd),
+        preco: Number(l.pr_unit_sem_iva),
+        taxa: String(l.taxa_iva),
+      };
+    })
+  );
+  
+}, [venda,produtos,clientes,fornecedores]);
+
+
+   async function loadVenda()
+   {
+    const token  = await AsyncStorage.getItem("@token")
+
+      try {
+      
+            const response = await api.get(`/documentos/${id}`,
+               {
+                   headers: { Authorization: `Bearer ${token}` },
+               }   
+            )
+            const vendaAPI = response.data.data; // 
+
+             
+            setVenda(response.data.data)
+
+             console.log(JSON.stringify(vendaAPI, null, 2));
+        }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+
+        finally
+        {
+           
+        }
+
+   }
+
 
   useEffect(()=> {
+    
+
     async function loadData()
     {
        await loadClientes ()
@@ -85,7 +180,7 @@ export default function VendasScreen() {
     loadData()
   },[])
 
-  useEffect(()=>{
+  useEffect(()=> {
 
     if (selectedProduto)
     {
@@ -105,7 +200,7 @@ export default function VendasScreen() {
   },[selectedProduto,clienteSelecionado])
 
 
-   useEffect(()=>{
+   useEffect (()=>{
 
     if (fornecedorSelecionado)
     {
@@ -114,7 +209,7 @@ export default function VendasScreen() {
     }
     else
     {
-        setIdSelectedProduto(0)
+        setIdFornecedorSelecionado(0)
     }
 
    
@@ -139,6 +234,9 @@ export default function VendasScreen() {
     }
 
   },[selectedTipoDocumento])
+
+
+
 
   const NAV_ITEMS = [
   { icon: ShoppingBag , label: 'Vendas' },
@@ -283,10 +381,9 @@ async function loadFornecedores()
             tipo_doc: selectedTipoDocumento,
             nome_doc: selectedNomeDocumento,
             ano_serie: new Date().getFullYear().toString(),
-            // contribuinte: nrContribuinte,
-
+            contribuinte: nrContribuinte,
             fornecedor_id: IdFornecedorSelecionado,
-            // nome_fornecedor: fornecedorSelecionado?.nome,
+            nome_fornecedor: fornecedorSelecionado?.nome,
             condicao_pagamento:selectedCondicaoPagamento??'',
           // estado:'RASCUNHO',
          
@@ -311,7 +408,7 @@ async function loadFornecedores()
         
        Alert.alert(
       'Factura criada em rascunho',
-      `Fornecedor: ${fornecedorSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
+      `Cliente: ${fornecedorSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
         [
         { text: 'OK', style: 'cancel' },
         { text: 'GERAR PDF', onPress: () => console.log('Enviando PDF...') },
@@ -546,6 +643,10 @@ async function loadFornecedores()
     </View>
   );
 
+  console.log('tipo:', selectedTipoDocumento)
+console.log('nome:', selectedNomeDocumento)
+
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
@@ -576,12 +677,11 @@ async function loadFornecedores()
             <View style={{gap:10,marginBottom:15}}>
               <Text style={styles.dialogTextStyle}>Nome do documento:</Text>
               <TextInput
-                    style={styles.input}
-                    placeholder=""
-                    value={selectedNomeDocumento}
-                    editable={false}
-                    keyboardType="numeric"  />
-
+                  style={styles.input}
+                  placeholder=""
+                  value={selectedNomeDocumento}
+                  editable={false}
+                  keyboardType="numeric"  />   
             </View>
 
              <Text style={[styles.dialogTextStyle,
@@ -625,7 +725,7 @@ async function loadFornecedores()
         
 
           { selectedNomeDocumento ===nomeDocumento[1] 
-            || selectedTipoDocumento === 'NE' ?
+            || selectedTipoDocumento === TipoDocumento[1] ?
             (
             <View style={{flexDirection:'row',alignItems:'center'}}>
               <Text style={[styles.sectionTitle,{
@@ -667,7 +767,7 @@ async function loadFornecedores()
         
 
          { selectedNomeDocumento ===nomeDocumento[1] 
-         || selectedTipoDocumento === 'NE' ?
+         || selectedTipoDocumento === TipoDocumento[1]?
 
          (
             fornecedorSelecionado ? (
@@ -807,50 +907,60 @@ async function loadFornecedores()
             </TouchableOpacity>
           ))}
         </View>
-           {(selectedNomeDocumento !==nomeDocumento[1] 
-                    || selectedTipoDocumento !== TipoDocumento[1]) && 
+        
+         {selectedNomeDocumento !==nomeDocumento[1] 
+            && selectedTipoDocumento !== TipoDocumento[1] ?
+       (
+        <View>
+       
 
-                  <View>
-                    <View style={{gap:10,marginTop:20}}>
-                      <Text style={styles.dialogTextStyle}>Método de pagamento:</Text>
-                          <Select
-                            label=""
-                            placeholder="Selecione o método de pagamento"
-                            options ={metodoPagamento.map(metodo => ({
-                              label: metodo ,
-                              value: metodo 
-                            }))}
-                            selectedValue={selectedMetodoPagamento}
-                            onValueChange={setSelectedMetodoPagamento}
-                          />
-                  </View>
+
+         <View style={{gap:10,marginTop:20}}>
+              <Text style={styles.dialogTextStyle}>Método de pagamento:</Text>
+                  <Select
+                    label=""
+                    placeholder="Selecione o método de pagamento"
+                    options ={metodoPagamento.map(metodo => ({
+                      label: metodo ,
+                      value: metodo 
+                    }))}
+                    selectedValue={selectedMetodoPagamento}
+                    onValueChange={setSelectedMetodoPagamento}
+                  />
+            </View>
+
+
+          <View style={styles.card}>
         
+           
+            <Text style={styles.inputLabel}>Método: </Text>
+            <TextInput
+              style={styles.inputUnEditable}
+              value={selectedMetodoPagamento}
+              editable={false}
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.inputLabel}>Banco / Serviço: </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Banco"
+              
+            />
+             <Text style={styles.inputLabel}>Nº de movimento: </Text>
+             <TextInput
+              style={styles.input}
+              placeholder="ex: 1234xx, 5678xx, etc"
+              keyboardType="decimal-pad"
+            />
+            </View>
+        </View>):
         
-                  <View style={styles.card}>
-                
-                   
-                    <Text style={styles.inputLabel}>Método: </Text>
-                    <TextInput
-                      style={styles.inputUnEditable}
-                      value={selectedMetodoPagamento}
-                      editable={false}
-                      keyboardType="numeric"
-                    />
-        
-                    <Text style={styles.inputLabel}>Banco / Serviço: </Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Banco"
-                      
-                    />
-                     <Text style={styles.inputLabel}>Nº de movimento: </Text>
-                     <TextInput
-                      style={styles.input}
-                      placeholder="ex: 1234xx, 5678xx, etc"
-                      keyboardType="decimal-pad"
-                    />
-                    </View>
-                </View>}
+        (
+          <View>
+
+          </View>
+        )}
 
 
         {/* LISTA DE ITENS */}

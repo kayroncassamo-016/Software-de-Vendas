@@ -129,10 +129,59 @@ export interface Vendas
     valor_pago: string,
     contribuinte: string,
     nome_doc: string,
+     tipo_doc:string,
     ano_serie: string,
     estado: string,
     total_doc: string
-    produtos:Produtos
+    // produtos:Produtos,
+    cliente_id?: number,
+    fornecedor_id?:number
+    nome_fornecedor?:string,
+    condicao_pagamento?: string,
+    produto_id: number,
+    qtd: number,
+    taxa_iva:string,
+    pr_unit_sem_iva: string,
+    //  metodo?: string,
+    //  valor:string,
+    //  banco_servico?:string,
+    //  nr_movimento?:number,
+
+    pagamentos:pagamento[]
+
+     linhas:linha [],
+}
+
+export interface pagamento
+{
+    metodo?: string,
+     valor:string,
+     banco_servico?:string,
+     nr_movimento?:number,
+}
+
+export interface linha 
+{
+    id:number,
+    produto_id: number,
+    qtd: number,
+    taxa_iva:string,
+    pr_unit_sem_iva: string,
+
+}
+
+export interface Fornecedores
+{
+    id:number,
+    codigo:string,
+    nome:string,
+    email:string,
+    telefone:string,
+    morada:string,
+    nuit:string,
+    cidade:string
+
+
 }
 
 

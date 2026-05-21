@@ -2,23 +2,28 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from 'expo-router';
 import { Cog, Grid2X2, Handshake, Package, Plus, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-
 import {
-    ActivityIndicator,
-    // SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  // SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+//import { Swipeable } from 'react-native-gesture-handler';
+import 'react-native-gesture-handler';
+// import Swipeable from 'react-native-gesture-handler/Swipeable';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
 import { Vendas } from '@/types/types';
+import { useRef } from 'react';
 
 
 
@@ -113,44 +118,207 @@ const [vendas, setVendas] = useState<Vendas[]>([]);
 const [loadingClientes,setLoadingClientes] = useState(false)
 const [filtrados, setFiltrados] = useState<Vendas[]>([]);
 const [vendaSeleccionada, setVendaSeleccionada] = useState<Vendas|null>(null)
-const [visibleFormCadastro, setVisibleFormCadastro] = useState(false)
-const [visibleDetalhesCliente, setVisibleDetalhesCliente] = useState(false)
-const [visibleDeletarCliente, setVisibleDeletarCliente] = useState(false)
-const [visibleEditarCliente, setVisibleEditarCliente] = useState(false)
+
 
 
 const router = useRouter()
 
 
 
-const VendaItem = ({ venda, onPress}:clienteItemProps) => {
+// const VendaItem = ({ venda, onPress}:clienteItemProps) => {
+
+
+//   return (
+//     <TouchableOpacity 
+//       style={styles.clienteCard}
+//       onPress={onPress}
+//       activeOpacity={0.7}
+//     >
+//       <View style={styles.clienteLeft}>
+//         <Text style={styles.clienteNome}>{venda.nome_doc}</Text>
+//         {/* <BadgeTipoCliente tipo = {cliente.tipo}/> */}
+        
+//         <Text style ={{
+//           color:'#838282'
+//         }}>
+//           {venda.ano_serie}
+//         </Text>
+//       </View>
+
+//       <View style={''}>
+//           {/* {cliente.tipo} */}
+//           <BadgeEstadoVenda estado = {venda.estado}/>
+//       </View>
+//     </TouchableOpacity>
+    
+//   );
+// };
+
+
+const VendaItem = ({ venda, onPress }: clienteItemProps) => {
+
+  const swipeableRef = useRef<any>(null);
+
+  const confirmarVenda = async () => {
+    try {
+      const token = await AsyncStorage.getItem("@token");
+
+      await api.post(`/documentos/confirm/${venda.id}`, 
+       // { estado: "CONFIRMADO" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      swipeableRef.current?.close() 
+      
+
+      setVendas(prev =>
+        prev.map(v =>
+          v.id === venda.id ? { ...v, estado: "CONFIRMADO" } : v
+        )
+      );
+
+      setFiltrados(prev =>
+        prev.map(v =>
+          v.id === venda.id ? { ...v, estado: "CONFIRMADO" } : v
+        )
+      );
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+
+  const cancelarVenda = async () => {
+
+  try {
+
+    const token = await AsyncStorage.getItem("@token");
+
+    await api.post(
+      `/documentos/cancel/${venda.id}`,
+      //{ estado: "CANCELADO" },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    setVendas(prev =>
+      prev.map(v =>
+        v.id === venda.id
+          ? { ...v, estado: "CANCELADO" }
+          : v
+      )
+    );
+
+    setFiltrados(prev =>
+      prev.map(v =>
+        v.id === venda.id
+          ? { ...v, estado: "CANCELADO" }
+          : v
+      )
+    );
+
+    swipeableRef.current?.close();
+
+  } catch (err) {
+    console.log(err);
+  }
+
+};
+
+  const renderRightActions = () => (
+    <View style={{
+      justifyContent: 'center',
+      backgroundColor: '#3fa04c',
+      paddingHorizontal: 20,
+      flex: 1,
+      borderRadius: 12,
+      marginBottom: 8
+    }}>
+      <Text style={{ color: '#fff', fontWeight: '600' }}>
+        Confirmar venda →
+      </Text>
+    </View>
+  );
+
+  const renderLeftActions = () => (
+    <View style={{
+      justifyContent: 'center',
+      backgroundColor: '#d44e4e',
+      paddingHorizontal: 20,
+      alignItems:'flex-start',
+      flex: 1,
+      borderRadius: 12,
+      marginBottom: 8
+    }}>
+      <Text style={{ color: '#fff', fontWeight: '600' }}>
+         ← Cancelar venda 
+      </Text>
+    </View>
+  );
+
 
 
   return (
-    <TouchableOpacity 
-      style={styles.clienteCard}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View style={styles.clienteLeft}>
-        <Text style={styles.clienteNome}>{venda.nome_doc}</Text>
-        {/* <BadgeTipoCliente tipo = {cliente.tipo}/> */}
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      renderLeftActions={renderLeftActions}
+      onSwipeableOpen={(direction) => {
         
-        <Text style ={{
-          color:'#838282'
-        }}>
-          {venda.ano_serie}
-        </Text>
-      </View>
+        if (direction ==='left'){
+        
+          Alert.alert(
+          "Confirmar venda",
+          "Queres confirmar esta venda?",
+          [
+            { text: "Cancelar", style: "cancel",  
+              onPress: () => swipeableRef.current?.close() },
+            { text: "Sim", onPress: confirmarVenda }
+          ]
+        );
+      }
+      if (direction ==='right'){
+        Alert.alert(
+        "Cancelar venda",
+        "Queres cancelar esta venda?",
+        [
+        {
+          text: "Não",
+          style: "cancel",
+          onPress: () => swipeableRef.current?.close()
+        },
+        {
+          text: "Sim",
+          onPress: cancelarVenda
+        }
+      ]
+    );
+  }
+       
+      }}
+    >
+      <TouchableOpacity
+        style={styles.clienteCard}
+        onPress={onPress}
+      >
+        <View style={styles.clienteLeft}>
+          <Text style={styles.clienteNome}>{venda.nome_doc}</Text>
+          <Text style={{ color: '#838282' }}>
+            {venda.ano_serie}
+          </Text>
+        </View>
 
-      <View style={''}>
-          {/* {cliente.tipo} */}
-          <BadgeEstadoVenda estado = {venda.estado}/>
-      </View>
-    </TouchableOpacity>
-    
+        <BadgeEstadoVenda estado={venda.estado} />
+      </TouchableOpacity>
+    </Swipeable>
   );
 };
+
+
 
   function navigatePage(pageIndex:number)
   {
@@ -249,6 +417,18 @@ useEffect(() =>
         router.push('/(authenticated)/vendasForm')
     }
 
+    function AbrirVendasFormRascunho()
+    {
+         router.push({
+            pathname:"/(authenticated)/vendasForm",
+            params:
+            {
+              id: vendaSeleccionada?.id,
+            
+            }
+        })
+    }
+
 
 
   return (
@@ -308,8 +488,12 @@ useEffect(() =>
               key={index}
               venda={venda}
               onPress={() => {
-                 setVisibleDetalhesCliente(true)
-                 setVendaSeleccionada(venda)
+                 router.push({
+                  pathname: "/components/Vendas/AbrirRascunho",
+                  params: {
+                    id: venda.id,
+                  }
+            })
               }}
             />
              ))
@@ -359,41 +543,7 @@ useEffect(() =>
         )})}
       </View>
 
-          {/*Detalhes do cliente seleccionado*/}
-          {/* <DetalhesCliente
-          visible={visibleDetalhesCliente}
-          setVisible={setVisibleDetalhesCliente}
-          cliente={clienteSeleccionado}
-          setVisibleDeletarcliente={setVisibleDeletarCliente}
-          setVisibleEditarcliente = {setVisibleEditarCliente}
-          />
 
-          <DeletarCliente
-            visible={visibleDeletarCliente}
-            setVisible = {setVisibleDeletarCliente}
-            cliente = {clienteSeleccionado}
-            setClientes = {setClientes}
-            setFiltrados = {setFiltrados}
-            setVisibleDetalhesCliente = {setVisibleDetalhesCliente}
-          />
-
-          <AdicionarCliente
-            visible={visibleFormCadastro}
-            setVisible={setVisibleFormCadastro}
-            setLoading={setLoadingClientes}
-            setClientes = {setClientes}
-            setFiltrados = {setFiltrados}
-          />
-
-          <EditarCliente
-            cliente={clienteSeleccionado}
-            visible={visibleEditarCliente}
-            setVisible={setVisibleEditarCliente}
-            setLoading={setLoadingClientes}
-            setClientes = {setClientes}
-            setFiltrados = {setFiltrados}
-          /> */}
-          
 
     </SafeAreaView>
   );
