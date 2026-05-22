@@ -285,17 +285,17 @@ const total = precoL
         
       }
 
-      await api.post('/products',
+      await api.post('/produtos',
         payload, {
         headers: { Authorization: `Bearer ${token}` },
         }   
       )
       setLoadingProdutos(true)
 
-      const response = await api.get('/products')
+      const response = await api.get('/produtos')
 
-      setProdutos(response.data.data.data)
-      setFiltrados(response.data.data.data)
+      setProdutos(response.data.data)
+      setFiltrados(response.data.data)
 
       Alert.alert('Produto cadastrado com sucesso!',)
 
@@ -633,19 +633,19 @@ useEffect(()=> {
 
         setLoadingProdutos(true)
 
-            const response = await api.get("/products",
-                {
+            const response = await api.get("/produtos",
+            {
                headers: { Authorization: `Bearer ${token}` },
             }   
             )
-            const produtosAPI = response.data.data.data; // 
+            const produtosAPI = response.data.data; // 
 
              
-            setProdutos(response.data.data.data)
-            setFiltrados(response.data.data.data)
-             //console.log("produtos da base: ", response.data.data.data)
+            setProdutos(response.data.data)
+            setFiltrados(response.data.data)
+            console.log("produtos da base: ", response.data.data)
 
-             console.log(JSON.stringify(produtosAPI, null, 2));
+            console.log(JSON.stringify(produtosAPI, null, 2));
         }
 
         catch(err)
@@ -713,7 +713,7 @@ useEffect(()=> {
                   Nome:
                 </Text>
                 <Text style={{paddingLeft:5}}>
-                  {produtoSeleccionado?.designacao||""}
+                  {produtoSeleccionado?.designacao??''}
                 </Text>
               </View>
 
@@ -742,6 +742,16 @@ useEffect(()=> {
                 </Text>
                 <Text style={{paddingLeft:5}}>
                   {produtoSeleccionado?.categoria.designacao}
+                </Text>
+              </View>
+
+               
+              <View style={{flexDirection:'row',paddingTop:5}}>
+                <Text style={{fontWeight:'bold'}}>
+                  Stock:
+                </Text>
+                <Text style={{paddingLeft:5}}>
+                  {parseFloat(produtoSeleccionado?.stock_actual??'').toFixed(0)}
                 </Text>
               </View>
 

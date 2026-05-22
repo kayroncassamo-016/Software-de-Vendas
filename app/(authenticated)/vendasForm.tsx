@@ -245,14 +245,14 @@ async function loadFornecedores()
 
        try {
       
-            const response = await api.get("/products",
+            const response = await api.get("/produtos",
                {
                headers: { Authorization: `Bearer ${token}` },
                }   
             )
 
-            setProdutos(response.data.data.data)
-            setFiltradosProdutos(response.data.data.data)
+            setProdutos(response.data.data)
+            setFiltradosProdutos(response.data.data)
              //console.log("clientes da base: ", response.data.data.data)
 
         }
@@ -348,6 +348,7 @@ async function loadFornecedores()
             taxa_iva:item.taxa,
             pr_unit_sem_iva: item.preco
           })),
+          pagamento:selectedMetodoPagamento,
 
           pagamentos:[
           {

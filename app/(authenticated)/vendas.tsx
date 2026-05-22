@@ -41,19 +41,34 @@ const BadgeEstadoVenda = ({estado} :any) => {
   if (estado === 'CONFIRMADO')
   {
     return (
-      <Text style ={{
-        backgroundColor: '#b9fcce',
-        color:'#3fa04c',
-        paddingHorizontal:5,
-        paddingVertical:2,
-        borderRadius:20,
-        fontSize:11,
-        fontWeight:500
-      }}
-      >
-        {estado}
+      <View>
+        <Text style ={{
+          backgroundColor: '#b9fcce',
+          color:'#3fa04c',
+          paddingHorizontal:5,
+          paddingVertical:2,
+          borderRadius:20,
+          fontSize:11,
+          fontWeight:500
+        }}
+        >
+          {estado}
+        
+        </Text>
       
-      </Text>
+        {/* <TouchableOpacity
+        style={{position:'absolute',
+          top:30,
+          left:10
+          }}
+        >
+        <Text style={{
+          fontSize:10,
+          }}>
+            Exportar em pdf
+        </Text>
+        </TouchableOpacity> */}
+      </View>
     )
   }
   else if (estado === 'CANCELADO')
@@ -125,34 +140,7 @@ const router = useRouter()
 
 
 
-// const VendaItem = ({ venda, onPress}:clienteItemProps) => {
 
-
-//   return (
-//     <TouchableOpacity 
-//       style={styles.clienteCard}
-//       onPress={onPress}
-//       activeOpacity={0.7}
-//     >
-//       <View style={styles.clienteLeft}>
-//         <Text style={styles.clienteNome}>{venda.nome_doc}</Text>
-//         {/* <BadgeTipoCliente tipo = {cliente.tipo}/> */}
-        
-//         <Text style ={{
-//           color:'#838282'
-//         }}>
-//           {venda.ano_serie}
-//         </Text>
-//       </View>
-
-//       <View style={''}>
-//           {/* {cliente.tipo} */}
-//           <BadgeEstadoVenda estado = {venda.estado}/>
-//       </View>
-//     </TouchableOpacity>
-    
-//   );
-// };
 
 
 const VendaItem = ({ venda, onPress }: clienteItemProps) => {
@@ -183,8 +171,9 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
         )
       );
 
-    } catch (err) {
+    } catch (err:any) {
       console.log(err);
+      console.log(err.response);
     }
   };
 
@@ -262,14 +251,31 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
 
 
 
-  return (
+    return (
     <Swipeable
       ref={swipeableRef}
-      renderRightActions={renderRightActions}
-      renderLeftActions={renderLeftActions}
+      renderRightActions= {
+         renderRightActions
+        // () => { 
+
+        // if (venda.estado ==='RASCUNHO')
+        // {
+        //    renderRightActions
+        // } } 
+      }
+      renderLeftActions={ 
+         renderLeftActions
+
+        // () => {
+        // if (venda.estado !=='CANCELADO')
+        // {
+        //        
+        // }  }
+      
+    }
       onSwipeableOpen={(direction) => {
-        
-        if (direction ==='left'){
+
+        if (direction ==='left' && venda.estado ==='RASCUNHO'){
         
           Alert.alert(
           "Confirmar venda",
@@ -281,7 +287,29 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
           ]
         );
       }
-      if (direction ==='right'){
+      else  if (direction ==='left' && venda.estado ==='CONFIRMADO'){
+        Alert.alert(
+          'Não é possível confirmar uma venda já confirmada!',
+           ' Venda já confirmada',
+          [
+            { text: "Ok", style: "cancel",  
+              onPress: () => swipeableRef.current?.close() },
+          ]
+        );
+      }
+
+      else  if (direction ==='left' && venda.estado ==='CANCELADO'){
+        Alert.alert(
+          'Não é possível cancelar uma venda já confirmada!',
+           ' Venda já confirmada.',
+          [
+            { text: "Ok", style: "cancel",  
+              onPress: () => swipeableRef.current?.close() },
+          ]
+        );
+      }
+
+      if (direction ==='right'&& venda.estado ==='RASCUNHO'){
         Alert.alert(
         "Cancelar venda",
         "Queres cancelar esta venda?",
@@ -298,6 +326,41 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
       ]
     );
   }
+      else if (direction ==='right'&& venda.estado ==='CONFIRMADO'){
+        Alert.alert(
+          "Cancelar venda",
+          "Queres cancelar esta venda?",
+        [  
+        {
+          text: "Não",
+          style: "cancel",
+          onPress: () => swipeableRef.current?.close()
+        },
+        {
+          text: "Sim",
+          onPress: cancelarVenda
+        }
+      
+      ]
+    );
+  }
+
+    else if (direction ==='right'&& venda.estado ==='CANCELADO'){
+        Alert.alert(
+         'Não é possível cancelar uma venda já cancelada!',
+           ' Venda já cancelada.',
+        [
+        {
+          text: "Ok",
+          style: "cancel",
+          onPress: () => swipeableRef.current?.close()
+        },
+      
+      ]
+    );
+  }
+
+
        
       }}
     >
@@ -383,8 +446,9 @@ useEffect(() =>
   {
     const token  = await AsyncStorage.getItem("@token")
 
-    try{
-        setLoadingClientes(true)
+        try
+          {
+            setLoadingClientes(true)
 
             const response = await api.get("/documentos",
                {
@@ -393,13 +457,12 @@ useEffect(() =>
             )
             const vendasAPI = response.data.data.data; // 
 
-             
             setVendas(response.data.data.data)
             setFiltrados(response.data.data.data)
              
+            console.log(JSON.stringify(vendasAPI, null, 2));
 
-             console.log(JSON.stringify(vendasAPI, null, 2));
-        }
+          }
 
         catch(err:any)
         {

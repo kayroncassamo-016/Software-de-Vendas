@@ -9,6 +9,7 @@ import {
     View
 } from 'react-native';
 import { Button, Dialog, Portal } from 'react-native-paper';
+
 interface ProdutoProps
 {
     visible: boolean
@@ -44,15 +45,15 @@ async function handleDeletarProduto()
      
      setLoadingDelete(true)
 
-     await api.delete(`/products/${produto?.id}`,
+     await api.delete(`/produtos/${produto?.id}`,
      {
         headers: { Authorization: `Bearer ${token}` },
      })
      //setLoading(true)  
-     const response = await api.get('/products')
+     const response = await api.get('/produtos')
     
-     setProdutos(response.data.data.data)
-     setFiltrados(response.data.data.data)
+     setProdutos(response.data.data)
+     setFiltrados(response.data.data)
      
        
      Alert.alert('Produto deletado com sucesso!',)
@@ -119,8 +120,7 @@ async function handleDeletarProduto()
                         backgroundColor:colors.red,
                         borderRadius: 8,
                         padding:6,
-                        fontWeight:'bold'}}
-                    >
+                        fontWeight:'bold'}}>
                        {
                         loadingDelete ?
                         (

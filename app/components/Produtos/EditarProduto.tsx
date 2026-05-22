@@ -426,16 +426,16 @@ export function EditarProdutoForm({produto,visible,setVisible,
           
            //console.log('id eh este ',produto?.id)
 
-           await api.put(`/products/${produto?.id}`,
+           await api.put(`/produtos/${produto?.id}`,
             payload, {
             headers: { Authorization: `Bearer ${token}` },
             } 
           )
         
 
-          const response = await api.get('/products')
-           setProdutos(response.data.data.data)
-           setFiltrados(response.data.data.data)
+          const response = await api.get('/produtos')
+           setProdutos(response.data.data)
+           setFiltrados(response.data.data)
 
           Alert.alert('Produto actualizado com sucesso!',)
 

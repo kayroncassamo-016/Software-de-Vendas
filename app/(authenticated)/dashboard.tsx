@@ -16,9 +16,11 @@ export default function DashBoard () {
  
   const [loadingProductNumber, SetLoadingProductNumber] = useState(false)
   const [loadingClienteNumber, SetLoadingClienteNumber] = useState(false)
+  const [loadingVendasNumber, SetLoadingVendasNumber] = useState(false)
   const router = useRouter()
   const [totalProdutos, setTotalProdutos] = useState(0);
   const [totalClientes, setTotalClientes] = useState(0);
+  const [totalVendas, setTotalVendas] = useState(0);
 
   const {user} = useContexto()
 
@@ -30,6 +32,7 @@ export default function DashBoard () {
   async function loadStats() {
     loadingProductStats()
     loadingClienteStats()
+    loadingVendasStats()
   }
 
   loadStats();
@@ -65,8 +68,8 @@ async function loadingClienteStats()
     try{
 
         SetLoadingProductNumber(true)
-        const res =  await api.get("/products");
-        setTotalProdutos(res.data.data.data.length);
+        const res =  await api.get("/produtos");
+        setTotalProdutos(res.data.data.length);
 
     }
     catch (err)
@@ -80,11 +83,32 @@ async function loadingClienteStats()
 
     }
   }
-  
 
+  async function loadingVendasStats()
+  {
+    try
+    {
+
+        SetLoadingVendasNumber(true)
+        const res =  await api.get("/documentos");
+        setTotalVendas(res.data.data.data.length);
+
+    }
+    catch (err:any)
+    {
+    
+        console.log(err.response)
+    }
+    finally
+    {
+      SetLoadingVendasNumber(false)
+
+    }
+  }
+  
   
    function navigatePage(pageIndex:number)
-  {
+   {
       setActiveNav(pageIndex)
       
       if (pageIndex === 3) 
@@ -242,8 +266,21 @@ async function loadingClienteStats()
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Empresas</Text>
-          <Text style={styles.value}>7</Text>       
+          <Text style={styles.cardTitle}>Vendas totais</Text>  
+          {
+              loadingVendasNumber?
+              (
+                 <Text style={{
+                  fontStyle:"italic",
+                  fontSize:10
+                 }}>
+                     Carregando...
+                  </Text>
+              ):
+              (
+                <Text style={styles.value}>{totalVendas}</Text>
+              )
+            }
           <Text style={styles.positive}>↑ 2 vs março</Text>
         </View>
       </View>

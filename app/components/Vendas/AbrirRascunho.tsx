@@ -105,8 +105,8 @@ export default function AbrirRascunho()
     // setSelectedMetodoPagamento(venda?.pagamentos.find
     //   (pagamento => ))
 
-    setSelectedMetodoPagamento('')//Comecar daqui mesmo
-
+    setSelectedMetodoPagamento(venda?.pagamento??'')//Comecar daqui mesmo
+    
     const clienteSeleccionado = clientes.find
     (cliente => cliente.id === venda?.cliente_id)
 
@@ -343,14 +343,14 @@ async function loadFornecedores()
 
        try {
       
-            const response = await api.get("/products",
+            const response = await api.get("/produtos",
                {
                headers: { Authorization: `Bearer ${token}` },
                }   
             )
 
-            setProdutos(response.data.data.data)
-            setFiltradosProdutos(response.data.data.data)
+            setProdutos(response.data.data)
+            setFiltradosProdutos(response.data.data)
              //console.log("clientes da base: ", response.data.data.data)
 
         }
@@ -399,7 +399,7 @@ async function loadFornecedores()
         
         }
          setLoadingGuardarRascunho(true)
-           await api.post('/documentos',
+           await api.put(`/documentos/${id}`,
             payload, {
                headers: { Authorization: `Bearer ${token}` },
            } 
@@ -432,7 +432,8 @@ async function loadFornecedores()
          {
           const payload =
           {
-            tipo_doc: selectedTipoDocumento,
+            // tipo_doc: selectedTipoDocumento,
+             tipo_doc: 'FT',
             nome_doc: selectedNomeDocumento,
             ano_serie: new Date().getFullYear().toString(),
             contribuinte: nrContribuinte,
@@ -446,9 +447,11 @@ async function loadFornecedores()
             pr_unit_sem_iva: item.preco
           })),
 
+          pagamento:selectedMetodoPagamento,
+
           pagamentos:[
           {
-            metodo: selectedMetodoPagamento,
+            metodo: selectedMetodoPagamento??'',
             valor:total,
             banco_servico:'',
             nr_movimento:''
@@ -456,7 +459,7 @@ async function loadFornecedores()
 
         }
          setLoadingGuardarRascunho(true)
-           await api.post('/documentos',
+           await api.put(`/documentos/${id}`,
             payload, {
                headers: { Authorization: `Bearer ${token}` },
            } 
@@ -996,6 +999,9 @@ console.log('nome:', selectedNomeDocumento)
 
         {/* BOTÕES DE ACÇÃO */}
         <View style={styles.actionsRow}>
+
+          {venda?.estado !=='CANCELADO' &&
+
           <TouchableOpacity style={[styles.btnSecundario,
 
           loadingGuardarRascunho?
@@ -1011,25 +1017,39 @@ console.log('nome:', selectedNomeDocumento)
                  loadingGuardarRascunho?
                  (   
                  <Text style={styles.btnSecundarioText}>
-                  Guardando Rascunho...
+                  Guardando...
                  </Text>
                 )
                  :
                  (   
+
                  <Text style={styles.btnSecundarioText}>
-                    Guardar Rascunho
+                    Guardar
                   </Text>
                  )
             }
           </TouchableOpacity>
+           }
 
+           {
+            venda?.estado ==='CONFIRMADO' &&
+          
           <TouchableOpacity
             style={styles.btnPrimario}
             onPress={confirmarVenda}>
-          
-            <Text style={styles.btnPrimarioText}>Confirmar Factura</Text>
+               <Text style={styles.btnPrimarioText}>EXPORTAR PDF</Text>
           </TouchableOpacity>
-        </View>
+              }
+           {
+            venda?.estado ==='CANCELADO' &&
+            <View style={{}}>
+              <Text style={{textAlign:'center', fontSize:15,
+                color:'#f33c3c',fontWeight:700}}>
+                Venda cancelada
+              </Text>
+            </View>
+           }
+        </View> 
 
         <View style={{ height: 30 }} />
       </ScrollView>

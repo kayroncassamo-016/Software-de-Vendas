@@ -59,16 +59,16 @@ export interface Produtos
   designacao: string;
   preco_venda_liquido_1: string;
   preco_venda_iliquido_1: string;
-  categoria_id:number,
-  familia_id:number,
+  categoria_id: number,
+  familia_id: number,
   marca_id:number,
   imposto_id:number,
-  motivo_isencao_id:number,
-  
+  motivo_isencao_id: number,
+  stock_actual: string,
   categoria: Categoria,
   imposto: Imposto
-  tipo_produto:Tipo,
-  marca:Marca,
+  tipo_produto: Tipo,
+  marca: Marca,
   familia:Familia
 }
 
@@ -146,7 +146,7 @@ export interface Vendas
     //  valor:string,
     //  banco_servico?:string,
     //  nr_movimento?:number,
-
+    pagamento:string
     pagamentos:pagamento[]
 
      linhas:linha [],
