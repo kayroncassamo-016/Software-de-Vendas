@@ -74,6 +74,8 @@ export function EditarProdutoForm({produto,visible,setVisible,
 
     const [precoL, setPrecoLiquido] = useState('')
     const [precoIL, setPrecoIliquido] = useState('')
+    const [stock, setStock] = useState('')
+    
     
     const taxa = selectedImpostoTaxa
     const total = precoL
@@ -92,6 +94,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
         setSelectedMarca(produto.marca?.nome ?? '');
         setSelectedFamily(produto.familia?.designacao ?? '');
         setSelectedImposto(produto.imposto?.designacao ?? '');
+        setStock(produto.stock_actual??'')
       }
 }, [produto]);
     
@@ -401,6 +404,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
         categoria_id: selectedCategoryId,
         preco_venda_liquido_1: precoL,
         preco_venda_iliquido_1: precoIL,
+        stock_actual:stock,
         preco_venda_liquido_2: 0,
         preco_venda_iliquido_2: 0,
         preco_venda_liquido_3: 0,

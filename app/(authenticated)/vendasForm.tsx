@@ -338,7 +338,7 @@ async function loadFornecedores()
             tipo_doc: selectedTipoDocumento,
             nome_doc: selectedNomeDocumento,
             ano_serie: new Date().getFullYear().toString(),
-            contribuinte: nrContribuinte,
+            //contribuinte: nrContribuinte,
             cliente_id: IdClienteSelecionado,
 
 
@@ -585,7 +585,7 @@ async function loadFornecedores()
 
             </View>
 
-             <Text style={[styles.dialogTextStyle,
+             {/* <Text style={[styles.dialogTextStyle,
               {
                 marginBottom:10
               }
@@ -595,7 +595,7 @@ async function loadFornecedores()
               placeholder="ex: 1234xx, 5678xx, etc"
               value={nrContribuinte}
               onChangeText={setNrContribuinte}
-              keyboardType="numeric"  />
+              keyboardType="numeric"  /> */}
 
               <View style={{gap:10, marginTop:20}}>
                   <Text style={styles.dialogTextStyle}>Condição de pagamento:</Text>

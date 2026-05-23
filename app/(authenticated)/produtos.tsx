@@ -200,6 +200,8 @@ const [precoIL_4, setPrecoIliquido_4] = useState('')
 const [precoL_5, setPrecoLiquido_5] = useState('')
 const [precoIL_5, setPrecoIliquido_5] = useState('')
 
+const [stock, setStock] = useState('');
+
 
 const precoNum = parseFloat(precoVenda) || 0;
 const taxa = selectedImpostoTaxa
@@ -277,6 +279,7 @@ const total = precoL
         preco_venda_iliquido_4: 0,
         preco_venda_liquido_5: 0,
         preco_venda_iliquido_5: 0,
+        stock_actual:stock,
         marca_id: selectedMarcaId ||undefined,
         familia_id: selectedFamilyId ||undefined,
         tipo_produto_id: selectedTipoId ||undefined,
@@ -918,6 +921,19 @@ useEffect(()=> {
                 style={styles.TextFieldStyling}/>
               </View>
 
+
+              
+              <View style={styles.dialogContentStyle}>
+                <Text style={styles.dialogTextStyle}> Stock:</Text>
+                <TextInput value={stock} onChangeText={(text) =>{
+                  
+                  setStock(text)
+             
+                }}
+                keyboardType='numeric'
+                style={styles.TextFieldStyling}/>
+              </View>
+
               <View style={styles.dialogContent}>
                 <Text style={[styles.dialogTextStyle
                   ,{paddingRight:45}
@@ -936,19 +952,7 @@ useEffect(()=> {
                 />
               </View>
               
-              { TextAreaEnabled &&
-              // ( <TextInput
-              //  multiline
-              //  placeholder="Digite aqui o motivo da isenção do imposto ..."
-              //  style={{
-              //   fontStyle:'italic',
-              //   borderWidth: 1,
-              //   borderRadius:8,
-              //   borderColor: '#ccc',
-              //   padding: 10,
-              //   height: 100,
-              //   textAlignVertical: 'top'
-              // }} /> ) 
+            
                
               <View style={styles.dialogContent}>
                    
@@ -972,7 +976,7 @@ useEffect(()=> {
                 />
                  </View>
 
-              }
+              
                 
                 <View style={styles.dialogContent}>
                 <Text style={[styles.dialogTextStyle

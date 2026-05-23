@@ -2,8 +2,10 @@
 import { api } from '@/services/api';
 import { Clientes, Fornecedores, Produtos, Vendas } from '@/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
+import * as Print from 'expo-print';
 
+import * as Sharing from 'expo-sharing';
+import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -486,8 +488,6 @@ async function loadFornecedores()
       }
     }
     
-
-
       
     }
 
@@ -537,49 +537,85 @@ async function loadFornecedores()
   const { subtotal,iva, total } = calcularTotais();
 
   // Confirmar venda
-  async function confirmarVenda ()
-  {
-    const token  = await AsyncStorage.getItem("@token")
 
 
-    if (!clienteSelecionado) {
-      Alert.alert('Erro', 'Selecciona um cliente');
-      return;
+
+  function gerarHTMLVenda() {
+  return `
+    <html>
+      <body>
+        <h1>Factura / Venda</h1>
+
+        <p><strong>Cliente:</strong> ${clienteSelecionado?.nome ?? ''}</p>
+        <p><strong>Email:</strong> ${clienteSelecionado?.email ?? ''}</p>
+
+        <hr />
+
+        <h3>Itens</h3>
+        <table border="1" cellspacing="0" cellpadding="5" width="100%">
+          <tr>
+            <th>Produto</th>
+            <th>Qtd</th>
+            <th>Preço</th>
+            <th>Total</th>
+          </tr>
+
+          ${itens.map(item => `
+            <tr>
+              <td>${item.nome}</td>
+              <td>${item.quantidade}</td>
+              <td>${item.preco.toFixed(2)}</td>
+              <td>${(item.quantidade * item.preco).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <hr />
+
+        <p><strong>Subtotal:</strong> ${subtotal.toFixed(2)}</p>
+        <p><strong>IVA:</strong> ${iva.toFixed(2)}</p>
+        <h2>Total: ${total.toFixed(2)} MT</h2>
+      </body>
+    </html>
+  `;
+}
+
+function gerarNumeroFactura() {
+  const ano = new Date().getFullYear();
+
+  const numero = venda?.id ?? Math.floor(Math.random() * 9999);
+
+  return `FT-${ano}-${String(numero).padStart(4, '0')}`;
+}
+
+
+async function extrairPDFVenda() {
+  try {
+    const html = gerarHTMLVenda();
+
+    const { uri } = await Print.printToFileAsync({
+      html,
+    });
+
+    console.log('PDF gerado em:', uri);
+
+    const isAvailable = await Sharing.isAvailableAsync();
+
+    if (isAvailable) {
+      await Sharing.shareAsync(uri);
+    } else {
+      Alert.alert('PDF gerado', 'Não foi possível partilhar o ficheiro.');
     }
 
-    if (itens.length === 0) {
-      Alert.alert('Erro', 'Adiciona pelo menos um item');
-      return;
-    }
-
-     try 
-     {
-        await api.post('/documentos', 
-          {
-             headers: { Authorization: `Bearer ${token}` },
-          }   
-        )
-     }
-     catch (err:any)
-     {
-
-     }
-
-     finally 
-     {
-
-     }
+  } catch (error) {
+    console.log(error);
+    Alert.alert('Erro', 'Não foi possível gerar o PDF.');
+  }
+}
 
 
-    Alert.alert(
-      'Factura criada',
-      `Cliente: ${clienteSelecionado.nome}\nTotal: ${total.toFixed(2)} MT`,
-       [
-        { text: 'Fechar', style: 'cancel' },
-        { text: 'Enviar PDF', onPress: () => console.log('Enviando PDF...') },
-       ]
-    );
-  };
+
+  
 
     const handleSearch = (text: string): void => {
     setSearchText(text);
@@ -687,7 +723,7 @@ console.log('nome:', selectedNomeDocumento)
                   keyboardType="numeric"  />   
             </View>
 
-             <Text style={[styles.dialogTextStyle,
+             {/* <Text style={[styles.dialogTextStyle,
               {
                 marginBottom:10
               }
@@ -697,7 +733,7 @@ console.log('nome:', selectedNomeDocumento)
               placeholder="ex: 1234xx, 5678xx, etc"
               value={nrContribuinte}
               onChangeText={setNrContribuinte}
-              keyboardType="numeric"  />
+              keyboardType="numeric"  /> */}
 
               <View style={{gap:10, marginTop:20}}>
                   <Text style={styles.dialogTextStyle}>Condição de pagamento:</Text>
@@ -1036,7 +1072,7 @@ console.log('nome:', selectedNomeDocumento)
           
           <TouchableOpacity
             style={styles.btnPrimario}
-            onPress={confirmarVenda}>
+            onPress={extrairPDFVenda}>
                <Text style={styles.btnPrimarioText}>EXPORTAR PDF</Text>
           </TouchableOpacity>
               }
