@@ -402,6 +402,32 @@ async function loadFornecedores()
       return;
     }
 
+    const quantidadeNova = parseInt(quantidade) || 1;
+
+  // Verifica se o produto já existe
+  const itemExistente = itens.find(
+    item => item.produto_id === IdSelectedProduto
+  );
+
+  if (itemExistente) {
+
+    // Atualiza quantidade do item existente
+    const itensAtualizados = itens.map(item => {
+      if (item.produto_id === IdSelectedProduto) {
+        return {
+          ...item,
+          quantidade: item.quantidade + quantidadeNova,
+        };
+      }
+
+      return item;
+    });
+
+    setItens(itensAtualizados);
+  }
+  
+  else {
+
     const novoItem: Item = {
       id: Date.now(),
       produto_id: IdSelectedProduto,
@@ -412,8 +438,10 @@ async function loadFornecedores()
     };
 
     setItens([...itens, novoItem]);
+  }
     setNomeProduto('');
-    setQuantidade(quantidade);
+    // setQuantidade(quantidade);
+    setQuantidade('');
     setPreco('');
   };
 
@@ -528,8 +556,8 @@ async function loadFornecedores()
     <View style={styles.itemRow}>
       <View style={styles.itemInfo}>
         <Text style={styles.itemNome}>{item.nome}</Text>
-        <Text style={styles.itemDetalhes}>
-          {item.quantidade} × {item.preco.toFixed(2)}  MT
+         <Text style={styles.itemDetalhes}>
+          {item.quantidade}  × {item.preco.toFixed(2)}  MT
         </Text>
         <Text style={[styles.itemDetalhes,{paddingTop:10}]}>
            IVA {parseFloat(item.taxa).toFixed(0)} %
@@ -585,17 +613,7 @@ async function loadFornecedores()
 
             </View>
 
-             {/* <Text style={[styles.dialogTextStyle,
-              {
-                marginBottom:10
-              }
-             ]}>Nº de contribuinte: </Text>
-             <TextInput
-              style={styles.input}
-              placeholder="ex: 1234xx, 5678xx, etc"
-              value={nrContribuinte}
-              onChangeText={setNrContribuinte}
-              keyboardType="numeric"  /> */}
+         
 
               <View style={{gap:10, marginTop:20}}>
                   <Text style={styles.dialogTextStyle}>Condição de pagamento:</Text>
@@ -752,6 +770,7 @@ async function loadFornecedores()
             style={styles.input}
             placeholder="Ex: Consultoria em TI"
             value={nomeProduto}
+            editable={false}
             onChangeText={setNomeProduto}
           />
 
@@ -770,6 +789,7 @@ async function loadFornecedores()
             placeholder="0.00"
             value={preco}
             onChangeText={setPreco}
+            editable={false}
             keyboardType="decimal-pad"
           />
 
@@ -914,12 +934,12 @@ async function loadFornecedores()
             }
           </TouchableOpacity>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.btnPrimario}
             onPress={confirmarVenda}>
           
             <Text style={styles.btnPrimarioText}>Confirmar Factura</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <View style={{ height: 30 }} />

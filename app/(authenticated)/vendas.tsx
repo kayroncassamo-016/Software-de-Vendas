@@ -212,8 +212,10 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
 
     swipeableRef.current?.close();
 
-  } catch (err) {
+  } catch (err:any) {
     console.log(err);
+      console.log(err.response);
+
   }
 
 };
@@ -256,23 +258,12 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
       ref={swipeableRef}
       renderRightActions= {
          renderRightActions
-        // () => { 
-
-        // if (venda.estado ==='RASCUNHO')
-        // {
-        //    renderRightActions
-        // } } 
-      }
+        
+        }
       renderLeftActions={ 
          renderLeftActions
 
-        // () => {
-        // if (venda.estado !=='CANCELADO')
-        // {
-        //        
-        // }  }
-      
-    }
+        }
       onSwipeableOpen={(direction) => {
 
         if (direction ==='left' && venda.estado ==='RASCUNHO'){
@@ -300,8 +291,8 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
 
       else  if (direction ==='left' && venda.estado ==='CANCELADO'){
         Alert.alert(
-          'Não é possível cancelar uma venda já confirmada!',
-           ' Venda já confirmada.',
+          'Não é possível confirmar uma venda já cancelada!',
+           ' Venda já cancelada.',
           [
             { text: "Ok", style: "cancel",  
               onPress: () => swipeableRef.current?.close() },
@@ -313,7 +304,7 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
         Alert.alert(
         "Cancelar venda",
         "Queres cancelar esta venda?",
-        [
+      [
         {
           text: "Não",
           style: "cancel",
@@ -326,8 +317,9 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
       ]
     );
   }
-      else if (direction ==='right'&& venda.estado ==='CONFIRMADO'){
-        Alert.alert(
+      else if (direction ==='right'&& venda.estado ==='CONFIRMADO')
+        {
+        Alert.alert (
           "Cancelar venda",
           "Queres cancelar esta venda?",
         [  
@@ -345,7 +337,7 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
     );
   }
 
-    else if (direction ==='right'&& venda.estado ==='CANCELADO'){
+    else if (direction ==='right' && venda.estado ==='CANCELADO'){
         Alert.alert(
          'Não é possível cancelar uma venda já cancelada!',
            ' Venda já cancelada.',
@@ -359,8 +351,6 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
       ]
     );
   }
-
-
        
       }}
     >

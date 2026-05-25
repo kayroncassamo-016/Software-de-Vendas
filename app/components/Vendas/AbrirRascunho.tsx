@@ -3,7 +3,6 @@ import { api } from '@/services/api';
 import { Clientes, Fornecedores, Produtos, Vendas } from '@/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
-
 import * as Sharing from 'expo-sharing';
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -20,13 +19,14 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-// Definir tipos
+// Definir ";
+import { colors } from '@/constants/theme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 //import { Item } from 'react-native-paper/lib/typescript/components/Drawer/Drawer';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Item {
-  id: number;
+  id?: number;
   produto_id:number;
   taxa:string,
   nome: string;
@@ -392,6 +392,7 @@ async function loadFornecedores()
 
 
          linhas: itens.map(item => ({
+            id: item.id,
             produto_id: item.produto_id,
             qtd: item.quantidade,
             taxa_iva:item.taxa,
@@ -406,6 +407,7 @@ async function loadFornecedores()
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
+         
 
         
        Alert.alert(
@@ -434,11 +436,9 @@ async function loadFornecedores()
          {
           const payload =
           {
-            // tipo_doc: selectedTipoDocumento,
-             tipo_doc: 'FT',
+           tipo_doc: selectedTipoDocumento,
             nome_doc: selectedNomeDocumento,
             ano_serie: new Date().getFullYear().toString(),
-            contribuinte: nrContribuinte,
             cliente_id: IdClienteSelecionado,
 
 
@@ -469,7 +469,7 @@ async function loadFornecedores()
 
         
        Alert.alert(
-      'Factura criada em rascunho',
+      'Factura actualizada com sucesso.',
       `Cliente: ${clienteSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
         [
         { text: 'OK', style: 'cancel' },
@@ -495,30 +495,95 @@ async function loadFornecedores()
 
 
   // Adicionar item à venda
+
+
   const adicionarItem = () => {
-    if (!nomeProduto || !preco) {
-      Alert.alert('Erro', 'Preenche o nome e preço do produto');
-      return;
+      if (!nomeProduto || !preco) {
+        Alert.alert('Erro', 'Preenche o nome e preço do produto');
+        return;
+      }
+  
+      const quantidadeNova = parseInt(quantidade) || 1;
+  
+    // Verifica se o produto já existe
+    const itemExistente = itens.find(
+      item => item.produto_id === IdSelectedProduto
+    );
+  
+    if (itemExistente) {
+          if (venda?.estado !== 'CANCELADO'){
+      // Atualiza quantidade do item existente
+      const itensAtualizados = itens.map(item => {
+        if (item.produto_id === IdSelectedProduto) {
+          return {
+            ...item,
+            quantidade: item.quantidade + quantidadeNova,
+          };
+        }
+  
+        return item;
+      });
+  
+      setItens(itensAtualizados);
+          }
+          else{
+              Alert.alert('Não é possível adicionar itens para ' +
+          'uma venda já cancelada.')
+          }
+        
+        }
+    
+    else {
+
+      if (venda?.estado === 'CANCELADO')
+      {
+        Alert.alert('Não é possível adicionar itens para ' +
+          'uma venda já cancelada.')
+      }
+      
+      if (venda?.estado === 'CONFIRMADO')
+      {
+        Alert.alert('Não é possível adicionar itens para ' +
+          'uma venda já confirmada.')
+      }
+      
+      if (venda?.estado === 'RASCUNHO')
+      {
+  
+      const novoItem: Item = {
+        produto_id: IdSelectedProduto,
+        taxa:taxaSelectedProduto,
+        nome: nomeProduto,
+        quantidade: parseInt(quantidade) || 1,
+        preco: parseFloat(preco),
+      };
+  
+      setItens([...itens, novoItem]);
+      setNomeProduto('');
+      setQuantidade('');
+      setQuantidade('');
+      setPreco('');
     }
-
-    const novoItem: Item = {
-      id: Date.now(),
-      produto_id: IdSelectedProduto,
-      taxa:taxaSelectedProduto,
-      nome: nomeProduto,
-      quantidade: parseInt(quantidade) || 1,
-      preco: parseFloat(preco),
-    };
-
-    setItens([...itens, novoItem]);
-    setNomeProduto('');
-    setQuantidade(quantidade);
-    setPreco('');
-  };
+     
+    }};
 
   // Remover item
-  const removerItem = (id: number) => {
-    setItens(itens.filter(item => item.id !== id));
+  const removerItem = (id: number|undefined) => {
+    if (venda?.estado ==='RASCUNHO')
+    {
+      setItens(itens.filter(item => item.id !== id));
+    }
+    else  if (venda?.estado ==='CONFIRMADO')
+    {
+         Alert.alert('Não é possível remover itens para ' +
+          'uma venda já confirmada.')
+    }
+    else  if (venda?.estado ==='CANCELADO')
+    {
+         Alert.alert('Não é possível remover itens para ' +
+          'uma venda já cancelada.')
+    }
+    
   };
 
   // Calcular totais
@@ -588,30 +653,75 @@ function gerarNumeroFactura() {
   return `FT-${ano}-${String(numero).padStart(4, '0')}`;
 }
 
-
 async function extrairPDFVenda() {
+
   try {
+
     const html = gerarHTMLVenda();
 
-    const { uri } = await Print.printToFileAsync({
+    const nomeFactura = `${gerarNumeroFactura()}.pdf`;
+
+    // gera PDF
+    const pdf = await Print.printToFileAsync({
       html,
     });
 
-    console.log('PDF gerado em:', uri);
+    console.log(pdf.uri);
 
-    const isAvailable = await Sharing.isAvailableAsync();
+    const isAvailable =
+      await Sharing.isAvailableAsync();
 
     if (isAvailable) {
-      await Sharing.shareAsync(uri);
+
+      await Sharing.shareAsync(pdf.uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: nomeFactura,
+        UTI: '.pdf',
+      });
+
     } else {
-      Alert.alert('PDF gerado', 'Não foi possível partilhar o ficheiro.');
+
+      Alert.alert(
+        'PDF gerado',
+        nomeFactura
+      );
     }
 
   } catch (error) {
+
     console.log(error);
-    Alert.alert('Erro', 'Não foi possível gerar o PDF.');
+
+    Alert.alert(
+      'Erro',
+      'Não foi possível gerar o PDF.'
+    );
   }
 }
+
+
+// async function extrairPDFVenda() {
+//   try {
+//     const html = gerarHTMLVenda();
+
+//     const { uri } = await Print.printToFileAsync({
+//       html,
+//     });
+
+//     console.log('PDF gerado em:', uri);
+
+//     const isAvailable = await Sharing.isAvailableAsync();
+
+//     if (isAvailable) {
+//       await Sharing.shareAsync(uri);
+//     } else {
+//       Alert.alert('PDF gerado', 'Não foi possível partilhar o ficheiro.');
+//     }
+
+//   } catch (error) {
+//     console.log(error);
+//     Alert.alert('Erro', 'Não foi possível gerar o PDF.');
+//   }
+// }
 
 
 
@@ -656,6 +766,31 @@ async function extrairPDFVenda() {
     }
   };
 
+  const aumentarQuantidade = (id: number|undefined) => {
+  setItens(prev =>
+    prev.map(item =>
+      item.id === id
+        ? { ...item, quantidade: item.quantidade + 1 }
+        : item
+    )
+  );
+};
+
+const diminuirQuantidade = (id: number|undefined) => {
+  setItens(prev =>
+    prev.map(item =>
+      item.id === id
+        ? {
+            ...item,
+            quantidade:
+              item.quantidade > 1
+                ? item.quantidade - 1
+                : 1,
+          }
+        : item
+    )
+  );
+};
 
 
   // Renderizar item da lista
@@ -663,9 +798,45 @@ async function extrairPDFVenda() {
     <View style={styles.itemRow}>
       <View style={styles.itemInfo}>
         <Text style={styles.itemNome}>{item.nome}</Text>
-        <Text style={styles.itemDetalhes}>
-          {item.quantidade} × {item.preco.toFixed(2)}  MT
+        {/* <Text style={styles.itemDetalhes}> */}
+        
+        <View style={{flexDirection:'row'}}>
+
+          {(venda?.estado==='CONFIRMADO'||venda?.estado==='RASCUNHO')
+          &&
+          <TouchableOpacity style={{borderRadius:2,
+          backgroundColor:colors.blue,
+          paddingHorizontal:7,
+          marginHorizontal:5
+          }}
+          onPress={()=>{
+           diminuirQuantidade(item.id)
+          }}>
+          <Text style={{color:'#fff'}}>-</Text>
+        </TouchableOpacity>
+        }
+           <Text style={styles.itemDetalhes}>
+        {item.quantidade}    
         </Text>
+
+         { (venda?.estado==='CONFIRMADO'||venda?.estado==='RASCUNHO')
+          &&
+          <TouchableOpacity style={{borderRadius:2,
+              backgroundColor:colors.blue,
+              paddingHorizontal:4,
+              marginHorizontal:5
+          }}
+          onPress={() =>{
+            aumentarQuantidade(item.id)
+          }}>
+          
+             <Text style={{color:'#fff'}}>+</Text>
+          </TouchableOpacity>
+        }
+
+          <Text style={styles.itemDetalhes}>  × {item.preco.toFixed(2)}  MT</Text>
+        </View>
+        {/* </Text> */}
         <Text style={[styles.itemDetalhes,{paddingTop:10}]}>
            IVA {parseFloat(item.taxa).toFixed(0)} %
         </Text>
@@ -890,6 +1061,7 @@ console.log('nome:', selectedNomeDocumento)
             style={styles.input}
             placeholder="Ex: Consultoria em TI"
             value={nomeProduto}
+            editable={false}
             onChangeText={setNomeProduto}
           />
 
@@ -908,13 +1080,15 @@ console.log('nome:', selectedNomeDocumento)
             placeholder="0.00"
             value={preco}
             onChangeText={setPreco}
+            editable={false}
+
             keyboardType="decimal-pad"
           />
 
           <TouchableOpacity
             style={styles.btnAdicionar}
-            onPress={adicionarItem}
-          >
+            onPress={adicionarItem} >
+         
             <Text style={styles.btnAdicionarText}>+ Adicionar Item</Text>
           </TouchableOpacity>
         </View>
@@ -1008,7 +1182,10 @@ console.log('nome:', selectedNomeDocumento)
             <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Itens Adicionados</Text>
             <FlatList
               data={itens}
-              keyExtractor={(item) => item.id.toString()}
+              //keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item, index) =>
+               item.id ? item.id.toString() : index.toString()
+              }
               scrollEnabled={false}
               renderItem={renderItem}
             />

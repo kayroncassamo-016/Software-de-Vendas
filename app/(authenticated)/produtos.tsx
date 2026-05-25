@@ -953,7 +953,7 @@ useEffect(()=> {
               </View>
               
             
-               
+                {TextAreaEnabled &&
               <View style={styles.dialogContent}>
                    
                   <View style={{flexDirection:'column'}}>
@@ -974,7 +974,7 @@ useEffect(()=> {
                     selectedValue={selectedMotivoIsencao}
                     onValueChange={setSelectedMotivoIsencao}
                 />
-                 </View>
+                 </View>}
 
               
                 

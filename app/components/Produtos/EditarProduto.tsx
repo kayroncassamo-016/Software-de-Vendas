@@ -554,6 +554,17 @@ export function EditarProdutoForm({produto,visible,setVisible,
                 style={styles.TextFieldStyling}/>
               </View>
 
+              <View style={styles.dialogContentStyle}>
+                <Text style={styles.dialogTextStyle}> Stock:</Text>
+                <TextInput value={stock} onChangeText={(text) =>{
+                  
+                  setStock(text)
+              
+                }}
+                keyboardType='numeric'
+                style={styles.TextFieldStyling}/>
+              </View>
+              
               <View style={styles.dialogContent}>
                 <Text style={[styles.dialogTextStyle
                   ,{paddingRight:45}
