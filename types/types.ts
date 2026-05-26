@@ -142,10 +142,7 @@ export interface Vendas
     qtd: number,
     taxa_iva:string,
     pr_unit_sem_iva: string,
-    //  metodo?: string,
-    //  valor:string,
-    //  banco_servico?:string,
-    //  nr_movimento?:number,
+    impresso:boolean
     pagamento:string
     pagamentos:pagamento[]
 

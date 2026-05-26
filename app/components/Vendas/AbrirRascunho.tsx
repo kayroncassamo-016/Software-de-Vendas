@@ -65,7 +65,9 @@ export default function AbrirRascunho()
   const [selectedMetodoPagamento, setSelectedMetodoPagamento] = useState('');
   const [loadingGuardarRascunho, setLoadingGuardarRascunho] = useState(false)
   const [activeNav, setActiveNav] = useState(0);
-
+  const [totalItens,setTotalItens] = useState(0)
+  const [countAdicionar,setCountAdicionar] = useState(0)
+  const [impresso, setImpresso] = useState<boolean|undefined>(false)
   const [venda,setVenda] = useState<Vendas|null>(null)
   const router = useRouter()
 
@@ -134,6 +136,11 @@ export default function AbrirRascunho()
       };
     })
   );
+      setTotalItens(itens.length)
+      setCountAdicionar(itens.length)
+      setImpresso(venda?.impresso)
+      
+
   
 }, [venda,produtos,clientes,fornecedores]);
 
@@ -169,6 +176,14 @@ export default function AbrirRascunho()
 
    }
 
+  //  useEffect (()=>{
+    
+  //    if(itens)
+  //    {
+  //     setCountAdicionar(itens.length)
+  //    }
+
+  //  },[])
 
   useEffect(()=> {
     
@@ -543,8 +558,33 @@ async function loadFornecedores()
       
       if (venda?.estado === 'CONFIRMADO')
       {
-        Alert.alert('Não é possível adicionar itens para ' +
-          'uma venda já confirmada.')
+        // Alert.alert('Não é possível adicionar itens para ' +
+        //   'uma venda já confirmada.')
+        if (countAdicionar < totalItens)
+        {
+          const novoItem: Item = {
+          produto_id: IdSelectedProduto,
+          taxa:taxaSelectedProduto,
+          nome: nomeProduto,
+          quantidade: parseInt(quantidade) || 1,
+          preco: parseFloat(preco),
+        };
+  
+          setItens([...itens, novoItem]);
+          setNomeProduto('');
+          setQuantidade('');
+          setQuantidade('');
+          setPreco('');
+          setCountAdicionar(prev => prev + 1)
+        }
+        else  {
+          Alert.alert('Não é possível adicionar mais itens.',
+            'Caso queira adicionar itens diferentes, remova um da lista!'
+          )
+        }
+        
+     
+
       }
       
       if (venda?.estado === 'RASCUNHO')
@@ -563,6 +603,7 @@ async function loadFornecedores()
       setQuantidade('');
       setQuantidade('');
       setPreco('');
+      
     }
      
     }};
@@ -575,8 +616,13 @@ async function loadFornecedores()
     }
     else  if (venda?.estado ==='CONFIRMADO')
     {
-         Alert.alert('Não é possível remover itens para ' +
-          'uma venda já confirmada.')
+        //  Alert.alert('Não é possível remover itens para ' +
+        //   'uma venda já confirmada.')
+
+      setItens(itens.filter(item => item.id !== id));
+
+      setCountAdicionar(prev => prev-1)
+
     }
     else  if (venda?.estado ==='CANCELADO')
     {
@@ -677,7 +723,10 @@ async function extrairPDFVenda() {
         mimeType: 'application/pdf',
         dialogTitle: nomeFactura,
         UTI: '.pdf',
-      });
+      })
+
+      await api.post(`/documentos/print/${id}`)
+      setImpresso(true)
 
     } else {
 
@@ -1213,17 +1262,23 @@ console.log('nome:', selectedNomeDocumento)
         {/* BOTÕES DE ACÇÃO */}
         <View style={styles.actionsRow}>
 
-          {venda?.estado !=='CANCELADO' &&
+          {impresso?
+            (
+              <View></View>
 
-          <TouchableOpacity style={[styles.btnSecundario,
+            ):
+            (
+              venda?.estado !=='CANCELADO' &&
 
-          loadingGuardarRascunho?
-          (
-            {backgroundColor:'#cecece'}
-          ) : ( 
-            {backgroundColor:'#fff'}
-          )           
-              
+              <TouchableOpacity style={[styles.btnSecundario,
+
+              loadingGuardarRascunho?
+              (
+                {backgroundColor:'#cecece'}
+              ) : ( 
+                {backgroundColor:'#fff'}
+              )           
+                  
           ]}
           onPress={()=> handleGuardarRascunho()}>
             {
@@ -1242,7 +1297,9 @@ console.log('nome:', selectedNomeDocumento)
                  )
             }
           </TouchableOpacity>
-           }
+           )}
+           
+           </View>
 
            {
             venda?.estado ==='CONFIRMADO' &&
@@ -1253,16 +1310,27 @@ console.log('nome:', selectedNomeDocumento)
                <Text style={styles.btnPrimarioText}>EXPORTAR PDF</Text>
           </TouchableOpacity>
               }
-           {
-            venda?.estado ==='CANCELADO' &&
-            <View style={{}}>
+            
+             {
+            venda?.impresso &&
+            <View style={{marginTop:10,flexDirection:'row'}}>
               <Text style={{textAlign:'center', fontSize:15,
-                color:'#f33c3c',fontWeight:700}}>
-                Venda cancelada
+                color:'#0ba049',fontWeight:700,justifyContent:'flex-start'}}>
+                 Venda já impressa
               </Text>
             </View>
            }
-        </View> 
+          
+     
+         {
+            venda?.estado ==='CANCELADO' &&
+            <View style={{marginTop:10,flexDirection:'row'}}>
+              <Text style={{textAlign:'center', fontSize:15,
+                justifyContent:'flex-start',color:'#f33c3c',fontWeight:700}}>
+                Venda cancelada
+              </Text>
+            </View>
+          }
 
         <View style={{ height: 30 }} />
       </ScrollView>
