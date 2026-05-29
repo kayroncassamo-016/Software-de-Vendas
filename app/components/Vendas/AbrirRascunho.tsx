@@ -70,10 +70,12 @@ export default function AbrirRascunho()
   const [impresso, setImpresso] = useState<boolean|undefined>(false)
   const [venda,setVenda] = useState<Vendas|null>(null)
   const router = useRouter()
-
+  const [itensInicializados, setItensInicializados] = useState(false);
   // const TipoDocumento = ['Factura','Nota de devolução',
   //   'Guia de transporte','Recibo','Orçamento']
 
+  const [IdLinhaRemovida, setIdLinhaRemovida] = useState<number|undefined>(0)
+  const [IdLinha, setIdLinha] = useState<number|undefined>(0)
   const TipoDocumento = ['VD','NE',
      ]
   const nomeDocumento = ['Venda a dinheiro', 'Nota de entrada']
@@ -145,6 +147,22 @@ export default function AbrirRascunho()
 }, [venda,produtos,clientes,fornecedores]);
 
 
+
+
+
+useEffect (()=>{
+
+  if (selectedProduto)
+  {
+     const linha = venda?.linhas.find(p => p.produto_id === selectedProduto.id)
+     
+     setIdLinha(linha?.id)
+  }
+
+},[selectedProduto,venda])
+
+
+
    async function loadVenda()
    {
     const token  = await AsyncStorage.getItem("@token")
@@ -176,14 +194,6 @@ export default function AbrirRascunho()
 
    }
 
-  //  useEffect (()=>{
-    
-  //    if(itens)
-  //    {
-  //     setCountAdicionar(itens.length)
-  //    }
-
-  //  },[])
 
   useEffect(()=> {
     
@@ -209,12 +219,28 @@ export default function AbrirRascunho()
         setIdSelectedProduto(0)
     }
 
-    if (clienteSelecionado)
+
+  },[selectedProduto])
+
+ 
+  useEffect (()=>{
+
+     if (clienteSelecionado)
     {
         setIdClienteSelecionado(clienteSelecionado.id)
+        console.log(clienteSelecionado.nome ,'agora')
+        console.log(clienteSelecionado.id ,'agora')
     }
 
-  },[selectedProduto,clienteSelecionado])
+    else
+    {
+      setIdClienteSelecionado(0)
+    }
+
+  
+
+
+  },[clienteSelecionado])
 
 
    useEffect (()=>{
@@ -398,14 +424,13 @@ async function loadFornecedores()
             tipo_doc: selectedTipoDocumento,
             nome_doc: selectedNomeDocumento,
             ano_serie: new Date().getFullYear().toString(),
-            contribuinte: nrContribuinte,
+            //contribuinte: nrContribuinte??'',
             fornecedor_id: IdFornecedorSelecionado,
             nome_fornecedor: fornecedorSelecionado?.nome,
             condicao_pagamento:selectedCondicaoPagamento??'',
           // estado:'RASCUNHO',
-         
-
-
+       
+       
          linhas: itens.map(item => ({
             id: item.id,
             produto_id: item.produto_id,
@@ -416,12 +441,17 @@ async function loadFornecedores()
 
         
         }
+   
          setLoadingGuardarRascunho(true)
-           await api.put(`/documentos/${id}`,
+
+         console.log('venda antes de ENVIAR : ', payload)
+          
+           const response = await api.put(`/documentos/${id}`,
             payload, {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
+         console.log('venda actualizada: ',response.data.data)
          
 
         
@@ -454,17 +484,20 @@ async function loadFornecedores()
            tipo_doc: selectedTipoDocumento,
             nome_doc: selectedNomeDocumento,
             ano_serie: new Date().getFullYear().toString(),
-            cliente_id: IdClienteSelecionado,
+            // cliente_id: IdClienteSelecionado,
+            cliente_id: clienteSelecionado?.id,
 
 
          linhas: itens.map(item => ({
+             id: item.id,
+            //...(item.id ? { id: item.id } : {}),
             produto_id: item.produto_id,
             qtd: item.quantidade,
             taxa_iva:item.taxa,
             pr_unit_sem_iva: item.preco
           })),
 
-          pagamento:selectedMetodoPagamento,
+          // pagamento:selectedMetodoPagamento,
 
           pagamentos:[
           {
@@ -476,11 +509,18 @@ async function loadFornecedores()
 
         }
          setLoadingGuardarRascunho(true)
-           await api.put(`/documentos/${id}`,
+              console.log('venda antes de ENVIAR : ', payload)
+
+           const response = await api.put(`/documentos/${id}`,
             payload, {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
+             const responseData = response.data.data
+            console.log('venda depois de ENVIAR :')
+
+            console.log(JSON.stringify(responseData, null, 2));
+
 
         
        Alert.alert(
@@ -488,7 +528,7 @@ async function loadFornecedores()
       `Cliente: ${clienteSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
         [
         { text: 'OK', style: 'cancel' },
-        { text: 'GERAR PDF', onPress: () => console.log('Enviando PDF...') },
+        // { text: 'GERAR PDF', onPress: () => console.log('Enviando PDF...') },
         ]
         );
       }
@@ -526,7 +566,9 @@ async function loadFornecedores()
     );
   
     if (itemExistente) {
-          if (venda?.estado !== 'CANCELADO'){
+          if ((venda?.estado === 'CONFIRMADO' &&!impresso)
+            || venda?.estado === 'RASCUNHO'
+          ){
       // Atualiza quantidade do item existente
       const itensAtualizados = itens.map(item => {
         if (item.produto_id === IdSelectedProduto) {
@@ -541,56 +583,94 @@ async function loadFornecedores()
   
       setItens(itensAtualizados);
           }
-          else{
+          
+          else if (venda?.estado === 'CANCELADO'){
               Alert.alert('Não é possível adicionar itens para ' +
           'uma venda já cancelada.')
+          }
+
+          else if (impresso)
+          {
+              Alert.alert('Não é possível adicionar itens para ' +
+          'uma venda já impressa.')
           }
         
         }
     
     else {
-
       if (venda?.estado === 'CANCELADO')
       {
         Alert.alert('Não é possível adicionar itens para ' +
           'uma venda já cancelada.')
       }
+       else if (impresso)
+          {
+              Alert.alert('Não é possível adicionar itens para ' +
+          'uma venda já impressa.')
+          }
       
       if (venda?.estado === 'CONFIRMADO')
       {
-        // Alert.alert('Não é possível adicionar itens para ' +
-        //   'uma venda já confirmada.')
+
         if (countAdicionar < totalItens)
         {
-          const novoItem: Item = {
-          produto_id: IdSelectedProduto,
-          taxa:taxaSelectedProduto,
-          nome: nomeProduto,
-          quantidade: parseInt(quantidade) || 1,
-          preco: parseFloat(preco),
-        };
+        //   const novoItem: Item = {
+        //   id:IdLinhaRemovida,
+         
+        //   // id: venda?.linhas.find(
+        //   //     p => p.produto_id === selectedProduto?.id
+        //   // )?.id,
+        //   produto_id: selectedProduto?.id?? 0,
+        //   taxa:taxaSelectedProduto,
+        //   nome: nomeProduto,
+        //   quantidade: parseInt(quantidade) || 1,
+        //   preco: parseFloat(preco),
+        // };
   
-          setItens([...itens, novoItem]);
-          setNomeProduto('');
-          setQuantidade('');
-          setQuantidade('');
-          setPreco('');
-          setCountAdicionar(prev => prev + 1)
-        }
-        else  {
-          Alert.alert('Não é possível adicionar mais itens.',
-            'Caso queira adicionar itens diferentes, remova um da lista!'
-          )
-        }
-        
-     
+        //   setItens([...itens, novoItem]);
+        //   setNomeProduto('');
+        //   setQuantidade('');
+        //   setQuantidade('');
+        //   setPreco('');
+        //   setCountAdicionar(prev => prev + 1)
+        // }
+        // else  {
+        //   Alert.alert('Não é possível adicionar mais itens.',
+        //     'Caso queira adicionar itens diferentes, remova um da lista!'
+        //   )
+        // }
 
-      }
+        const linhaLivre = itens.find(i => i.produto_id === 0 || i.nome === '');
+
+        if (linhaLivre) {
+          setItens(prev =>
+            prev.map(item =>
+              item.id === linhaLivre.id
+                ? {
+            ...item,
+            produto_id: selectedProduto?.id ?? 0,
+            taxa: taxaSelectedProduto,
+            nome: nomeProduto,
+            quantidade: parseInt(quantidade) || 1,
+            preco: parseFloat(preco),
+          }
+        : item
+            )
+          );
+        } else {
+          Alert.alert(
+            'Não é possível adicionar mais itens.',
+            'Use uma linha existente ou remova conteúdo de uma linha.'
+          );
+        }
+
+      }}
       
       if (venda?.estado === 'RASCUNHO')
       {
   
       const novoItem: Item = {
+        
         produto_id: IdSelectedProduto,
         taxa:taxaSelectedProduto,
         nome: nomeProduto,
@@ -612,14 +692,38 @@ async function loadFornecedores()
   const removerItem = (id: number|undefined) => {
     if (venda?.estado ==='RASCUNHO')
     {
+   
       setItens(itens.filter(item => item.id !== id));
+      
     }
-    else  if (venda?.estado ==='CONFIRMADO')
-    {
-        //  Alert.alert('Não é possível remover itens para ' +
-        //   'uma venda já confirmada.')
 
-      setItens(itens.filter(item => item.id !== id));
+    else if (impresso && venda?.estado ==='CONFIRMADO')
+    {
+         Alert.alert('Não é possível remover itens para ' +
+          'uma venda já impressa.')
+    }
+
+    else  if (venda?.estado ==='CONFIRMADO' )
+    {
+      // const linhaId = itens.find(item => item.id === id)?.id
+      // setIdLinhaRemovida(linhaId)
+      // setItens(itens.filter(item => item.id !== id));
+
+          setItens(prev =>
+      prev.map(item =>
+        item.id === id
+          ? {
+              ...item,
+              produto_id: 0,
+              nome: '',
+              quantidade: 0,
+              preco: 0,
+              taxa: '0',
+            }
+          : item
+      )
+    );
+
 
       setCountAdicionar(prev => prev-1)
 
@@ -726,7 +830,7 @@ async function extrairPDFVenda() {
       })
 
       await api.post(`/documentos/print/${id}`)
-      setImpresso(true)
+      //setImpresso(true)
 
     } else {
 
@@ -745,32 +849,13 @@ async function extrairPDFVenda() {
       'Não foi possível gerar o PDF.'
     );
   }
+  finally
+  {
+      setImpresso(true)
+
+  }
 }
 
-
-// async function extrairPDFVenda() {
-//   try {
-//     const html = gerarHTMLVenda();
-
-//     const { uri } = await Print.printToFileAsync({
-//       html,
-//     });
-
-//     console.log('PDF gerado em:', uri);
-
-//     const isAvailable = await Sharing.isAvailableAsync();
-
-//     if (isAvailable) {
-//       await Sharing.shareAsync(uri);
-//     } else {
-//       Alert.alert('PDF gerado', 'Não foi possível partilhar o ficheiro.');
-//     }
-
-//   } catch (error) {
-//     console.log(error);
-//     Alert.alert('Erro', 'Não foi possível gerar o PDF.');
-//   }
-// }
 
 
 
@@ -854,12 +939,13 @@ const diminuirQuantidade = (id: number|undefined) => {
           {(venda?.estado==='CONFIRMADO'||venda?.estado==='RASCUNHO')
           &&
           <TouchableOpacity style={{borderRadius:2,
-          backgroundColor:colors.blue,
+          backgroundColor:impresso?'#a4cef8':colors.blue,
           paddingHorizontal:7,
           marginHorizontal:5
           }}
           onPress={()=>{
-           diminuirQuantidade(item.id)
+
+            !impresso && diminuirQuantidade(item.id)
           }}>
           <Text style={{color:'#fff'}}>-</Text>
         </TouchableOpacity>
@@ -871,12 +957,14 @@ const diminuirQuantidade = (id: number|undefined) => {
          { (venda?.estado==='CONFIRMADO'||venda?.estado==='RASCUNHO')
           &&
           <TouchableOpacity style={{borderRadius:2,
-              backgroundColor:colors.blue,
+              backgroundColor:impresso?'#a4cef8':colors.blue,
               paddingHorizontal:4,
-              marginHorizontal:5
+              marginHorizontal:5,
+              
           }}
           onPress={() =>{
-            aumentarQuantidade(item.id)
+            !impresso && aumentarQuantidade(item.id)
+           
           }}>
           
              <Text style={{color:'#fff'}}>+</Text>
@@ -1036,9 +1124,9 @@ console.log('nome:', selectedNomeDocumento)
                 <Text style={styles.clienteNuit}>Email: {fornecedorSelecionado.email}</Text>
               </View>
               <TouchableOpacity
-                onPress={() => setFornecedorSelecionado(null)}
-                style={styles.btnMudar}
-              >
+                onPress={() => (venda?.estado ==='RASCUNHO') && setFornecedorSelecionado(null)}
+                style={styles.btnMudar}   >
+           
                 <Text style={styles.btnMudarText}>Mudar</Text>
               </TouchableOpacity>
             </View>
@@ -1072,7 +1160,7 @@ console.log('nome:', selectedNomeDocumento)
               <Text style={styles.clienteNuit}>Email: {clienteSelecionado.email}</Text>
             </View>
             <TouchableOpacity
-              onPress={() => setClienteSelecionado(null)}
+              onPress={() => (venda?.estado ==='RASCUNHO') && setClienteSelecionado(null)}
               style={styles.btnMudar}>
           
               <Text style={styles.btnMudarText}>Mudar</Text>
@@ -1260,12 +1348,14 @@ console.log('nome:', selectedNomeDocumento)
         </View>
 
         {/* BOTÕES DE ACÇÃO */}
-        <View style={styles.actionsRow}>
+        
+        
+          <View style={styles.actionsRow}>
 
           {impresso?
             (
-              <View></View>
-
+              // <View></View>
+              <View/>
             ):
             (
               venda?.estado !=='CANCELADO' &&
@@ -1287,7 +1377,7 @@ console.log('nome:', selectedNomeDocumento)
                  <Text style={styles.btnSecundarioText}>
                   Guardando...
                  </Text>
-                )
+                 )
                  :
                  (   
 
@@ -1295,27 +1385,29 @@ console.log('nome:', selectedNomeDocumento)
                     Guardar
                   </Text>
                  )
+                 
             }
+            {/* console.log('venda antes de ENVIAR : ', payload) */}
           </TouchableOpacity>
            )}
-           
-           </View>
 
-           {
-            venda?.estado ==='CONFIRMADO' &&
-          
+             {
+            venda?.estado ==='CONFIRMADO' && (
+            
           <TouchableOpacity
             style={styles.btnPrimario}
             onPress={extrairPDFVenda}>
                <Text style={styles.btnPrimarioText}>EXPORTAR PDF</Text>
           </TouchableOpacity>
-              }
-            
+          )
+              }  
+          </View>
+
              {
-            venda?.impresso &&
+            impresso &&
             <View style={{marginTop:10,flexDirection:'row'}}>
               <Text style={{textAlign:'center', fontSize:15,
-                color:'#0ba049',fontWeight:700,justifyContent:'flex-start'}}>
+                color:'#0ba049',fontWeight:'700',justifyContent:'flex-start'}}>
                  Venda já impressa
               </Text>
             </View>
@@ -1326,7 +1418,7 @@ console.log('nome:', selectedNomeDocumento)
             venda?.estado ==='CANCELADO' &&
             <View style={{marginTop:10,flexDirection:'row'}}>
               <Text style={{textAlign:'center', fontSize:15,
-                justifyContent:'flex-start',color:'#f33c3c',fontWeight:700}}>
+                justifyContent:'flex-start',color:'#f33c3c',fontWeight:'700'}}>
                 Venda cancelada
               </Text>
             </View>

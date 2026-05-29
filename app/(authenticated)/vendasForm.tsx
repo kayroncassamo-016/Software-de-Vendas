@@ -1,9 +1,9 @@
  import { Select } from '@/components/project/Select';
+import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
 import { Clientes, Fornecedores, Produtos } from '@/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
-
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -549,10 +549,90 @@ async function loadFornecedores()
     }
   };
 
+   const aumentarQuantidade = (id: number|undefined) => {
+  setItens(prev =>
+    prev.map(item =>
+      item.id === id
+        ? { ...item, quantidade: item.quantidade + 1 }
+        : item
+    )
+  );
+};
 
+const diminuirQuantidade = (id: number|undefined) => {
+  setItens(prev =>
+    prev.map(item =>
+      item.id === id
+        ? {
+            ...item,
+            quantidade:
+              item.quantidade > 1
+                ? item.quantidade - 1
+                : 1,
+          }
+        : item
+    )
+  );
+};
+
+ const renderItem = ({ item }: { item: Item }) => (
+    <View style={styles.itemRow}>
+      <View style={styles.itemInfo}>
+        <Text style={styles.itemNome}>{item.nome}</Text>
+        
+        <View style={{flexDirection:'row'}}>
+
+          
+          <TouchableOpacity style={{borderRadius:2,
+          backgroundColor:colors.blue,
+          paddingHorizontal:7,
+          marginHorizontal:5
+          }}
+          onPress={()=>{
+           diminuirQuantidade(item.id)
+          }}>
+          <Text style={{color:'#fff'}}>-</Text>
+        </TouchableOpacity>
+        
+           <Text style={styles.itemDetalhes}>
+        {item.quantidade}    
+        </Text>
+
+        
+          <TouchableOpacity style={{borderRadius:2,
+              backgroundColor:colors.blue,
+              paddingHorizontal:4,
+              marginHorizontal:5
+          }}
+          onPress={() =>{
+            aumentarQuantidade(item.id)
+          }}>
+          
+             <Text style={{color:'#fff'}}>+</Text>
+          </TouchableOpacity>
+        
+
+          <Text style={styles.itemDetalhes}>  × {item.preco.toFixed(2)}  MT</Text>
+        </View>
+        {/* </Text> */}
+        <Text style={[styles.itemDetalhes,{paddingTop:10}]}>
+           IVA {parseFloat(item.taxa).toFixed(0)} %
+        </Text>
+      </View>
+      <View style={styles.itemRight}>
+        <Text style={styles.itemTotal}>{(item.quantidade * item.preco).toFixed(2)} MT</Text>
+        <TouchableOpacity
+          onPress={() => removerItem(item.id)}
+          style={styles.btnRemover}
+        >
+          <Text style={styles.btnRemoverText}>✕</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   // Renderizar item da lista
-  const renderItem = ({ item }: { item: Item }) => (
+  const renderItem2 = ({ item }: { item: Item }) => (
     <View style={styles.itemRow}>
       <View style={styles.itemInfo}>
         <Text style={styles.itemNome}>{item.nome}</Text>

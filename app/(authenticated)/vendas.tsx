@@ -22,9 +22,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
-import { Vendas } from '@/types/types';
+import { Clientes, Fornecedores, Vendas } from '@/types/types';
 import { useRef } from 'react';
-
 
 
 const NAV_ITEMS = [
@@ -133,7 +132,8 @@ const [vendas, setVendas] = useState<Vendas[]>([]);
 const [loadingClientes,setLoadingClientes] = useState(false)
 const [filtrados, setFiltrados] = useState<Vendas[]>([]);
 const [vendaSeleccionada, setVendaSeleccionada] = useState<Vendas|null>(null)
-
+const [clientes, setClientes] = useState<Clientes[]>()
+const [fornecedores, setFornecedores] = useState<Fornecedores[]>()
 
 
 const router = useRouter()
@@ -251,6 +251,9 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
     </View>
   );
 
+const cliente = clientes?.find(cliente=>cliente.id===venda.cliente_id)
+const fornecedor = fornecedores?.find(fornecedor=>
+  fornecedor.id === venda.fornecedor_id)
 
 
     return (
@@ -354,15 +357,21 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
        
       }}
     >
+      
       <TouchableOpacity
         style={styles.clienteCard}
         onPress={onPress}
       >
         <View style={styles.clienteLeft}>
           <Text style={styles.clienteNome}>{venda.nome_doc}</Text>
-          <Text style={{ color: '#838282' }}>
+          {/* <Text style={{ color: '#838282' }}>
             {venda.ano_serie}
+          </Text> */}
+
+           <Text style={{ color: '#838282' }}>
+            {(cliente?.email??fornecedor?.email )+ ` (${(venda.ano_serie)})`}
           </Text>
+
         </View>
 
         <BadgeEstadoVenda estado={venda.estado} />
@@ -426,11 +435,56 @@ useEffect(() =>
     async function loadData()
     {
         await loadVendas()
+        await loadClientes()
+        await loadFornecedores()
     }
 
      loadData()
    
 },[])
+
+  async function loadClientes()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+        try
+          {
+            const response = await api.get("/clientes",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+               }   
+            )
+      
+            setClientes(response.data.data)
+          }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+    }
+
+ async function loadFornecedores()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+        try
+          {
+            const response = await api.get("/fornecedor",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+               }   
+            )
+      
+            setFornecedores(response.data.data)
+          }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+    }
+
+
+
 
   async function loadVendas()
   {
