@@ -32,7 +32,8 @@ export interface Clientes
     tipo: string,
     sexo:string,
     endereco?:Endereco,
-    financeiro?: Financeiro
+    financeiro?: Financeiro,
+    created_at:Date
 }
 
 export interface Endereco
@@ -69,7 +70,8 @@ export interface Produtos
   imposto: Imposto
   tipo_produto: Tipo,
   marca: Marca,
-  familia:Familia
+  familia:Familia,
+  created_at:Date
 }
 
 export interface Categoria

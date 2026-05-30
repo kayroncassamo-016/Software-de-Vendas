@@ -129,21 +129,28 @@ const [searchText, setSearchText] = useState<string>('');
 const [activeNav, setActiveNav] = useState(0);
 
 const [vendas, setVendas] = useState<Vendas[]>([]);
+const [loading,setLoading] = useState(false)
+const [loadingVendas,setLoadingVendas] = useState(false)
 const [loadingClientes,setLoadingClientes] = useState(false)
+const [loadingFornecedores,setLoadingFornecedores] = useState(false)
 const [filtrados, setFiltrados] = useState<Vendas[]>([]);
 const [vendaSeleccionada, setVendaSeleccionada] = useState<Vendas|null>(null)
 const [clientes, setClientes] = useState<Clientes[]>()
 const [fornecedores, setFornecedores] = useState<Fornecedores[]>()
+const [clienteVenda,setClienteVenda] = useState<Clientes>()
+const [fornecedorVenda,setFornecedorVenda] = useState<Fornecedores>()
 
-
+const [idCliente,setIdCliente] = useState(0)
+const [idFornecedor,setIdFornecedor] = useState(0)
 const router = useRouter()
 
 
 
 
 
-
 const VendaItem = ({ venda, onPress }: clienteItemProps) => {
+
+ 
 
   const swipeableRef = useRef<any>(null);
 
@@ -254,6 +261,7 @@ const VendaItem = ({ venda, onPress }: clienteItemProps) => {
 const cliente = clientes?.find(cliente=>cliente.id===venda.cliente_id)
 const fornecedor = fornecedores?.find(fornecedor=>
   fornecedor.id === venda.fornecedor_id)
+  
 
 
     return (
@@ -430,14 +438,35 @@ const fornecedor = fornecedores?.find(fornecedor=>
 
   };
 
+  
+
 useEffect(() =>
 {
-    async function loadData()
-    {
-        await loadVendas()
-        await loadClientes()
-        await loadFornecedores()
-    }
+    // async function loadData()
+    // {
+    //     // await loadVendas()
+    //     // await loadClientes()
+    //     // await loadFornecedores()
+    //      await Promise.all([
+    //       loadVendas(),
+    //       loadClientes(),
+    //       loadFornecedores()
+    //     ]);
+    // }
+
+    async function loadData() {
+      try {
+        setLoading(true);
+
+        await Promise.all([
+          loadVendas(),
+          loadClientes(),
+          loadFornecedores()
+        ]);
+      } finally {
+        setLoading(false);
+      }
+}
 
      loadData()
    
@@ -448,6 +477,7 @@ useEffect(() =>
     const token  = await AsyncStorage.getItem("@token")
         try
           {
+           
             const response = await api.get("/clientes",
                {
                headers: { Authorization: `Bearer ${token}` },
@@ -461,6 +491,7 @@ useEffect(() =>
         {
             console.log(err.response)
         }
+        
     }
 
  async function loadFornecedores()
@@ -468,6 +499,8 @@ useEffect(() =>
     const token  = await AsyncStorage.getItem("@token")
         try
           {
+            setLoadingFornecedores(true)
+
             const response = await api.get("/fornecedor",
                {
                headers: { Authorization: `Bearer ${token}` },
@@ -481,6 +514,7 @@ useEffect(() =>
         {
             console.log(err.response)
         }
+       
     }
 
 
@@ -492,8 +526,7 @@ useEffect(() =>
 
         try
           {
-            setLoadingClientes(true)
-
+          
             const response = await api.get("/documentos",
                {
                headers: { Authorization: `Bearer ${token}` },
@@ -513,10 +546,7 @@ useEffect(() =>
             console.log(err.response)
         }
 
-        finally
-        {
-            setLoadingClientes(false)
-        }
+        
     }
 
     function AbrirVendasForm()
@@ -583,11 +613,12 @@ useEffect(() =>
         showsVerticalScrollIndicator={true}
       >
        {
-         loadingClientes?
+         loading?
          
           (<View style = {styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.blue}/>
           </View>
+         
           ):
             filtrados.length > 0 ? (
             filtrados.map((venda,index) => (

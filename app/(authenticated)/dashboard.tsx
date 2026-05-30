@@ -1,5 +1,6 @@
 import { useContexto } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
+import { Clientes, Produtos } from "@/types/types";
 import { useRouter } from "expo-router";
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import { useEffect, useState } from "react";
@@ -11,7 +12,6 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
-
 export default function DashBoard () {
  
   const [loadingProductNumber, SetLoadingProductNumber] = useState(false)
@@ -21,10 +21,52 @@ export default function DashBoard () {
   const [totalProdutos, setTotalProdutos] = useState(0);
   const [totalClientes, setTotalClientes] = useState(0);
   const [totalVendas, setTotalVendas] = useState(0);
-
+  const [clientes, setClientes] = useState<Clientes[]>()
+  const [produtos, setProdutos] = useState<Produtos[]>()
+  const [novosClientes, setNovosClientes] = useState(0);
+  const [novosProdutos, setNovosProdutos] = useState(0);
   const {user} = useContexto()
 
   const [activeNav, setActiveNav] = useState(2);
+
+  useEffect (()=>{
+
+    if (produtos)
+    {
+      const hoje = new Date();
+
+      const produtosHoje = produtos?.filter((produto:any) => {
+      const dataCriacao = new Date(produto.created_at);
+
+      return (
+        dataCriacao.getDate() === hoje.getDate() &&
+        dataCriacao.getMonth() === hoje.getMonth() &&
+        dataCriacao.getFullYear() === hoje.getFullYear()
+      );
+    });
+
+    setNovosProdutos(produtosHoje?.length??0);
+
+    }
+    if (clientes)
+    {
+        const hoje = new Date();
+
+      const clientesHoje = clientes?.filter((cliente) => {
+        
+      const dataCriacao = new Date(cliente.created_at);
+
+      return (
+        dataCriacao.getDate() === hoje.getDate() &&
+        dataCriacao.getMonth() === hoje.getMonth() &&
+        dataCriacao.getFullYear() === hoje.getFullYear()
+      );
+    });
+
+    setNovosClientes(clientesHoje?.length??0);
+
+    }
+  },[produtos,clientes])
 
 
   useEffect(() => {
@@ -49,6 +91,25 @@ async function loadingClienteStats()
         SetLoadingClienteNumber(true)
         const res =  await api.get("/clientes");
         setTotalClientes(res.data.data.length);
+        setClientes(res.data.data)
+
+    //   const hoje = new Date();
+
+    //   const clientesHoje = clientes?.filter((cliente) => {
+        
+    //   const dataCriacao = new Date(cliente.created_at);
+
+    //   return (
+    //     dataCriacao.getDate() === hoje.getDate() &&
+    //     dataCriacao.getMonth() === hoje.getMonth() &&
+    //     dataCriacao.getFullYear() === hoje.getFullYear()
+    //   );
+    // });
+
+    // setNovosClientes(clientesHoje?.length??0);
+      console.log(JSON.stringify(clientes?.[0], null, 2));
+
+
 
     }
     catch (err)
@@ -70,6 +131,21 @@ async function loadingClienteStats()
         SetLoadingProductNumber(true)
         const res =  await api.get("/produtos");
         setTotalProdutos(res.data.data.length);
+        setProdutos(res.data.data)
+
+        //  const hoje = new Date();
+
+        // const produtosHoje = produtos?.filter((produto:any) => {
+        //   const dataCriacao = new Date(produto.created_at);
+
+        //   return (
+        //     dataCriacao.getDate() === hoje.getDate() &&
+        //     dataCriacao.getMonth() === hoje.getMonth() &&
+        //     dataCriacao.getFullYear() === hoje.getFullYear()
+        //   );
+        // });
+
+        // setNovosProdutos(produtosHoje?.length??0);
 
     }
     catch (err)
@@ -237,7 +313,10 @@ async function loadingClienteStats()
                 <Text style={styles.value}>{totalClientes}</Text>
               )
             }
-          <Text style={styles.neutral}>+2 novos</Text>
+          {/* <Text style={styles.neutral}>+2 novos</Text> */}
+          <Text style={styles.neutral}> +{novosClientes} novos hoje</Text>
+ 
+
         </View>
 
         <View style={styles.card}>
@@ -260,7 +339,9 @@ async function loadingClienteStats()
             
           {/* // </Text>        */}
           <Text style={styles.positive}>x activos</Text>
-          <Text style={styles.neutral}>+y novos</Text>
+          {/* <Text style={styles.neutral}>+y novos</Text> */}
+          <Text style={styles.neutral}> +{novosProdutos} novos hoje</Text>
+
           <Text style={styles.danger}>z inactivos</Text>
 
         </View>
