@@ -1,6 +1,6 @@
 import { useContexto } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
-import { Clientes, Produtos } from "@/types/types";
+import { Categoria, Clientes, Fornecedores, Marca, Produtos, Tipo, Vendas } from "@/types/types";
 import { useRouter } from "expo-router";
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import { useEffect, useState } from "react";
@@ -22,9 +22,27 @@ export default function DashBoard () {
   const [totalClientes, setTotalClientes] = useState(0);
   const [totalVendas, setTotalVendas] = useState(0);
   const [clientes, setClientes] = useState<Clientes[]>()
-  const [produtos, setProdutos] = useState<Produtos[]>()
+  const [clientesEmpresa, setClientesEmpresa] = useState<Clientes[]>()
+  const [clientesParticular, setClientesParticular] = useState<Clientes[]>()
+  const [clientesHomens, setClientesHomens] = useState<Clientes[]>()
+  const [clientesMulheres, setClientesMulheres] = useState<Clientes[]>()
   const [novosClientes, setNovosClientes] = useState(0);
+
+  const [produtos, setProdutos] = useState<Produtos[]>()  
+  const [categorias, setCategorias] = useState<Categoria[]>()  
+  const [marcas, setMarcas] = useState<Marca[]>()  
+  const [tipos, setTipos] = useState<Tipo[]>()  
+  const [fornecedores,setFornecedores] = useState<Fornecedores[]>()
   const [novosProdutos, setNovosProdutos] = useState(0);
+
+  const [vendas, setVendas] = useState<Vendas[]>()
+  const [novasVendas, setNovasVendas] = useState(0);
+  const [vendasConfirmado, setVendasConfirmado] = useState<Vendas[]>()
+  const [vendasCancelado, setVendasCancelado] = useState<Vendas[]>()
+  const [vendasRascunho, setVendasRascunho] = useState<Vendas[]>()
+  const [vendasVD, setVendasVD] = useState<Vendas[]>()
+  const [vendasNE, setVendasNE] = useState<Vendas[]>()
+  const [vendasImpresso, setVendasImpresso] = useState<Vendas[]>()
   const {user} = useContexto()
 
   const [activeNav, setActiveNav] = useState(2);
@@ -64,17 +82,81 @@ export default function DashBoard () {
     });
 
     setNovosClientes(clientesHoje?.length??0);
+    
+    setClientesEmpresa(clientes.filter(clienteEmpresa=>
+      clienteEmpresa.tipo==='empresa'
+    ))
+    setClientesParticular(clientes.filter(clienteEmpresa=>
+      clienteEmpresa.tipo==='particular'
+    ))
+    setClientesHomens(clientes.filter(cliente=>cliente.sexo==='Masculino'))
+    setClientesMulheres(clientes.filter(cliente=>cliente.sexo==='Feminino'))
 
     }
-  },[produtos,clientes])
+
+    if (vendas)
+    {
+      const hoje = new Date();
+
+      const vendasHoje = vendas?.filter((venda) => {
+        
+      const dataCriacao = new Date(venda.created_at);
+
+      return (
+        dataCriacao.getDate() === hoje.getDate() &&
+        dataCriacao.getMonth() === hoje.getMonth() &&
+        dataCriacao.getFullYear() === hoje.getFullYear()
+      );
+    });
+
+    setNovasVendas(vendasHoje?.length??0);
+    setVendasRascunho (vendas.filter(venda=>
+      venda.estado==='RASCUNHO')
+    )
+    setVendasConfirmado(vendas.filter(venda=>
+      venda.estado==='CONFIRMADO')
+    )
+    setVendasCancelado (vendas.filter(venda=>
+      venda.estado==='CANCELADO')
+    )
+    setVendasNE(vendas.filter(venda=>venda.tipo_doc==='NE'))
+    setVendasVD(vendas.filter(venda=>venda.tipo_doc==='VD'))
+    setVendasImpresso(vendas.filter(venda=>venda.impresso===true))
+
+    }
+
+    if (marcas)
+    {
+      
+    }
+
+    if (categorias)
+    {
+
+    }
+
+    if (tipos)
+    {
+
+    }
+
+
+
+
+  },[produtos,clientes,vendas])
 
 
   useEffect(() => {
 
   async function loadStats() {
-    loadingProductStats()
-    loadingClienteStats()
-    loadingVendasStats()
+    await loadingProductStats()
+    await loadingClienteStats()
+    await loadingVendasStats()
+    await loadTipos()
+    await loadMarcas()
+    await loadCategorias()
+    await loadFornecedores()
+    
   }
 
   loadStats();
@@ -93,23 +175,7 @@ async function loadingClienteStats()
         setTotalClientes(res.data.data.length);
         setClientes(res.data.data)
 
-    //   const hoje = new Date();
-
-    //   const clientesHoje = clientes?.filter((cliente) => {
-        
-    //   const dataCriacao = new Date(cliente.created_at);
-
-    //   return (
-    //     dataCriacao.getDate() === hoje.getDate() &&
-    //     dataCriacao.getMonth() === hoje.getMonth() &&
-    //     dataCriacao.getFullYear() === hoje.getFullYear()
-    //   );
-    // });
-
-    // setNovosClientes(clientesHoje?.length??0);
       console.log(JSON.stringify(clientes?.[0], null, 2));
-
-
 
     }
     catch (err)
@@ -133,20 +199,6 @@ async function loadingClienteStats()
         setTotalProdutos(res.data.data.length);
         setProdutos(res.data.data)
 
-        //  const hoje = new Date();
-
-        // const produtosHoje = produtos?.filter((produto:any) => {
-        //   const dataCriacao = new Date(produto.created_at);
-
-        //   return (
-        //     dataCriacao.getDate() === hoje.getDate() &&
-        //     dataCriacao.getMonth() === hoje.getMonth() &&
-        //     dataCriacao.getFullYear() === hoje.getFullYear()
-        //   );
-        // });
-
-        // setNovosProdutos(produtosHoje?.length??0);
-
     }
     catch (err)
     {
@@ -168,6 +220,7 @@ async function loadingClienteStats()
         SetLoadingVendasNumber(true)
         const res =  await api.get("/documentos");
         setTotalVendas(res.data.data.data.length);
+        setVendas(res.data.data.data)
 
     }
     catch (err:any)
@@ -182,6 +235,81 @@ async function loadingClienteStats()
     }
   }
   
+
+  async function loadMarcas()
+    {
+      try{
+  
+        const response = await api.get('/marcas')
+  
+        setMarcas(response.data.data)
+      }
+      catch(err)
+      {
+        if(err instanceof Error)
+          console.log(err.message)
+      }
+      finally
+      {
+  
+      }
+    }
+
+     async function loadTipos()
+      {
+        try{
+    
+          const response = await api.get('/tipo')
+    
+          setTipos(response.data.data)
+        }
+        catch(err)
+        {
+          if(err instanceof Error)
+            console.log(err.message)
+        }
+        finally
+        {
+    
+        }
+      }
+
+     async function loadCategorias()
+       {
+        try{
+    
+          const response = await api.get('/categorias')
+    
+          setCategorias(response.data.data)
+        }
+        catch(err)
+        {
+          if(err instanceof Error)
+            console.log(err.message)
+        }
+        finally
+        {
+    
+        }
+      }
+
+  async function loadFornecedores()
+  {
+      try {
+            const response = await api.get("/fornecedor")
+            setFornecedores(response.data.data)
+          
+        }
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+
+        finally
+        {
+           
+        }
+    }
   
    function navigatePage(pageIndex:number)
    {
@@ -291,9 +419,10 @@ async function loadingClienteStats()
 
     
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Facturas emitidas</Text>
-          <Text style={styles.value}>34</Text>
-          <Text style={styles.positive}>↑ 8 vs março</Text>
+          <Text style={styles.cardTitle}>Fornecedores totais</Text>
+          <Text style={styles.value}>{fornecedores?.length}</Text>
+          {/* <Text style={styles.positive}>↑ 8 vs março</Text> */}
+
         </View>
 
       
@@ -313,9 +442,65 @@ async function loadingClienteStats()
                 <Text style={styles.value}>{totalClientes}</Text>
               )
             }
-          {/* <Text style={styles.neutral}>+2 novos</Text> */}
-          <Text style={styles.neutral}> +{novosClientes} novos hoje</Text>
- 
+            <View style={{flexDirection:'row'}}>
+              <Text style={styles.positive}> + {novosClientes}</Text>
+              <Text style={styles.neutral}> hoje</Text>
+            </View>
+
+           <View style={{flexDirection:'row',alignItems:'center'}}>
+             <Text style={styles.clienteEmpresa}>empresas</Text>
+
+             <Text style={{
+                color: '#555',
+                fontSize: 11,
+              }}
+             > : {clientesEmpresa?.length}</Text>
+           </View>
+
+            <View style={{flexDirection:'row',alignItems:"center"}}>
+             <Text style={styles.clienteParticular}>particulares</Text>
+
+              <Text style={{
+                color: '#555',
+                fontSize: 11,
+              }}>: {clientesParticular?.length}</Text>
+            </View>
+
+                <View>
+                  <View style={{flexDirection:'row',alignItems:"center"}}>
+                    <Text style={{
+                        color: '#555',
+                        fontSize: 11,paddingLeft:10
+                      }}> • Homens
+                    </Text>
+
+                      <Text style={{
+                        color: '#555',
+                        fontSize: 11,
+                      }}>: {clientesHomens?.length}
+                      </Text>
+                  </View>
+
+                   <View style={{flexDirection:'row',alignItems:"center"}}>
+                    <Text style={{
+                        color: '#555',
+                        fontSize: 11,paddingLeft:10
+                      }}> • Mulheres
+                    </Text>
+
+                      <Text style={{
+                        color: '#555',
+                        fontSize: 11,
+                      }}>: {clientesMulheres?.length}
+                      </Text>
+                  </View>
+
+                    
+                 </View>
+        
+          
+         
+
 
         </View>
 
@@ -336,13 +521,48 @@ async function loadingClienteStats()
                 <Text style={styles.value}>{totalProdutos}</Text>
               )
             }
-            
-          {/* // </Text>        */}
-          <Text style={styles.positive}>x activos</Text>
-          {/* <Text style={styles.neutral}>+y novos</Text> */}
-          <Text style={styles.neutral}> +{novosProdutos} novos hoje</Text>
+   
+            <View style={{flexDirection:'row'}}>
+              <Text style={styles.positive}> + {novosProdutos}</Text>
+              <Text style={styles.neutral}> hoje</Text>
+            </View>
 
-          <Text style={styles.danger}>z inactivos</Text>
+            <View style={{flexDirection:'row'}}>
+              <Text style={{color:'#555',
+                    fontSize:11
+                  }}>{categorias?.length}
+              </Text>
+
+              <Text style={{color:'#555',
+                    fontSize:11
+                  }}> categorias
+              </Text>
+            </View>
+
+            <View style={{flexDirection:'row'}}>
+              <Text style={{color:'#555',
+                    fontSize:11
+                  }}>{marcas?.length}
+              </Text>
+              
+              <Text style={{color:'#555',
+                    fontSize:11
+                  }}> marcas</Text>
+            </View>
+
+            <View style={{flexDirection:'row'}}>
+              <Text style={{color:'#555',
+                    fontSize:11
+                  }}>{tipos?.length}
+              </Text>
+
+              <Text style={{color:'#555',
+                    fontSize:11
+                  }}> tipos
+              </Text>
+
+            </View>
+
 
         </View>
 
@@ -362,7 +582,100 @@ async function loadingClienteStats()
                 <Text style={styles.value}>{totalVendas}</Text>
               )
             }
-          <Text style={styles.positive}>↑ 2 vs março</Text>
+          
+          <View style={{flexDirection:'row',alignItems:'center',
+            justifyContent:'space-between'
+          }}>
+            <View>
+              <View style={{flexDirection:'row'}}>
+                <Text style={styles.positive}> + {novasVendas}</Text>
+                <Text style={styles.neutral}> hoje</Text>
+              </View>
+
+              <View style={{flexDirection:'row'}}>
+                  <Text style={{color:'green',
+                    fontSize:11
+                  }}>Confirmado
+                  </Text>
+
+                  <Text style={{color: '#555',
+                    fontSize:11
+                  }}>: {vendasConfirmado?.length}
+                  </Text>
+
+              </View>
+
+              <View style={{flexDirection:'row'}}>
+                  
+                  <Text style={{color:'#966f34',
+                    fontSize:11
+                  }}>Rascunho
+                  </Text>
+
+                  <Text style={{color:'#555',
+                    fontSize:11
+                  }}>: {vendasRascunho?.length}
+                  </Text>
+
+              </View>
+
+              <View style={{flexDirection:'row'}}>
+                  
+                  <Text style={{color:'red',
+                    fontSize:11
+                  }}>Cancelado
+                  </Text>
+
+                  <Text style={{color:'#555',
+                    fontSize:11
+                  }}>: {vendasCancelado?.length}
+                  </Text>
+              </View>
+
+              <View style={{flexDirection:'row'}}>
+                  
+                  <Text style={{color:'#555',
+                    fontSize:11
+                  }}>Impresso
+                  </Text>
+
+                  <Text style={{color:'#555',
+                    fontSize:11
+                  }}>: {vendasImpresso?.length}
+                  </Text>
+              </View>
+            </View>
+
+            <View>
+              <View style={{flexDirection:'row'}}>
+                  
+                  <Text style={{color:'#555',
+                    fontSize:11
+                  }}>VD's
+                  </Text>
+
+                  <Text style={{color:'#555',
+                    fontSize:11
+                  }}>: {vendasVD?.length}
+                  </Text>
+              </View>
+
+               <View style={{flexDirection:'row'}}>
+                  
+                  <Text style={{color:'#555',
+                    fontSize:11
+                  }}>NE's
+                  </Text>
+
+                  <Text style={{color:'#555',
+                    fontSize:11
+                  }}>: {vendasNE?.length}
+                  </Text>
+              </View>
+            </View>
+
+
+           </View>
         </View>
       </View>
 
@@ -601,4 +914,27 @@ bottomNav: {
     backgroundColor: '#185FA5',
     marginTop: 1,
   },
+
+  clienteEmpresa:
+  {
+    //  backgroundColor: '#c9ccec',
+      color:'#4f0fe2',
+      // paddingHorizontal:3,
+      // paddingVertical:1,
+      // borderRadius:20,
+      fontSize:11,
+      fontWeight:500
+  },
+
+  clienteParticular:
+  {
+    // backgroundColor: '#fae5d9',
+    color:'#854F0B',
+    padding:1,
+    // borderRadius:20,
+    fontSize:11,
+    // paddingHorizontal:5,
+    // paddingVertical:2,
+    fontWeight:500
+  }
 });

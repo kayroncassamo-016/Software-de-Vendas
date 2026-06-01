@@ -292,7 +292,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
       {
         try{
     
-          const response = await api.get('/marca')
+          const response = await api.get('/marcas')
     
           setMarcas(response.data.data)
           // console.log('impostos:', response.data.data.data)
@@ -356,7 +356,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
       {
         try{
     
-          const response = await api.get('/imposto')
+          const response = await api.get('/impostos')
     
           setImpostos(response.data.data)
           // console.log('impostos:', response.data.data.data)
@@ -377,7 +377,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
        {
         try{
     
-          const response = await api.get('/categoria')
+          const response = await api.get('/categorias')
     
           setCategorias(response.data.data)
          console.log('categorias:', response.data.data)

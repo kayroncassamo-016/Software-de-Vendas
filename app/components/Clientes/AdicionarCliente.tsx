@@ -32,6 +32,7 @@ export function AdicionarCliente({visible,setVisible
 
 {
     const [numero,setNumero ] = useState('')
+    const [nuit,setNuit ] = useState('')
     const [nome,setNome] = useState('')
     const [email,setEmail] = useState('')
     const [morada,setMorada] = useState('')
@@ -88,6 +89,7 @@ export function AdicionarCliente({visible,setVisible
     const payload = 
       {
         numero:numero,
+        nuit:nuit,
         nome: nome,
         email: email,
         tipo: selectedTipo,
@@ -183,6 +185,13 @@ export function AdicionarCliente({visible,setVisible
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}> Número:</Text>
                 <TextInput value={numero} onChangeText={setNumero}
+                keyboardType='numeric'
+                style={styles.TextFieldStyling}/>
+              </View>
+
+               <View style={styles.dialogContentStyle}>
+                <Text style={styles.dialogTextStyle}> Nuit:</Text>
+                <TextInput value={nuit} onChangeText={setNuit}
                 keyboardType='numeric'
                 style={styles.TextFieldStyling}/>
               </View>

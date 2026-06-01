@@ -34,6 +34,7 @@ export function EditarCliente({visible,setVisible
 
 {
     const [numero,setNumero ] = useState('')
+    const [nuit,setNuit ] = useState('')
     const [nome,setNome] = useState('')
     const [email,setEmail] = useState('')
     const [morada,setMorada] = useState('')
@@ -74,6 +75,7 @@ export function EditarCliente({visible,setVisible
    if (cliente)
    {
         setNumero(cliente.numero.toString());
+        setNuit(cliente.nuit.toString())
         setNome(cliente.nome);
         setEmail(cliente.email);
         setMorada(cliente.endereco?.morada??'');
@@ -131,6 +133,7 @@ export function EditarCliente({visible,setVisible
       {
 
         numero:numero,
+        nuit:nuit,
         nome: nome,
         email: email,
         tipo: selectedTipo??'',
@@ -233,6 +236,13 @@ export function EditarCliente({visible,setVisible
                     color: '#666'
                   }
                 ]}/>
+              </View>
+
+                <View style={styles.dialogContentStyle}>
+                <Text style={styles.dialogTextStyle}> Nuit:</Text>
+                <TextInput value={nuit} onChangeText={setNuit}
+                keyboardType='numeric' style={styles.TextFieldStyling
+                }/>
               </View>
 
 

@@ -27,6 +27,7 @@ export interface Clientes
     id: number,
     numero:number,
     nome:string,
+    nuit:string
     data_nascimento:string,
     email: string,
     tipo: string,
@@ -149,6 +150,7 @@ export interface Vendas
     pagamentos:pagamento[]
 
      linhas:linha [],
+     created_at:Date
 }
 
 export interface pagamento

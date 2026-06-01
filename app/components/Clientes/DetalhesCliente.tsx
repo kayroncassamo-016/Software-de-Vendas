@@ -169,7 +169,8 @@ export function DetalhesCliente({visible,setVisible,
                    Limite de crédito:
                 </Text>
                 <Text style={{paddingLeft:5}}>
-                    {cliente?.financeiro?.limite_credito??'N/A'}
+                    {parseFloat(cliente?.financeiro?.limite_credito??'N/A').
+                    toFixed(2).toString()}
                 </Text>
               </View>
 
@@ -178,7 +179,8 @@ export function DetalhesCliente({visible,setVisible,
                   Desconto comercial:
                 </Text>
                 <Text style={{paddingLeft:5}}>
-                    {cliente?.financeiro?.desconto_comercial??'N/A'}
+                  {parseFloat(cliente?.financeiro?.desconto_comercial??'N/A').
+                  toFixed(2).toString()}
                 </Text>
               </View>
 
