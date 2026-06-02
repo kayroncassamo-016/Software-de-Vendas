@@ -1,6 +1,7 @@
 import { useContexto } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { Categoria, Clientes, Fornecedores, Marca, Produtos, Tipo, Vendas } from "@/types/types";
+import { formatMoney } from "@/utils/format";
 import { useRouter } from "expo-router";
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import { useEffect, useState } from "react";
@@ -12,6 +13,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
+
 export default function DashBoard () {
  
   const [loadingProductNumber, SetLoadingProductNumber] = useState(false)
@@ -38,14 +40,29 @@ export default function DashBoard () {
   const [vendas, setVendas] = useState<Vendas[]>()
   const [novasVendas, setNovasVendas] = useState(0);
   const [vendasConfirmado, setVendasConfirmado] = useState<Vendas[]>()
+  const [vendasConfirmadoVD, setVendasConfirmadoVD] = useState<Vendas[]>()
   const [vendasCancelado, setVendasCancelado] = useState<Vendas[]>()
   const [vendasRascunho, setVendasRascunho] = useState<Vendas[]>()
+  const [vendasRascunhoVD, setVendasRascunhoVD] = useState<Vendas[]>()
+  const [vendasFornecedorNE, setVendasFornecedorNE] = useState<Vendas[]>()
   const [vendasVD, setVendasVD] = useState<Vendas[]>()
   const [vendasNE, setVendasNE] = useState<Vendas[]>()
   const [vendasImpresso, setVendasImpresso] = useState<Vendas[]>()
+  const [vendasImpressoAcumulado, setVendasImpressoAcumulado] = useState<number>(0)
+  const [vendasConfirmadoAcumulado, setVendasConfirmadoAcumulado] = useState<number>(0)
+  const [vendasRascunhoAcumulado, setVendasRascunhoAcumulado] = useState<number>(0)
+  const [vendasFornecedorAcumulado, setVendasFornecedorAcumulado] = useState<number>(0)
   const {user} = useContexto()
 
   const [activeNav, setActiveNav] = useState(2);
+
+  const data = new Date();
+
+  const mes = data.toLocaleString('pt-PT', { month: 'long' });
+
+  const mesCapitalizado = mes.charAt(0).toUpperCase() + mes.slice(1);
+
+  const ano = data.toLocaleString('pt-PT', { year: 'numeric' });
 
   useEffect (()=>{
 
@@ -89,8 +106,10 @@ export default function DashBoard () {
     setClientesParticular(clientes.filter(clienteEmpresa=>
       clienteEmpresa.tipo==='particular'
     ))
-    setClientesHomens(clientes.filter(cliente=>cliente.sexo==='Masculino'))
-    setClientesMulheres(clientes.filter(cliente=>cliente.sexo==='Feminino'))
+    setClientesHomens(clientes.filter(cliente=>cliente.sexo==='Masculino'||
+      cliente.sexo==='masculino'))
+    setClientesMulheres(clientes.filter(cliente=>cliente.sexo==='Feminino'||
+      cliente.sexo==='feminino'))
 
     }
 
@@ -113,37 +132,141 @@ export default function DashBoard () {
     setVendasRascunho (vendas.filter(venda=>
       venda.estado==='RASCUNHO')
     )
+      setVendasRascunhoVD (vendas.filter(venda=>
+      venda.estado==='RASCUNHO'&& venda.tipo_doc==='VD' )
+    )
     setVendasConfirmado(vendas.filter(venda=>
-      venda.estado==='CONFIRMADO')
+      venda.estado==='CONFIRMADO' )
+    )
+    setVendasConfirmadoVD(vendas.filter(venda=>
+      venda.estado==='CONFIRMADO'  && venda.tipo_doc==='VD')
     )
     setVendasCancelado (vendas.filter(venda=>
       venda.estado==='CANCELADO')
     )
     setVendasNE(vendas.filter(venda=>venda.tipo_doc==='NE'))
     setVendasVD(vendas.filter(venda=>venda.tipo_doc==='VD'))
-    setVendasImpresso(vendas.filter(venda=>venda.impresso===true))
+    setVendasImpresso(vendas.filter(venda=>
+      venda.impresso===true && venda.estado!=='CANCELADO' 
+      && venda.tipo_doc==='VD'))
 
     }
-
-    if (marcas)
+    if (fornecedores)
     {
-      
+      setVendasFornecedorNE(vendas?.filter(venda=>
+      venda.impresso  && venda.tipo_doc==='NE'))
     }
 
-    if (categorias)
+
+  },[produtos,clientes,vendas,fornecedores])
+
+  useEffect (()=>{
+    
+    if (vendasImpresso)
     {
+       setVendasImpressoAcumulado(
 
+        vendasImpresso.reduce((acumulador,vendaAtual)=>
+        {
+          const hoje = new Date();
+          const dataCriacao = new Date(vendaAtual.created_at);
+
+          if (dataCriacao.getMonth() === hoje.getMonth() &&
+              dataCriacao.getFullYear() === hoje.getFullYear())
+          {
+              return acumulador + parseFloat(vendaAtual.total_doc)
+          }
+          
+          return acumulador
+        
+
+        } ,0)
+       )
     }
 
-    if (tipos)
+  },[vendasImpresso])
+
+
+  useEffect (()=>
+  {
+    if (vendasConfirmadoVD)
     {
+      setVendasConfirmadoAcumulado (
 
+        vendasConfirmadoVD.reduce ((acumulador, vendaAtual) =>  
+        {
+          const hoje = new Date ()
+          const dataCriacao = new Date (vendaAtual.created_at)
+
+          if (dataCriacao.getMonth()=== hoje.getMonth() &&
+              dataCriacao.getFullYear() === hoje.getFullYear()
+            && !vendaAtual.impresso
+           )
+          {
+             return  acumulador + parseFloat(vendaAtual.total_doc)
+          }
+
+         return acumulador
+  
+           
+        }, 0)
+      )
     }
+  },[vendasConfirmadoVD])
 
 
+  useEffect (()=>
+  {
+    if (vendasRascunhoVD)
+    {
+      setVendasRascunhoAcumulado (
+
+        vendasRascunhoVD.reduce ((acumulador, vendaAtual) =>  
+        {
+          const hoje = new Date ()
+          const dataCriacao = new Date (vendaAtual.created_at)
+
+          if (dataCriacao.getMonth()=== hoje.getMonth() &&
+              dataCriacao.getFullYear() === hoje.getFullYear()
+           )
+          {
+             return  acumulador + parseFloat(vendaAtual.total_doc)
+          }
+
+         return acumulador
+  
+           
+        }, 0)
+      )
+    }
+  },[vendasRascunhoVD])
 
 
-  },[produtos,clientes,vendas])
+    useEffect (()=>
+  {
+    if (vendasFornecedorNE)
+    {
+      setVendasFornecedorAcumulado (
+
+        vendasFornecedorNE.reduce ((acumulador, vendaAtual) =>  
+        {
+          const hoje = new Date ()
+          const dataCriacao = new Date (vendaAtual.created_at)
+
+          if (dataCriacao.getMonth()=== hoje.getMonth() &&
+              dataCriacao.getFullYear() === hoje.getFullYear()
+           )
+          {
+             return  acumulador + parseFloat(vendaAtual.total_doc)
+          }
+
+         return acumulador
+  
+           
+        }, 0)
+      )
+    }
+  },[vendasFornecedorNE])
 
 
   useEffect(() => {
@@ -396,7 +519,11 @@ async function loadingClienteStats()
      
       <View style={styles.header}>
         <Text style={styles.greeting}>Bom dia, {user?.user.name}</Text>
-        <Text style={styles.subtitle}>Facturação — Abril 2026</Text>
+        <Text style={styles.subtitle}>
+          Facturação —{" "} 
+            {mesCapitalizado} de {ano}
+
+        </Text>
       </View>
 
   
@@ -405,25 +532,92 @@ async function loadingClienteStats()
         {/* Faturado */}
         
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Faturado (mês)</Text>
-          <Text style={styles.value}>245.800 MT</Text>
-          <Text style={styles.positive}>↑ 12% vs março</Text>
+          <Text style={styles.cardTitle}>Faturado (em VD's)</Text>
+
+          <Text style={styles.value}>
+            
+            {
+              formatMoney(vendasImpressoAcumulado) + ' MT'
+            }
+            
+          </Text>
+
+          <Text style={styles.positive}>↑ 12% vs maio</Text>
         </View>
 
     
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Por receber</Text>
-          <Text style={styles.value}>87.300 MT</Text>
-          <Text style={styles.danger}>3 facturas pendentes</Text>
+          <Text style={styles.cardTitle}>Por receber (em VD's)</Text>
+          <Text style={styles.value}>
+
+            {formatMoney(vendasConfirmadoAcumulado)+ ' MT'}
+
+          </Text>
+          <Text style={styles.danger}>
+          
+            {
+           vendasConfirmado?.filter(
+            venda=> !venda.impresso).length
+            } 
+        
+            {" "}factura(s) pendente(s)</Text>
         </View>
 
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Pago (em NE's)</Text>
+
+          <Text style={styles.value}>
+            
+            {
+              formatMoney(vendasFornecedorAcumulado) + ' MT'
+            }
+            
+          </Text>
+
+          <Text style={{color:'green',
+                    fontSize:12,marginTop:10}}>Valor total pago à fornecedores </Text>
+             
+        </View>
+
+        
+          <View style={styles.card}>
+          <Text style={styles.cardTitle}>Rascunhos (vendas não confirmadas)</Text>
+
+          <Text style={styles.value}>
+            
+            {
+              formatMoney(vendasRascunhoAcumulado) + ' MT'
+            }
+            
+          </Text>
+
+          <Text style={{color:'#966f34',
+                    fontSize:12,marginTop:10}}>  VD's não confirmadas   </Text>
+             
+        </View>
     
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Fornecedores totais</Text>
           <Text style={styles.value}>{fornecedores?.length}</Text>
-          {/* <Text style={styles.positive}>↑ 8 vs março</Text> */}
+          <Text style={styles.cardTitle}>Alguns fornecedores:</Text>
+          {
+            fornecedores?.slice(0,2).map((fornecedor,index)=>
+              (
+                <Text key={index}
+                 style={{
+                  color: '#555',
+                  fontSize: 10,
+                }}>
+                 • {fornecedor.nome}
+                
+                </Text>
+              )
+            )
+          }
 
         </View>
+
+        
 
       
         <View style={styles.card}>
