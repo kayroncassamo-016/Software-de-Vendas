@@ -150,7 +150,7 @@ export interface Vendas
     pagamentos:pagamento[]
 
      linhas:linha [],
-     created_at:Date
+     created_at:string
 }
 
 export interface pagamento

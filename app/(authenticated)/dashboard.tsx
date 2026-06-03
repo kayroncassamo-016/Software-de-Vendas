@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import { useEffect, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet, Text,
@@ -13,7 +14,6 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
-
 export default function DashBoard () {
  
   const [loadingProductNumber, SetLoadingProductNumber] = useState(false)
@@ -52,6 +52,11 @@ export default function DashBoard () {
   const [vendasConfirmadoAcumulado, setVendasConfirmadoAcumulado] = useState<number>(0)
   const [vendasRascunhoAcumulado, setVendasRascunhoAcumulado] = useState<number>(0)
   const [vendasFornecedorAcumulado, setVendasFornecedorAcumulado] = useState<number>(0)
+  
+  
+  const [refreshing, setRefreshing] = useState(false);
+  
+  
   const {user} = useContexto()
 
   const [activeNav, setActiveNav] = useState(2);
@@ -63,6 +68,40 @@ export default function DashBoard () {
   const mesCapitalizado = mes.charAt(0).toUpperCase() + mes.slice(1);
 
   const ano = data.toLocaleString('pt-PT', { year: 'numeric' });
+
+
+useEffect(() => {
+  loadStats();
+}, []);
+
+async function loadStats() {
+  try {
+    await Promise.all([
+      loadingProductStats(),
+      loadingClienteStats(),
+      loadingVendasStats(),
+      loadTipos(),
+      loadMarcas(),
+      loadCategorias(),
+      loadFornecedores(),
+    ]);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function onRefresh() {
+  try {
+    setRefreshing(true);
+
+    await loadStats();
+
+  } finally {
+    setRefreshing(false);
+  }
+}
+
+
 
   useEffect (()=>{
 
@@ -85,7 +124,7 @@ export default function DashBoard () {
     }
     if (clientes)
     {
-        const hoje = new Date();
+      const hoje = new Date();
 
       const clientesHoje = clientes?.filter((cliente) => {
         
@@ -469,44 +508,112 @@ async function loadingClienteStats()
     { icon: Cog, label: 'Config.' },
   ];
 
-  const FACTURAS = [
-  { num: 'FT 2026/034', cliente: 'Kayron Cassamo',    data: '22 Abr 2026', valor: '42.500 MT', estado: 'Pago' },
-  { num: 'FT 2026/033', cliente: 'Guifty',   data: '20 Abr 2026', valor: '18.750 MT', estado: 'Pendente' },
-  { num: 'FT 2026/032', cliente: 'Guilherme',          data: '18 Abr 2026', valor: '95.000 MT', estado: 'Pago' },
-  { num: 'FT 2026/031', cliente: 'Momade Gafar',            data: '15 Abr 2026', valor: '33.200 MT', estado: 'Pendente' },
-  ];
+
+const BadgeEstadoVenda = ({estado} :any) => {
   
-  function Badge({ estado }:{ estado: 'Pago' | 'Pendente' | 'Cancelado' }) {
-  const config = {
-    Pago: { bg: '#EAF3DE', color: '#3B6D11' },
-    Pendente:  { bg: '#FAEEDA', color: '#854F0B' },
-    Cancelado: { bg: '#FCEBEB', color: '#A32D2D' },
-  };
-  const { bg, color } = config[estado] || config.Pago;
-  
-  return (
-    <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text style={[styles.badgeText, { color }]}>{estado}</Text>
-    </View>
-  );
+  if (estado === 'CONFIRMADO')
+  {
+    return (
+      <View>
+        <Text style ={{
+          backgroundColor: '#b9fcce',
+          color:'#3fa04c',
+          paddingHorizontal:5,
+          paddingVertical:2,
+          borderRadius:20,
+          fontSize:11,
+          fontWeight:500
+        }}
+        >
+          {estado}
+        
+        </Text>
+    
+      </View>
+    )
+  }
+  else if (estado === 'CANCELADO')
+  {
+      return (
+      <Text style ={{
+        
+        backgroundColor: '#f58d8d',
+        color:'#8d3131',
+        padding:1,
+        borderRadius:20,
+        fontSize:11,
+        paddingHorizontal:5,
+        paddingVertical:2,
+        fontWeight:500
+      }}
+      >
+        {estado}
+      
+      </Text>
+      )
+   } 
+    else if (estado ==='RASCUNHO')
+    {
+      return (
+      <Text style ={{
+        
+        backgroundColor: '#ffe2b6',
+        color:'#966f34',
+        padding:1,
+        borderRadius:20,
+        fontSize:11,
+        paddingHorizontal:5,
+        paddingVertical:2,
+        fontWeight:500
+      }}
+      >
+        {estado}
+      
+      </Text>
+    )
+  }
+
+};
+interface VendaProps
+{
+  venda: Vendas
 }
 
-  function FacturaItem({ item }:any) {
-  return (
+  function FacturaItem({ venda }:VendaProps) {
+
+    const cliente = clientes?.find(cliente=> cliente.id === venda.cliente_id)
+    const fornecedor = fornecedores?.find(fornecedor=> fornecedor.id === venda.fornecedor_id)
+    
+    const today = new Date ()
+
+    const date = new Date (venda.created_at)
+
+    if (date.getMonth()===today.getMonth())
+    {
+
+    return (
    
     <TouchableOpacity style={styles.facturaCard}>
       <View style={styles.facturaLeft}>
-        <Text style={styles.facturaNum}>{item.num}</Text>
-        <Text style={styles.facturaCliente}>{item.cliente}</Text>
-        <Text style={styles.facturaData}>{item.data}</Text>
+        <Text style={styles.facturaNum}>{venda.tipo_doc} {new Date().getFullYear()+'/'+venda.id}</Text>
+        <Text style={styles.facturaCliente}>{cliente?.nome??fornecedor?.nome}</Text>
+        <Text style={styles.facturaData}> 
+          {new Date (venda?.created_at).getDate()} {" "}
+          {new Date (venda?.created_at).toLocaleString('pt-PT',{month:'short'})} {""}
+          {new Date (venda?.created_at).getFullYear()} 
+        </Text>
+
       </View>
       <View style={styles.facturaRight}>
-        <Text style={styles.facturaValor}>{item.valor}</Text>
-        <Badge estado={item.estado} />
+        <Text style={styles.facturaValor}>{formatMoney(venda.total_doc)+' MT'} </Text>
+        <BadgeEstadoVenda estado={venda.estado} />
       </View>
     </TouchableOpacity>
     
-  );
+  )
+}
+  else
+    return null
 }
 
 
@@ -514,7 +621,17 @@ async function loadingClienteStats()
    
     <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false}
+         refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#185FA5"]}
+            tintColor="#185FA5"
+          />
+  }
+        
+        >
 
      
       <View style={styles.header}>
@@ -875,15 +992,15 @@ async function loadingClienteStats()
 
         {/* Facturas recentes */}
       <View style= {styles.facturaContainer}>
-        <Text style={styles.sectionTitle}>Clientes - facturas recentes</Text>
+        <Text style={styles.sectionTitle}>Facturas recentes</Text>
 
-        {FACTURAS.map((item, i) => (
-        <FacturaItem key={i} item={item} />
+        {vendas?.map((venda, i) => (
+        <FacturaItem key={i} venda={venda} />
          ))}
       </View>
 
       <View>
-          <Text>gergregeghege</Text>
+          <Text></Text>
       </View>  
       </ScrollView>
     
@@ -952,8 +1069,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    borderWidth:2,
-    borderColor:'#000',
+    // borderWidth:2,
+    // borderColor:'#000',
     margin:10
   },
 

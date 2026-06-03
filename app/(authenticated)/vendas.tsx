@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   // SafeAreaView,
   ScrollView,
   StatusBar,
@@ -34,7 +35,7 @@ const NAV_ITEMS = [
     { icon: Cog, label: 'Config.' },
 ];
 
- //─── Badge de cliente ─────────────────────────────────────────────
+ 
 const BadgeEstadoVenda = ({estado} :any) => {
   
   if (estado === 'CONFIRMADO')
@@ -54,19 +55,7 @@ const BadgeEstadoVenda = ({estado} :any) => {
           {estado}
         
         </Text>
-      
-        {/* <TouchableOpacity
-        style={{position:'absolute',
-          top:30,
-          left:10
-          }}
-        >
-        <Text style={{
-          fontSize:10,
-          }}>
-            Exportar em pdf
-        </Text>
-        </TouchableOpacity> */}
+    
       </View>
     )
   }
@@ -119,10 +108,6 @@ interface clienteItemProps
     onPress : () => void
 }
 
-
-
-
-// ─── Ecrã de clientes ──────────────────────────────────────────────
 export default function VendasList ()  {
 
 const [searchText, setSearchText] = useState<string>('');
@@ -137,13 +122,36 @@ const [filtrados, setFiltrados] = useState<Vendas[]>([]);
 const [vendaSeleccionada, setVendaSeleccionada] = useState<Vendas|null>(null)
 const [clientes, setClientes] = useState<Clientes[]>()
 const [fornecedores, setFornecedores] = useState<Fornecedores[]>()
-const [clienteVenda,setClienteVenda] = useState<Clientes>()
-const [fornecedorVenda,setFornecedorVenda] = useState<Fornecedores>()
+const [refreshing, setRefreshing] = useState(false);
 
-const [idCliente,setIdCliente] = useState(0)
-const [idFornecedor,setIdFornecedor] = useState(0)
 const router = useRouter()
+ 
+useEffect(() => {
+  loadStats();
+}, []);
 
+async function loadStats() {
+  try {
+    await Promise.all([
+       loadVendas(),
+       loadClientes(),
+       loadFornecedores()
+    ]);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function onRefresh() {
+  try {
+    setRefreshing(true);
+
+    await loadStats();
+
+  } finally {
+    setRefreshing(false);
+  }
+}
 
 
 
@@ -554,20 +562,8 @@ useEffect(() =>
         router.push('/(authenticated)/vendasForm')
     }
 
-    function AbrirVendasFormRascunho()
-    {
-         router.push({
-            pathname:"/(authenticated)/vendasForm",
-            params:
-            {
-              id: vendaSeleccionada?.id,
-            
-            }
-        })
-    }
 
-
-
+    
   return (
     
     
@@ -611,6 +607,14 @@ useEffect(() =>
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#185FA5"]}
+            tintColor="#185FA5"
+          />  }
+
       >
        {
          loading?

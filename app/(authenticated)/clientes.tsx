@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 
 import {
   ActivityIndicator,
+  RefreshControl,
   // SafeAreaView,
   ScrollView,
   StatusBar,
@@ -12,7 +13,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -101,7 +102,8 @@ const [visibleFormCadastro, setVisibleFormCadastro] = useState(false)
 const [visibleDetalhesCliente, setVisibleDetalhesCliente] = useState(false)
 const [visibleDeletarCliente, setVisibleDeletarCliente] = useState(false)
 const [visibleEditarCliente, setVisibleEditarCliente] = useState(false)
-
+const [loadingInicial, setLoadingInicial] = useState(true);
+const [refreshing, setRefreshing] = useState(false);
 
 const router = useRouter()
 
@@ -184,11 +186,50 @@ const ClienteItem = ({ cliente, onPress}:clienteItemProps) => {
 
   };
 
+useEffect(() => {
+  async function init() {
+    try {
+      setLoadingClientes(true);
+      await loadClientes();
+    } finally {
+      setLoadingClientes(false);
+    }
+  }
+
+  init();
+}, []);
+
+
+useEffect(() => {
+  loadStats();
+}, []);
+
+async function loadStats() {
+  try {
+    await Promise.all([
+       loadClientes(),
+    ]);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function onRefresh() {
+  try {
+    setRefreshing(true);
+
+    await loadStats();
+
+  } finally {
+    setRefreshing(false);
+  }
+}
+
 useEffect(() =>
 {
     async function loadData()
     {
-        await loadClientes()
+        await Promise.all([loadClientes()])
     }
 
      loadData()
@@ -200,7 +241,7 @@ useEffect(() =>
     const token  = await AsyncStorage.getItem("@token")
 
     try{
-        setLoadingClientes(true)
+       // setLoadingClientes(true)
 
             const response = await api.get("/clientes",
                {
@@ -224,7 +265,7 @@ useEffect(() =>
 
         finally
         {
-            setLoadingClientes(false)
+        //    setLoadingClientes(false)
         }
     }
 
@@ -261,7 +302,15 @@ useEffect(() =>
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
-      >
+        refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={["#185FA5"]}
+          tintColor="#185FA5"
+        />  }   >
+
+   
        {
          loadingClientes?
          

@@ -10,6 +10,7 @@ import {
   Alert,
   Dimensions,
   KeyboardAvoidingView,
+  RefreshControl,
   // SafeAreaView,
   ScrollView,
   StatusBar,
@@ -17,7 +18,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -141,9 +142,6 @@ const [loadingProdutos,setLoadingProdutos] = useState(false)
 const [filtrados, setFiltrados] = useState<Produtos[]>([]);
 const [produtoSeleccionado, setProdutoSeleccionado] = useState<Produtos|null>(null)
 
-
-
-
 const [categorias, setCategorias] =  useState<Categoria[]>([])
 const [selectedCategory, setSelectedCategory] = useState<string>('');
 const [selectedCategoryId, setSelectedCategoryId] = useState<number>();
@@ -201,11 +199,11 @@ const [precoL_5, setPrecoLiquido_5] = useState('')
 const [precoIL_5, setPrecoIliquido_5] = useState('')
 
 const [stock, setStock] = useState('');
+const [refreshing, setRefreshing] = useState(false);
 
 
 const precoNum = parseFloat(precoVenda) || 0;
 const taxa = selectedImpostoTaxa
-// const total = precoNum + (precoNum * taxa / 100);
 
 const total = precoL
 
@@ -312,6 +310,38 @@ const total = precoL
   }
   finally{
     setLoadingProdutos(false)
+  }
+}
+
+
+useEffect(() => {
+  loadStats();
+}, []);
+
+async function loadStats() {
+  try {
+    await Promise.all([
+          loadProducts(),
+          loadImpostos(),
+          loadCategorias(),
+          loadFamilias(),
+          loadTipos(),
+          loadMarcas(),
+          loadMotivosIsencao()
+    ]);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function onRefresh() {
+  try {
+    setRefreshing(true);
+
+    await loadStats();
+
+  } finally {
+    setRefreshing(false);
   }
 }
 
@@ -1122,6 +1152,13 @@ useEffect(()=> {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
+         refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#185FA5"]}
+            tintColor="#185FA5"
+          />  }   
       >
        {
          loadingProdutos?
