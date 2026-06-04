@@ -1,9 +1,10 @@
 import { colors } from '@/constants/theme';
 import { useContexto } from '@/contexts/AuthContext';
+import { api } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from 'expo-router';
-import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
+import { Cog, Delete, EyeIcon, Grid2X2, Handshake, Package, Plus, ShoppingBag } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -47,8 +48,16 @@ const ConfigScreen = () => {
  
 
   const [modalUsuario, setModalUsuario] = useState(false);
-  const [nome, setNome] = useState("");
+  const [modalAddUser, setModalAddUser] = useState(false);
+  const [modalPermissoes, setModalPermissoes] = useState(false);
+  const [nome, setNome] = useState(""); 
   const [senha, setSenha] = useState("");
+  const [nomeNewUser, setNomeNewUser] = useState("");
+  const [senhaNewUser, setSenhaNewUser] = useState("");
+  const [emailNewUser, setEmailNewUser] = useState("");
+  const [cargoNewUser, setCargoNewUser] = useState("");
+  const [telefoneNewUser, setTelefoneNewUser] = useState("");
+ 
   const [showSenha, setShowSenha] = useState(false)
 
  
@@ -142,8 +151,42 @@ const ConfigScreen = () => {
       );
 };
 
+ async function adicionarUser()
+ {
+     
+    const token  = await AsyncStorage.getItem("@token")
+    const payload =
+    {
+      name:nomeNewUser,
+      password: senhaNewUser,
+      email:emailNewUser,
+      cargo:cargoNewUser,
+      telefone:telefoneNewUser
+      
+    }
 
-
+     try {  
+        await api.post ('/users',
+           payload, {
+           headers: { Authorization: `Bearer ${token}` },
+              }   
+            )        
+            Alert.alert('Novo usuário cadastrado com sucesso!',)
+      }
+      catch (err:any)
+      {
+          console.log('erro: ',err.response)
+      }
+      finally
+      {
+       
+      }
+ }
+ 
+ function verPermissoes()
+ {
+    
+ }
 
 
 
@@ -172,6 +215,27 @@ const ConfigScreen = () => {
           value={`${user?.user.name} `}
           onPress={() => setModalUsuario(true)}
         />
+
+        {
+          user?.user.name ==='Administrador' &&
+          (
+          <Item
+          label="Adicionar usuário"
+          onPress={() => setModalAddUser(true)}
+            />
+          )
+        }
+
+        {
+          user?.user.name ==='Administrador' &&
+          (
+          <Item
+          label="Permissões"
+          onPress={() => setModalPermissoes(true)}
+            />
+          )
+        }
+       
 
         {/* PREFERENCIAS */}
         <Text style={styles.section}>Preferências</Text>
@@ -245,6 +309,115 @@ const ConfigScreen = () => {
           </TouchableOpacity>
         </SafeAreaView>
       </Modal>
+
+
+      <Modal visible={modalAddUser} animationType="slide">
+        <SafeAreaView style={styles.modal}>
+          <Text style={styles.modalTitle}>Adicionar usuário</Text>
+
+          <Text style={{marginBottom:2}}>Nome: </Text>
+          <TextInput
+            placeholder="Digite o nome"
+              value={nomeNewUser}
+            onChangeText={setNomeNewUser}
+            style={styles.input}  />
+        
+          <Text style={{marginBottom:2}}>Email: </Text>
+          <TextInput
+            placeholder="Digite o email"
+              value={emailNewUser}
+            onChangeText={setEmailNewUser}
+            style={styles.input}  />
+
+
+          <Text style={{marginBottom:2}}>Senha: </Text>
+          <View style={styles.textFieldSenha}>
+            <TextInput
+              placeholder="Digite a senha"
+              value={senhaNewUser}
+              onChangeText={setSenhaNewUser}
+              style={[styles.input,{flex:1}]}
+              secureTextEntry={!showSenha}
+            />
+            <Pressable onPress={() => setShowSenha(!showSenha)}
+              style={styles.eyeIcon}
+              >
+               <Ionicons 
+                 name={showSenha ? 'eye-off' : 'eye'}
+                 size={24}
+                 color="#999"
+                />
+            </Pressable>
+          </View>
+
+           <Text style={{marginBottom:2}}>Cargo: </Text>
+           <TextInput
+            placeholder="Digite o cargo, e.g. vendedor, gerente ou stockista"
+              value={cargoNewUser}
+            onChangeText={setCargoNewUser}
+            style={styles.input}  />
+
+           <Text style={{marginBottom:2}}>Telefone: </Text>
+           <TextInput
+            placeholder="Digite o telefone"
+            value={telefoneNewUser}
+            onChangeText={setTelefoneNewUser}
+            keyboardType='numeric'
+            style={styles.input}  />
+
+       
+          
+          <TouchableOpacity onPress={adicionarUser} style={styles.btn}>
+            <Text style={{ color: '#fff' }}>Adicionar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setModalAddUser(false)}
+             style={styles.btnCancelar}>
+            <Text style={{ 
+              
+              color:'#fff'
+           }}>
+                Voltar
+                
+            </Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </Modal>
+
+
+       <Modal visible={modalPermissoes} animationType="slide">
+        <SafeAreaView style={styles.modal}>
+          <Text style={styles.modalTitle}>Permissões</Text>
+           
+          <TouchableOpacity style={styles.buttonPermissions}
+          onPress={verPermissoes}>
+              <EyeIcon color={colors.blue}/>
+              <Text>Ver permissões</Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity  style={styles.buttonPermissions}>
+              <Plus color={colors.blue}/>
+              <Text>Adicionar permissões</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity  style={styles.buttonPermissions}>
+               <Delete color={colors.blue}/>
+               <Text>Remover permissões</Text>
+          </TouchableOpacity>
+
+           <TouchableOpacity onPress={() => setModalPermissoes(false)}
+             style={styles.btnCancelar}>
+            <Text style={{ 
+              
+              color:'#fff'
+           }}>
+                Voltar
+            </Text>
+          </TouchableOpacity>
+          
+        </SafeAreaView>
+      </Modal>
+
 
        <View style={styles.bottomNav}>
               {NAV_ITEMS.map((nav, i) => 
@@ -417,4 +590,15 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 20,
   },
+  buttonPermissions:
+  {
+    borderWidth:2,
+    borderRadius:8,
+    borderColor:'#a7a6a6',
+    padding:5,
+    margin:5,
+    flexDirection:'row',
+    alignItems:'center',
+    gap:8
+  }
 });

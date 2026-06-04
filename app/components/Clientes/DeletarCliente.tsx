@@ -43,11 +43,12 @@ export const DeletarCliente = ({visible,setVisible,cliente
 
      setLoadingDelete(true)
 
-     await api.delete(`/clientes/${cliente?.id}`,
+      await api.delete(`/clientes/${cliente?.id}`,
      {
         headers: { Authorization: `Bearer ${token}` },
      })
      //setLoading(true)  
+     //console.log(responseDelete)
      const response = await api.get('/clientes')
     
      setClientes(response.data.data)
@@ -61,7 +62,9 @@ export const DeletarCliente = ({visible,setVisible,cliente
     }
     catch(err: any)
     {
-       console.log('Erro ao actualizar produto: ',err.response?.data)
+       Alert.alert('Erro ao apagar cliente',err.response?.data.message)
+
+       console.log('Erro ao apagar cliente: ',err.response?.data)
     }
 
     finally

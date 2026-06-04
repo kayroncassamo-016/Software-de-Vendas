@@ -63,7 +63,9 @@ async function handleDeletarProduto()
     }
     catch(err: any)
     {
-       console.log('Erro ao actualizar produto: ',err.response?.data)
+       Alert.alert('Erro ao apagar produto',err.response?.data.message)
+
+       console.log('Erro ao apagar produto: ',err.response?.data)
     }
 
     finally
