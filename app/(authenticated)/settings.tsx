@@ -114,7 +114,7 @@ const ConfigScreen = () => {
 
           if (pageIndex === 0) 
           {
-                router.push("/(authenticated)/vendasForm")
+                router.push("/(authenticated)/vendas")
           }
     }
 
@@ -230,8 +230,11 @@ const ConfigScreen = () => {
           user?.user.name ==='Administrador' &&
           (
           <Item
-          label="Permissões"
-          onPress={() => setModalPermissoes(true)}
+          label="Gestão de utilizadores"
+          onPress={() => 
+          //  setModalPermissoes(true)
+            router.push('/(authenticated)/userList')
+          }
             />
           )
         }
@@ -386,10 +389,14 @@ const ConfigScreen = () => {
 
        <Modal visible={modalPermissoes} animationType="slide">
         <SafeAreaView style={styles.modal}>
-          <Text style={styles.modalTitle}>Permissões</Text>
+          <Text style={styles.modalTitle}>Gestão de utilizadores</Text>
            
           <TouchableOpacity style={styles.buttonPermissions}
-          onPress={verPermissoes}>
+          onPress={() => {
+           //verPermissoes
+            router.push('/(authenticated)/userList')
+            }
+          }>
               <EyeIcon color={colors.blue}/>
               <Text>Ver permissões</Text>
           </TouchableOpacity>

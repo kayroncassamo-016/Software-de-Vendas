@@ -15,7 +15,8 @@ export default function RootLayout() {
   const theme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
 
   return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
+  
+  <GestureHandlerRootView style={{ flex: 1 }}>
     <AuthProvider>
       <PaperProvider>
       <Stack
@@ -89,19 +90,55 @@ export default function RootLayout() {
           }}/>
 
 
-
-
-
-           <Stack.Screen name="(authenticated)/vendas" options={
+        <Stack.Screen name="(authenticated)/vendas" options={
           {headerShown: false}}/>
       
         <Stack.Screen name="register/index" options={{headerShown: true,
             headerTitle: '',
             headerStyle: { backgroundColor: '#1a253f', }
+         }}/> 
 
-          }}/> 
-        
-
+         
+        <Stack.Screen name="(authenticated)/userDetail" options={
+          {  headerShown: true,
+             headerTintColor:'#5c5b5b',
+             headerStyle: {
+                  backgroundColor: '#e4e4e4',
+               },
+               headerTitle:'Voltar',
+            headerLeft: () => (
+                <TouchableOpacity
+                  onPress={() => router.replace('/(authenticated)/userList')}
+                >
+                  <Ionicons
+                    name="arrow-back"
+                    size={24}
+                    color="#5c5b5b"
+                  />
+                </TouchableOpacity>
+              ),
+          }}/>
+      
+        <Stack.Screen name="(authenticated)/userList" options={
+          {  headerShown: true,
+             headerTintColor:'#5c5b5b',
+             headerStyle: {
+                  backgroundColor: '#e4e4e4',
+               },
+               headerTitle:'Voltar',
+            headerLeft: () => (
+                <TouchableOpacity
+                  onPress={() => router.replace('/(authenticated)/settings')}
+                >
+                  <Ionicons
+                    name="arrow-back"
+                    size={24}
+                    color="#5c5b5b"
+                  />
+                </TouchableOpacity>
+              ),
+          }}/>
+      
         </Stack>
 
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
