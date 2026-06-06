@@ -48,13 +48,41 @@ export  function useAuth()
             }
 
         }
-        catch(err)
-        {
-            console.log(err)
-            setSigned(false);
-            setUser(undefined);
-            setNetworkError(true)
+        // catch(err:any)
+        // {
+        //     await AsyncStorage.removeItem("@token");
+        //     await AsyncStorage.removeItem("@user");
+        //     console.log(err)
+        //     setSigned(false);
+        //     setUser(undefined);
+        //     setNetworkError(true)
 
+        // }
+        catch(err:any)
+        {
+            console.log(err);
+
+            // Sem internet
+            if (!err.response)
+            {
+                setNetworkError(true);
+                return;
+            }
+
+            // Utilizador não autorizado
+            if (err.response.status === 401
+   )
+            {
+                await AsyncStorage.removeItem("@token");
+                await AsyncStorage.removeItem("@user");
+
+                setSigned(false);
+                setUser(undefined);
+                return;
+            }
+
+            // Outros erros
+            setSigned(false);
         }
 
         finally{
@@ -105,9 +133,12 @@ export  function useAuth()
         {
             console.log(err.response)
             console.log(axios.isAxiosError(err))
+            //Coemcar daqui do routes
+           console.log('yall ' ,err.response?.data?.message)
 
             if (err.response?.status === 401|| err.response?.status === 422)
             {
+                
                 throw new Error("INVALID_CREDENTIALS");
             }
 
@@ -149,6 +180,16 @@ export  function useAuth()
     finally{
 
     }}
+
+    function handleLogout() {
+    AsyncStorage.removeItem("@token");
+    AsyncStorage.removeItem("@user");
+
+    setSigned(false);
+    setUser(undefined);
+
+    router.replace("/login/login");
+}
 
    
 

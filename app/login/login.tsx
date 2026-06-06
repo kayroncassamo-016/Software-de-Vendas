@@ -49,6 +49,7 @@ export default function Home() {
             switch(err.message)
             {
               case "INVALID_CREDENTIALS":
+            
                   setErrorMessage("Email/senha inválidos. Introduza novamente.");
                   break;
 

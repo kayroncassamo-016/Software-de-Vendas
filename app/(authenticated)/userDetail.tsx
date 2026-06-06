@@ -1,19 +1,20 @@
+import { useContexto } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface User {
@@ -50,6 +51,7 @@ export default function UserDetail() {
   const [permissoesDocumentos,  setPermissoesDocumentos] = useState<string[]>([]);
   const [permissoesStock,  setPermissoesStock] = useState<string[]>([]);
   const [permissoesCategorias,  setPermissoesCategorias] = useState<string[]>([]);
+    const { signOut} = useContexto();
   
   const [permissionGroups, setPermissionGroups] = useState<
   Record<string, string[]>
@@ -111,6 +113,8 @@ const [permissionGroupsMeta, setPermissionGroupsMeta] = useState<any>({});
         activo:activo,
         permissions:allPermissoes,
       }
+     
+     
       console.log (payload)
       await api.put(`/users/${id}`, {
         
@@ -124,7 +128,7 @@ const [permissionGroupsMeta, setPermissionGroupsMeta] = useState<any>({});
       });
       
       Alert.alert('Sucesso', 'Utilizador actualizado com sucesso');
-      
+     
 
     } 
     catch (err:any) {
@@ -162,31 +166,6 @@ const [permissionGroupsMeta, setPermissionGroupsMeta] = useState<any>({});
       ]
     );
   };
-
-//   async function loadPermissions()
-//   {
-//      try {
-//       const token = await AsyncStorage.getItem('@token');
-//       const res = await api.get('/permissoes/all', {
-//         headers: { Authorization: `Bearer ${token}` },
-//       });
-
-//       setPermissoesClientes(res.data.data.clientes.permissions)
-//       setPermissoesProdutos(res.data.data.produtos.permissions)
-//       setPermissoesDocumentos(res.data.data.documentos.permissions)
-//       setPermissoesStock(res.data.data.stock.permissions)
-//       setPermissoesCategorias(res.data.data.categorias.permissions)
-
-      
-
-//     } catch (err:any) {
-//       console.log('Erro ao carregar permissoes:', err.response.data);
-//       Alert.alert('Erro', 'Não foi possível carregar as permissões.');
-//     } 
-//     finally {
-        
-//     }
-//   }
 
 
 async function loadPermissions() {
@@ -292,26 +271,6 @@ async function loadPermissions() {
 
         {/* Permissões */}
         <Text style={styles.sectionTitle}>Permissões</Text>
-        {/* {Object.entries(PERMISSION_GROUPS).map((group) => (
-          <View key={group[0]} style={styles.permissionGroup}>
-            <Text style={styles.groupTitle}>{group[0]}</Text>
-            {group[1].map((permission) => (
-              <TouchableOpacity
-                key={permission}
-                style={styles.permissionItem}
-                onPress={() => togglePermission(permission)}
-              >
-                <View style={[
-                  styles.checkbox,
-                  allPermissoes.includes(permission) && styles.checkboxActive
-                ]}>
-                  {allPermissoes.includes(permission) && <Text style={styles.checkmark}>✓</Text>}
-                </View>
-                <Text style={styles.permissionText}>{permission}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ))} */}
 
         {Object.entries(permissionGroups).map(([groupKey, permissions]) => {
   const label =
@@ -350,7 +309,7 @@ async function loadPermissions() {
     </View>
   );
 })}
-
+ </ScrollView>
         {/* Botões de Ação */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
@@ -373,7 +332,7 @@ async function loadPermissions() {
         </View>
 
         <View style={{ height: 30 }} />
-      </ScrollView>
+     
     </SafeAreaView>
   );
 }
@@ -498,6 +457,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginTop: 20,
+    paddingHorizontal:10
   },
   btnDanger: {
     flex: 1,

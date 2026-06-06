@@ -40,9 +40,38 @@ api.interceptors.response.use(
     if(error.response?.status === 401)
     {
         await AsyncStorage.removeItem("@token")
+        
     }
 
     return Promise.reject(error)
  }
 
 )
+// let isHandlingAuthError = false;
+// api.interceptors.response.use(
+//   response => response,
+
+//   async (error) => {
+
+//     const status = error.response?.status;
+
+//     if (status === 401 && !isHandlingAuthError) {
+
+//       isHandlingAuthError = true;
+
+//       await AsyncStorage.removeItem("@token");
+//       await AsyncStorage.removeItem("@user");
+
+//       Alert.alert('Erro', error.response.data.message);
+
+//     router.replace("/login/login");
+
+//       //reset após pequeno delay (evita bloqueio permanente)
+//       setTimeout(() => {
+//         isHandlingAuthError = false;
+//       }, 3000);
+//     }
+
+//     return Promise.reject(error);
+//   }
+// );
