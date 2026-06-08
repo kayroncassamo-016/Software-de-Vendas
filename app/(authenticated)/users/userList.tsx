@@ -1,18 +1,21 @@
 import { api } from '@/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { Plus } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
+
+import AddUser from './addUser';
 
 interface User {
   id: number;
@@ -27,6 +30,7 @@ interface User {
 export default function UsersListScreen() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [visibleAddUser, setVisibleAddUser] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -53,7 +57,7 @@ export default function UsersListScreen() {
     <TouchableOpacity
       style={styles.userCard}
       onPress={() => router.push({
-        pathname: '/(authenticated)/userDetail',
+        pathname: '/(authenticated)/users/userDetail',
         params: { id: item.id },
       })}
     >
@@ -80,13 +84,23 @@ export default function UsersListScreen() {
     </TouchableOpacity>
   );
 
+ 
+
   return (
+
+
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
 
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Utilizadores</Text>
-        <Text style={styles.headerSubtitle}>Gestão de utilizadores</Text>
+      <View style={[styles.header,{flexDirection:'row',
+        justifyContent:'space-between',alignItems:'center'}]}>
+         <View>
+            <Text style={styles.headerTitle}>Utilizadores</Text>
+            <Text style={styles.headerSubtitle}>Gestão de utilizadores</Text>
+         </View>
+         <TouchableOpacity onPress={()=> setVisibleAddUser (true)}>
+           <Plus color={'#fff'}/>
+         </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -102,6 +116,12 @@ export default function UsersListScreen() {
           contentContainerStyle={styles.listContent}
         />
       )}
+
+     <AddUser
+      visible = {visibleAddUser}
+      setVisible={setVisibleAddUser}
+     />
+
     </SafeAreaView>
   );
 }

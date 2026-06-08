@@ -136,7 +136,7 @@ export  function useAuth()
             //Coemcar daqui do routes
            console.log('yall ' ,err.response?.data?.message)
 
-            if (err.response?.status === 401|| err.response?.status === 422)
+            if (err.response?.status === 422)
             {
                 
                 throw new Error("INVALID_CREDENTIALS");

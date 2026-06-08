@@ -12,3 +12,14 @@ export function formatPercent(value: string | number): string {
 
   return `${Math.round(num)}%`;
 }
+
+
+export const formatPermission = (permission: string) => {
+  const parts = permission.split('.');
+
+  if (parts.length === 2) {
+    return parts[1];
+  }
+
+  return parts.slice(1).join(' > ');
+};

@@ -4,12 +4,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
-
-
+import { initDatabase } from './database/init';
 export default function RootLayout() {
+
+ 
+   useEffect(() => {
+    initDatabase();
+  }, []);
+
+
   const colorScheme = useColorScheme();
   const router = useRouter()
   const theme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
@@ -99,7 +106,7 @@ export default function RootLayout() {
          }}/> 
 
          
-        <Stack.Screen name="(authenticated)/userDetail" options={
+        <Stack.Screen name="(authenticated)/users/userDetail" options={
           {  headerShown: true,
              headerTintColor:'#5c5b5b',
              headerStyle: {
@@ -108,7 +115,7 @@ export default function RootLayout() {
                headerTitle:'Voltar',
             headerLeft: () => (
                 <TouchableOpacity
-                  onPress={() => router.replace('/(authenticated)/userList')}
+                  onPress={() => router.replace('/(authenticated)/users/userList')}
                 >
                   <Ionicons
                     name="arrow-back"
@@ -119,7 +126,7 @@ export default function RootLayout() {
               ),
           }}/>
       
-        <Stack.Screen name="(authenticated)/userList" options={
+        <Stack.Screen name="(authenticated)/users/userList" options={
           {  headerShown: true,
              headerTintColor:'#5c5b5b',
              headerStyle: {

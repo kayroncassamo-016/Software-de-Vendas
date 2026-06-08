@@ -1,5 +1,5 @@
-import { useContexto } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
+import { formatPermission } from '@/utils/format';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -25,7 +25,6 @@ interface User {
   activo: boolean;
   permissoes: string[];
 }
-
 const PERMISSION_GROUPS = {
   'Clientes': ['clientes.ver', 'clientes.criar', 'clientes.editar', 'clientes.eliminar', 'clientes.ativar', 'clientes.desativar'],
   'Documentos': ['documentos.ver', 'documentos.criar', 'documentos.confirmar', 'documentos.cancelar', 'documentos.eliminar', 'documentos.imprimir'],
@@ -46,12 +45,7 @@ export default function UserDetail() {
   const [cargo, setCargo] = useState('');
   const [activo, setActivo] = useState(false);
   const [allPermissoes, setAllPermissoes] = useState<string[]>([]);
-  const [permissoesClientes,  setPermissoesClientes] = useState<string[]>([]);
-  const [permissoesProdutos,  setPermissoesProdutos] = useState<string[]>([]);
-  const [permissoesDocumentos,  setPermissoesDocumentos] = useState<string[]>([]);
-  const [permissoesStock,  setPermissoesStock] = useState<string[]>([]);
-  const [permissoesCategorias,  setPermissoesCategorias] = useState<string[]>([]);
-    const { signOut} = useContexto();
+  
   
   const [permissionGroups, setPermissionGroups] = useState<
   Record<string, string[]>
@@ -302,7 +296,9 @@ async function loadPermissions() {
             </View>
 
             <Text style={styles.permissionText}>
-              {permission}
+              {/* {permission.split('.').slice(1).join(' ')} */}
+              {formatPermission(permission)}
+              {/* {permission.split('.').slice(1).join(' ')} */}
             </Text>
           </TouchableOpacity>
         ))}
