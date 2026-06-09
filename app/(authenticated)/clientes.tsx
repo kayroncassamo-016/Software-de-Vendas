@@ -25,6 +25,9 @@ import { DeletarCliente } from '../components/Clientes/DeletarCliente';
 import { DetalhesCliente } from '../components/Clientes/DetalhesCliente';
 import { EditarCliente } from '../components/Clientes/EditarCliente';
 
+import { isOnline } from "@/utils/network";
+
+import { ClienteRepository } from "../database/ClienteRepository";
 
 
 const NAV_ITEMS = [
@@ -87,8 +90,6 @@ interface clienteItemProps
 
 
 
-
-// ─── Ecrã de clientes ──────────────────────────────────────────────
 export default function ClienteScreen  ()  {
 
 const [searchText, setSearchText] = useState<string>('');
@@ -239,10 +240,12 @@ useEffect(() =>
   async function loadClientes()
   {
     const token  = await AsyncStorage.getItem("@token")
-
+    const online = await isOnline();
+    
     try{
        // setLoadingClientes(true)
-
+          
+        if (online) { 
             const response = await api.get("/clientes",
                {
                headers: { Authorization: `Bearer ${token}` },
@@ -253,10 +256,27 @@ useEffect(() =>
              
             setClientes(response.data.data)
             setFiltrados(response.data.data)
-             console.log("clientes da base: ", response.data.data)
+             
+            // response.data.data.forEach(saveCliente);
+            ClienteRepository.saveMany(response.data.data);
 
-             console.log(JSON.stringify(clientesAPI, null, 2));
+            
+            console.log(
+              "REGISTROS NO SQLITE:",
+              ClienteRepository.getAll()
+            );
+            
+            console.log("clientes da base: ", response.data.data)
+
+            console.log(JSON.stringify(clientesAPI, null, 2));
         }
+        else {
+            const local = ClienteRepository.getAll();
+            setClientes(local);
+            setFiltrados(local);
+            console.log("CLIENTES OFFLINE:", local);
+          }
+      }
 
         catch(err:any)
         {
@@ -418,10 +438,6 @@ useEffect(() =>
 
 
 
-
-
-
-// // ─── Estilos ──────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
