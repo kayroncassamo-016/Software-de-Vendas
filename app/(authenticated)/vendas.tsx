@@ -24,7 +24,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
 import { Clientes, Fornecedores, Vendas } from '@/types/types';
+import { isOnline } from "@/utils/network";
 import { useRef } from 'react';
+import { ClienteRepository } from "../database/ClienteRepository";
+import { FornecedoresRepository } from "../database/FornecedoresRepository";
+import { VendaRepository } from "../database/VendaRepository";
 
 
 const NAV_ITEMS = [
@@ -450,18 +454,7 @@ const fornecedor = fornecedores?.find(fornecedor=>
 
 useEffect(() =>
 {
-    // async function loadData()
-    // {
-    //     // await loadVendas()
-    //     // await loadClientes()
-    //     // await loadFornecedores()
-    //      await Promise.all([
-    //       loadVendas(),
-    //       loadClientes(),
-    //       loadFornecedores()
-    //     ]);
-    // }
-
+    
     async function loadData() {
       try {
         setLoading(true);
@@ -480,33 +473,68 @@ useEffect(() =>
    
 },[])
 
+  // async function loadClientes()
+  // {
+  //   const token  = await AsyncStorage.getItem("@token")
+  //       try
+  //         {
+           
+  //           const response = await api.get("/clientes",
+  //              {
+  //              headers: { Authorization: `Bearer ${token}` },
+  //              }   
+  //           )
+      
+  //           setClientes(response.data.data)
+  //         }
+
+  //       catch(err:any)
+  //       {
+  //           console.log(err.response)
+  //       }
+        
+  //   }
+
+
   async function loadClientes()
   {
     const token  = await AsyncStorage.getItem("@token")
-        try
-          {
-           
+    const online = await isOnline();
+    
+    try {
+      
+
+        if (online) { 
             const response = await api.get("/clientes",
                {
                headers: { Authorization: `Bearer ${token}` },
-               }   
+            }   
             )
-      
+  
             setClientes(response.data.data)
-          }
+        }
+        else 
+        {
+            const local = ClienteRepository.getAll();
+            setClientes(local);
+        }
 
+      }
         catch(err:any)
         {
             console.log(err.response)
         }
-        
+
     }
+
 
  async function loadFornecedores()
   {
     const token  = await AsyncStorage.getItem("@token")
+     const online = await isOnline();
         try
           {
+            if (online) {
             setLoadingFornecedores(true)
 
             const response = await api.get("/fornecedor",
@@ -516,11 +544,30 @@ useEffect(() =>
             )
       
             setFornecedores(response.data.data)
+              FornecedoresRepository.saveMany(response.data.data)
+        
+          }
+          else
+          {
+             const local = FornecedoresRepository.getAll();
+             setFornecedores(local);
+               console.log('FORNECEDORES OFFLINE', 
+                JSON.stringify(
+                local,
+                null,
+                2 )
+               );
+            }
+
           }
 
         catch(err:any)
         {
             console.log(err.response)
+        }
+        finally 
+        {
+          setLoadingFornecedores(false);
         }
        
     }
@@ -531,10 +578,11 @@ useEffect(() =>
   async function loadVendas()
   {
     const token  = await AsyncStorage.getItem("@token")
-
+    const online = await isOnline();
         try
           {
-          
+            if (online)
+            {
             const response = await api.get("/documentos",
                {
                headers: { Authorization: `Bearer ${token}` },
@@ -544,9 +592,19 @@ useEffect(() =>
 
             setVendas(response.data.data.data)
             setFiltrados(response.data.data.data)
-             
+                  VendaRepository.saveMany(response.data.data.data);
             console.log(JSON.stringify(vendasAPI, null, 2));
-
+          }
+           else
+           {
+              const local =  VendaRepository.getAll();
+                setVendas(local);
+                setFiltrados(local);
+                console.log("CLIENTE TESTE",
+                      JSON.stringify(local[0], null, 2)
+                    );
+                console.log("Vendas OFFLINE:", local)
+           }
           }
 
         catch(err:any)

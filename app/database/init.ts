@@ -31,48 +31,115 @@ export function initDatabase() {
   `);
 
   // PRODUTOS
-  db.execSync(`
-    CREATE TABLE IF NOT EXISTS produtos (
-      id INTEGER PRIMARY KEY,
+db.execSync(`
+CREATE TABLE IF NOT EXISTS produtos (
+    id INTEGER PRIMARY KEY,
 
-      codigo TEXT,
-      designacao TEXT,
+    codigo TEXT,
+    designacao TEXT,
 
-      preco_venda_liquido_1 TEXT,
-      preco_venda_iliquido_1 TEXT,
+    preco_venda_liquido_1 TEXT,
+    preco_venda_iliquido_1 TEXT,
 
-      categoria_id INTEGER,
-      categoria_descricao TEXT,
-      categoria_designacao TEXT,
+    categoria_id INTEGER,
+    categoria_descricao TEXT,
+    categoria_designacao TEXT,
 
-      familia_id INTEGER,
-      familia_codigo TEXT,
-      familia_designacao TEXT,
+    familia_id INTEGER,
+    familia_codigo TEXT,
+    familia_designacao TEXT,
 
-      marca_id INTEGER,
-      marca_codigo TEXT,
-      marca_nome TEXT,
-      marca_desconto_comercial TEXT,
-      marca_data_vencimento TEXT,
-      marca_limite_credito TEXT,
+    marca_id INTEGER,
+    marca_codigo TEXT,
+    marca_nome TEXT,
+    marca_desconto_comercial TEXT,
+    marca_data_vencimento TEXT,
+    marca_limite_credito TEXT,
 
-      imposto_id INTEGER,
-      imposto_codigo TEXT,
-      imposto_taxa TEXT,
-      imposto_designacao TEXT,
+    imposto_id INTEGER,
+    imposto_codigo TEXT,
+    imposto_taxa TEXT,
+    imposto_designacao TEXT,
 
-      motivo_isencao_id INTEGER,
+    motivo_isencao_id INTEGER,
 
-      tipo_produto_id INTEGER,
-      tipo_produto_codigo TEXT,
-      tipo_produto_designacao TEXT,
+    tipo_produto_id INTEGER,
+    tipo_produto_codigo TEXT,
+    tipo_produto_designacao TEXT,
 
-      stock_actual TEXT,
+    stock_actual TEXT,
 
-      created_at TEXT,
-      synced INTEGER DEFAULT 0
-    );
-  `);
+    created_at TEXT,
+
+    synced INTEGER DEFAULT 0
+);
+`);
+// CATEGORIAS
+db.execSync(`
+  CREATE TABLE IF NOT EXISTS categorias (
+    id INTEGER PRIMARY KEY,
+    descricao TEXT,
+    designacao TEXT,
+    synced INTEGER DEFAULT 0
+  );
+`);
+
+// IMPOSTOS
+db.execSync(`
+  CREATE TABLE IF NOT EXISTS impostos (
+    id INTEGER PRIMARY KEY,
+    codigo TEXT,
+    taxa TEXT,
+    designacao TEXT,
+    synced INTEGER DEFAULT 0
+  );
+`);
+
+// MARCAS
+db.execSync(`
+  CREATE TABLE IF NOT EXISTS marcas (
+    id INTEGER PRIMARY KEY,
+    codigo TEXT,
+    nome TEXT,
+    desconto_comercial TEXT,
+    data_vencimento TEXT,
+    limite_credito TEXT,
+    synced INTEGER DEFAULT 0
+  );
+`);
+
+// FAMILIAS
+db.execSync(`
+  CREATE TABLE IF NOT EXISTS familias (
+    id INTEGER PRIMARY KEY,
+    codigo TEXT,
+    designacao TEXT,
+    synced INTEGER DEFAULT 0
+  );
+`);
+
+// TIPOS
+db.execSync(`
+  CREATE TABLE IF NOT EXISTS tipos (
+    id INTEGER PRIMARY KEY,
+    codigo TEXT,
+    designacao TEXT,
+    synced INTEGER DEFAULT 0
+  );
+`);
+
+// MOTIVOS ISENÇÃO
+db.execSync(`
+  CREATE TABLE IF NOT EXISTS motivos_isencao (
+    id INTEGER PRIMARY KEY,
+    codigo TEXT,
+    designacao TEXT,
+    synced INTEGER DEFAULT 0
+  );
+`);
+
+
+
 
   // VENDAS
   db.execSync(`
@@ -138,5 +205,28 @@ export function initDatabase() {
       nr_movimento INTEGER
     );
   `);
+
+  db.execSync(`
+  CREATE TABLE IF NOT EXISTS fornecedores (
+
+    id INTEGER PRIMARY KEY,
+
+    codigo TEXT,
+    nome TEXT,
+
+    email TEXT,
+    telefone TEXT,
+
+    morada TEXT,
+    nuit TEXT,
+
+    cidade TEXT,
+
+    synced INTEGER DEFAULT 0
+
+  );
+`);
+
+
 
 }

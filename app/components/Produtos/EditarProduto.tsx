@@ -11,6 +11,7 @@ import {
   Tipo
 } from '@/types/types';
 import { formatMoney } from '@/utils/format';
+import { isOnline } from "@/utils/network";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
@@ -22,6 +23,12 @@ import {
   View
 } from 'react-native';
 
+import { CategoriaRepository } from '@/app/database/propriedades_produto/CategoriaRepository';
+import { FamiliaRepository } from '@/app/database/propriedades_produto/FamiliaRepository';
+import { ImpostoRepository } from '@/app/database/propriedades_produto/ImpostoRepository';
+import { MarcaRepository } from '@/app/database/propriedades_produto/MarcaRepository';
+import { MotivoIsencaoRepository } from '@/app/database/propriedades_produto/MotivoIsencaoRepository';
+import { TipoRepository } from '@/app/database/propriedades_produto/TipoRepository';
 import { Alert } from 'react-native';
 import { Button, Dialog, Portal } from 'react-native-paper';
 
@@ -94,7 +101,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
         setSelectedMarca(produto.marca?.nome ?? '');
         setSelectedFamily(produto.familia?.designacao ?? '');
         setSelectedImposto(produto.imposto?.designacao ?? '');
-        setStock(produto.stock_actual??'')
+        setStock(parseFloat(produto.stock_actual??'').toFixed(0))
       }
 }, [produto]);
     
@@ -269,11 +276,25 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
      async function loadMotivosIsencao()
       {
+        const online = await isOnline();
+
         try{
+          
+          if (online)
+          {
     
           const response = await api.get('/motivoisencao')
-    
+  
           setMotivosIsencao(response.data.data)
+
+          MotivoIsencaoRepository.saveMany(response.data.data)
+          
+          }
+          else
+          {
+            const local = MotivoIsencaoRepository.getAll();
+            setMotivosIsencao(local);
+          }
     
         }
         catch(err)
@@ -290,13 +311,23 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
       async function loadMarcas()
       {
+        const online = await isOnline();
+
         try{
     
+          if (online)
+          {
           const response = await api.get('/marcas')
     
           setMarcas(response.data.data)
-          // console.log('impostos:', response.data.data.data)
-    
+          MarcaRepository.saveMany(response.data.data)
+          }
+          
+          else
+          {
+            const local = MarcaRepository.getAll();
+            setMarcas(local);
+          }
         }
         catch(err)
         {
@@ -312,12 +343,23 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
       async function loadFamilias()
       {
+        const online = await isOnline();
+
         try{
-    
+          
+          if(online)
+          {
           const response = await api.get('/familia')
     
           setFamilias(response.data.data)
-          // console.log('impostos:', response.data.data.data)
+          FamiliaRepository.saveMany(response.data.data)
+          }
+
+          else
+          {
+            const local = FamiliaRepository.getAll();
+            setFamilias(local);
+          }
     
         }
         catch(err)
@@ -332,14 +374,25 @@ export function EditarProdutoForm({produto,visible,setVisible,
       }
     
       async function loadTipos()
-      {
+      {  
+        const online = await isOnline();
         try{
-    
+      
+          if(online)
+          {
+
           const response = await api.get('/tipo')
     
           setTipos(response.data.data)
-          // console.log('impostos:', response.data.data.data)
-    
+
+          TipoRepository.saveMany(response.data.data)
+          }
+          else{
+            const local = TipoRepository.getAll();
+
+            setTipos(local);
+          }
+         
         }
         catch(err)
         {
@@ -354,13 +407,24 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
       async function loadImpostos()
       {
+        const online = await isOnline();
+
         try{
+        
+          if (online) {
     
           const response = await api.get('/impostos')
     
           setImpostos(response.data.data)
-          // console.log('impostos:', response.data.data.data)
-    
+          ImpostoRepository.saveMany(response.data.data)
+        
+          }
+          else {
+            const local = ImpostoRepository.getAll();
+
+            setImpostos(local);
+          }
+
         }
         catch(err)
         {
@@ -375,14 +439,27 @@ export function EditarProdutoForm({produto,visible,setVisible,
     
        async function loadCategorias()
        {
-        try{
+        const online = await isOnline();
+        
+        try
+        {
+        if (online) {
     
-          const response = await api.get('/categorias')
-    
-          setCategorias(response.data.data)
-         console.log('categorias:', response.data.data)
-    
-        }
+              const response = await api.get('/categorias')
+        
+              setCategorias(response.data.data)
+              CategoriaRepository.saveMany(response.data.data)
+
+            console.log('categorias:', response.data.data)
+          }
+        else {
+            const local = CategoriaRepository.getAll();
+
+            setCategorias(local);
+            }
+          }
+
+
         catch(err)
         {
           if(err instanceof Error)
@@ -457,12 +534,6 @@ export function EditarProdutoForm({produto,visible,setVisible,
         
 
      }
-
-
-
-
-
-
 
 
 
@@ -556,7 +627,8 @@ export function EditarProdutoForm({produto,visible,setVisible,
 
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}> Stock:</Text>
-                <TextInput value={stock} onChangeText={(text) =>{
+                <TextInput value={stock}
+                 onChangeText={(text) =>{
                   
                   setStock(text)
               

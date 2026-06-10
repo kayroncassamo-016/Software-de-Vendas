@@ -256,24 +256,26 @@ useEffect(() =>
              
             setClientes(response.data.data)
             setFiltrados(response.data.data)
-             
-            // response.data.data.forEach(saveCliente);
+
             ClienteRepository.saveMany(response.data.data);
 
+            // console.log(
+            //   "REGISTROS NO SQLITE:",
+            //   ClienteRepository.getAll()
+            // );
             
-            console.log(
-              "REGISTROS NO SQLITE:",
-              ClienteRepository.getAll()
-            );
-            
-            console.log("clientes da base: ", response.data.data)
+            //console.log("clientes da base: ", response.data.data)
 
-            console.log(JSON.stringify(clientesAPI, null, 2));
+            //console.log(JSON.stringify(clientesAPI, null, 2));
         }
         else {
             const local = ClienteRepository.getAll();
             setClientes(local);
             setFiltrados(local);
+                      console.log(
+            "CLIENTE TESTE",
+            JSON.stringify(local[0], null, 2)
+          );
             console.log("CLIENTES OFFLINE:", local);
           }
       }

@@ -1,80 +1,3 @@
-// // repositories/VendaRepository.ts
-
-// import { Vendas } from '@/types/types';
-// import { db } from './db';
-
-// export const VendaRepository = {
-
-//   getAll(): Vendas[] {
-//     return db.getAllSync('SELECT * FROM vendas') as Vendas[];
-//   },
-
-//   getRascunhos(): Vendas[] {
-//     return db.getAllSync(
-//       'SELECT * FROM vendas WHERE estado = ?',
-//       ['RASCUNHO']
-//     ) as Vendas[];
-//   },
-
-//   getConfirmadas(): Vendas[] {
-//     return db.getAllSync(
-//       'SELECT * FROM vendas WHERE estado = ?',
-//       ['CONFIRMADO']
-//     ) as Vendas[];
-//   },
-
-//   save(venda: Vendas) {
-//     db.runSync(
-//       `INSERT OR REPLACE INTO vendas
-//       (
-//         id,
-//         nome_doc,
-//         tipo_doc,
-//         ano_serie,
-//         estado,
-//         cliente_id,
-//         fornecedor_id,
-//         total_doc,
-//         synced
-//       )
-//       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//       [
-//         venda.id,
-//         venda.nome_doc,
-//         venda.tipo_doc,
-//         venda.ano_serie,
-//         venda.estado ?? 'RASCUNHO',
-//         venda.cliente_id ?? null,
-//         venda.fornecedor_id ?? null,
-//         venda.total_doc ?? '0',
-//         0
-//       ]
-//     );
-//   },
-
-//   saveAsDraft(venda: Vendas) {
-//     this.save({ ...venda, estado: 'RASCUNHO' });
-//   },
-
-//   confirmLocal(id: number) {
-//     db.runSync(
-//       `UPDATE vendas SET estado = 'CONFIRMADO', synced = 0 WHERE id = ?`,
-//       [id]
-//     );
-//   },
-
-//   cancelLocal(id: number) {
-//     db.runSync(
-//       `UPDATE vendas SET estado = 'CANCELADO', synced = 0 WHERE id = ?`,
-//       [id]
-//     );
-//   },
-
-//   saveMany(vendas: Vendas[]) {
-//     vendas.forEach(v => this.save(v));
-//   }
-// };
-
 // repositories/VendaRepository.ts
 
 import { Vendas } from '@/types/types';
@@ -83,30 +6,148 @@ import { db } from './db';
 export const VendaRepository = {
 
   getAll(): Vendas[] {
-    return db.getAllSync(
+    const vendas = db.getAllSync(
       'SELECT * FROM vendas'
-    ) as Vendas[];
+    ) as any[];
+
+    return vendas.map(venda => {
+
+      const linhas = db.getAllSync(
+        'SELECT * FROM venda_linhas WHERE venda_id = ?',
+        [venda.id]
+      ) as any[];
+
+      const pagamentos = db.getAllSync(
+        'SELECT * FROM venda_pagamentos WHERE venda_id = ?',
+        [venda.id]
+      ) as any[];
+
+      return {
+        id: venda.id,
+
+        valor_pago: venda.valor_pago,
+        contribuinte: venda.contribuinte,
+
+        nome_doc: venda.nome_doc,
+        tipo_doc: venda.tipo_doc,
+        ano_serie: venda.ano_serie,
+
+        estado: venda.estado,
+        total_doc: venda.total_doc,
+
+        cliente_id: venda.cliente_id,
+        fornecedor_id: venda.fornecedor_id,
+
+        nome_fornecedor: venda.nome_fornecedor,
+        condicao_pagamento: venda.condicao_pagamento,
+
+        produto_id: venda.produto_id,
+        qtd: venda.qtd,
+
+        taxa_iva: venda.taxa_iva,
+        pr_unit_sem_iva: venda.pr_unit_sem_iva,
+
+        impresso: venda.impresso === 1,
+
+        pagamento: venda.pagamento,
+
+        pagamentos: pagamentos.map(p => ({
+          metodo: p.metodo,
+          valor: p.valor,
+          banco_servico: p.banco_servico,
+          nr_movimento: p.nr_movimento
+        })),
+
+        linhas: linhas.map(l => ({
+          id: l.id,
+          produto_id: l.produto_id,
+          qtd: l.qtd,
+          taxa_iva: l.taxa_iva,
+          pr_unit_sem_iva: l.pr_unit_sem_iva
+        })),
+
+        created_at: venda.created_at
+      };
+    });
   },
 
   getById(id: number): Vendas | null {
-    return db.getFirstSync(
+
+    const venda = db.getFirstSync(
       'SELECT * FROM vendas WHERE id = ?',
       [id]
-    ) as Vendas | null;
+    ) as any;
+
+    if (!venda) return null;
+
+    const linhas = db.getAllSync(
+      'SELECT * FROM venda_linhas WHERE venda_id = ?',
+      [id]
+    ) as any[];
+
+    const pagamentos = db.getAllSync(
+      'SELECT * FROM venda_pagamentos WHERE venda_id = ?',
+      [id]
+    ) as any[];
+
+    return {
+      id: venda.id,
+
+      valor_pago: venda.valor_pago,
+      contribuinte: venda.contribuinte,
+
+      nome_doc: venda.nome_doc,
+      tipo_doc: venda.tipo_doc,
+      ano_serie: venda.ano_serie,
+
+      estado: venda.estado,
+      total_doc: venda.total_doc,
+
+      cliente_id: venda.cliente_id,
+      fornecedor_id: venda.fornecedor_id,
+
+      nome_fornecedor: venda.nome_fornecedor,
+      condicao_pagamento: venda.condicao_pagamento,
+
+      produto_id: venda.produto_id,
+      qtd: venda.qtd,
+
+      taxa_iva: venda.taxa_iva,
+      pr_unit_sem_iva: venda.pr_unit_sem_iva,
+
+      impresso: venda.impresso === 1,
+
+      pagamento: venda.pagamento,
+
+      pagamentos: pagamentos.map(p => ({
+        metodo: p.metodo,
+        valor: p.valor,
+        banco_servico: p.banco_servico,
+        nr_movimento: p.nr_movimento
+      })),
+
+      linhas: linhas.map(l => ({
+        id: l.id,
+        produto_id: l.produto_id,
+        qtd: l.qtd,
+        taxa_iva: l.taxa_iva,
+        pr_unit_sem_iva: l.pr_unit_sem_iva
+      })),
+
+      created_at: venda.created_at
+    };
   },
 
   getRascunhos(): Vendas[] {
-    return db.getAllSync(
-      'SELECT * FROM vendas WHERE estado = ?',
-      ['RASCUNHO']
-    ) as Vendas[];
+    return this.getAll().filter(
+      venda => venda.estado === 'RASCUNHO'
+    );
   },
 
   getConfirmadas(): Vendas[] {
-    return db.getAllSync(
-      'SELECT * FROM vendas WHERE estado = ?',
-      ['CONFIRMADO']
-    ) as Vendas[];
+    return this.getAll().filter(
+      venda => venda.estado === 'CONFIRMADO'
+    );
   },
 
   save(venda: Vendas) {
@@ -140,11 +181,14 @@ export const VendaRepository = {
       )`,
       [
         venda.id,
+
         venda.valor_pago ?? '',
         venda.contribuinte ?? '',
+
         venda.nome_doc,
         venda.tipo_doc,
         venda.ano_serie,
+
         venda.estado ?? 'RASCUNHO',
         venda.total_doc ?? '0',
 
@@ -161,101 +205,123 @@ export const VendaRepository = {
         venda.pr_unit_sem_iva ?? '0',
 
         venda.impresso ? 1 : 0,
+
         venda.pagamento ?? '',
 
-        venda.created_at ?? new Date().toISOString(),
+        venda.created_at ??
+          new Date().toISOString(),
 
-        0
+        1
       ]
     );
 
-    // Salvar linhas da venda
-    if (venda.linhas?.length) {
+    db.runSync(
+      'DELETE FROM venda_linhas WHERE venda_id = ?',
+      [venda.id]
+    );
+
+    venda.linhas?.forEach(linha => {
 
       db.runSync(
-        'DELETE FROM venda_linhas WHERE venda_id = ?',
-        [venda.id]
-      );
-
-      venda.linhas.forEach(linha => {
-
-        db.runSync(
-          `INSERT INTO venda_linhas (
-            id,
-            venda_id,
-            produto_id,
-            qtd,
-            taxa_iva,
-            pr_unit_sem_iva
-          )
-          VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            linha.id,
-            venda.id,
-            linha.produto_id,
-            linha.qtd,
-            linha.taxa_iva,
-            linha.pr_unit_sem_iva
-          ]
-        );
-
-      });
-    }
-
-    // Salvar pagamentos
-    if (venda.pagamentos?.length) {
-
-      db.runSync(
-        'DELETE FROM venda_pagamentos WHERE venda_id = ?',
-        [venda.id]
-      );
-
-      venda.pagamentos.forEach(pagamento => {
-
-        db.runSync(
-          `INSERT INTO venda_pagamentos (
-            venda_id,
-            metodo,
-            valor,
-            banco_servico,
-            nr_movimento
-          )
-          VALUES (?, ?, ?, ?, ?)`,
-          [
-            venda.id,
-            pagamento.metodo ?? '',
-            pagamento.valor,
-            pagamento.banco_servico ?? '',
-            pagamento.nr_movimento ?? null
-          ]
-        );
-
-      });
-    }
-  },
-
-  saveMany(vendas: Vendas[]) {
-    vendas.forEach(venda => {
-      try {
-        this.save(venda);
-      } catch (err) {
-        console.log(
-          'Erro ao salvar venda:',
+        `INSERT INTO venda_linhas (
+          id,
+          venda_id,
+          produto_id,
+          qtd,
+          taxa_iva,
+          pr_unit_sem_iva
+        )
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          linha.id,
           venda.id,
-          err
-        );
-      }
+
+          linha.produto_id,
+          linha.qtd,
+
+          linha.taxa_iva,
+          linha.pr_unit_sem_iva
+        ]
+      );
+
+    });
+
+    db.runSync(
+      'DELETE FROM venda_pagamentos WHERE venda_id = ?',
+      [venda.id]
+    );
+
+    venda.pagamentos?.forEach(pagamento => {
+
+      db.runSync(
+        `INSERT INTO venda_pagamentos (
+          venda_id,
+          metodo,
+          valor,
+          banco_servico,
+          nr_movimento
+        )
+        VALUES (?, ?, ?, ?, ?)`,
+        [
+          venda.id,
+
+          pagamento.metodo ?? '',
+          pagamento.valor,
+
+          pagamento.banco_servico ?? '',
+          pagamento.nr_movimento ?? null
+        ]
+      );
+
     });
   },
 
+  saveMany(vendas: Vendas[]) {
+
+    vendas.forEach((venda, index) => {
+
+      try {
+
+        console.log(
+          'SALVANDO VENDA',
+          index,
+          venda.id
+        );
+
+        this.save(venda);
+
+        console.log(
+          'SALVO VENDA',
+          index,
+          venda.id
+        );
+
+      } catch (err) {
+
+        console.log(
+          'ERRO NA VENDA',
+          index,
+          venda.id,
+          err
+        );
+
+      }
+
+    });
+
+  },
+
   saveAsDraft(venda: Vendas) {
+
     this.save({
       ...venda,
       estado: 'RASCUNHO'
     });
+
   },
 
   confirmLocal(id: number) {
+
     db.runSync(
       `UPDATE vendas
        SET estado = 'CONFIRMADO',
@@ -263,9 +329,11 @@ export const VendaRepository = {
        WHERE id = ?`,
       [id]
     );
+
   },
 
   cancelLocal(id: number) {
+
     db.runSync(
       `UPDATE vendas
        SET estado = 'CANCELADO',
@@ -273,11 +341,23 @@ export const VendaRepository = {
        WHERE id = ?`,
       [id]
     );
+
   },
 
   clear() {
-    db.runSync('DELETE FROM venda_pagamentos');
-    db.runSync('DELETE FROM venda_linhas');
-    db.runSync('DELETE FROM vendas');
+
+    db.runSync(
+      'DELETE FROM venda_pagamentos'
+    );
+
+    db.runSync(
+      'DELETE FROM venda_linhas'
+    );
+
+    db.runSync(
+      'DELETE FROM vendas'
+    );
+
   }
+
 };

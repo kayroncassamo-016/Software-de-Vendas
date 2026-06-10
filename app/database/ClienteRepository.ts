@@ -5,18 +5,84 @@ import { db } from './db';
 
 export const ClienteRepository = {
 
+  // getAll(): Clientes[] {
+  //   return db.getAllSync('SELECT * FROM clientes') as Clientes[];
+  // },
+  
   getAll(): Clientes[] {
-    return db.getAllSync('SELECT * FROM clientes') as Clientes[];
-  },
+  const rows = db.getAllSync('SELECT * FROM clientes') as any[];
+
+  return rows.map(row => ({
+    id: row.id,
+    numero: row.numero,
+    nome: row.nome,
+    nuit: row.nuit,
+    data_nascimento: row.data_nascimento,
+    email: row.email,
+    tipo: row.tipo,
+    sexo: row.sexo,
+
+    endereco:{
+      id: row.endereco_id,
+      morada: row.morada,
+      provincia: row.provincia,
+      cod_postal: row.cod_postal
+    } ,
+
+    financeiro:  {
+      id: row.financeiro_id,
+      forma_pagamento: row.forma_pagamento,
+      limite_credito: row.limite_credito,
+      desconto_comercial: row.desconto_comercial,
+      data_vencimento: row.data_vencimento
+    } ,
+
+    created_at: new Date(row.created_at)
+  }));
+}, 
+
 
   getById(id: number): Clientes | null {
-    const result = db.getFirstSync(
-      'SELECT * FROM clientes WHERE id = ?',
-      [id]
-    );
+  const row = db.getFirstSync(
+    'SELECT * FROM clientes WHERE id = ?',
+    [id]
+  ) as any;
 
-    return result as Clientes | null;
-  },
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    numero: row.numero,
+    nome: row.nome,
+    nuit: row.nuit,
+    data_nascimento: row.data_nascimento,
+    email: row.email,
+    tipo: row.tipo,
+    sexo: row.sexo,
+
+    endereco:
+       {
+          id: row.endereco_id,
+          morada: row.morada,
+          provincia: row.provincia,
+          cod_postal: row.cod_postal
+        }
+      ,
+
+    financeiro: {
+          id: row.financeiro_id,
+          forma_pagamento: row.forma_pagamento,
+          limite_credito: row.limite_credito,
+          desconto_comercial: row.desconto_comercial,
+          data_vencimento: row.data_vencimento
+        }
+     ,
+
+    created_at: new Date(row.created_at)
+  };
+},
+
+
 
   save(cliente: Clientes) {
   db.runSync(

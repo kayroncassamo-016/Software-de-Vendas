@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Cog, Grid2X2, Handshake, Package, Plus, ShoppingBag, Trash } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 
+import { isOnline } from "@/utils/network";
 import {
   ActivityIndicator,
   Alert,
@@ -28,6 +29,7 @@ import { Categoria, Familia, Imposto, Marca, Motivo_Isencao, Produtos, Tipo } fr
 import { Button, Dialog, Portal } from 'react-native-paper';
 import { DeletarProduto } from '../components/Produtos/DeletarProduto';
 import { EditarProdutoForm } from '../components/Produtos/EditarProduto';
+import { ProdutoRepository } from '../database/ProdutoRepository';
 
 const { width } = Dimensions.get('window');
 
@@ -661,25 +663,40 @@ useEffect(()=> {
 
   async function loadProducts()
   {
-    try{
-         const token  = await AsyncStorage.getItem("@token")
+     const token  = await AsyncStorage.getItem("@token")
+     const online = await isOnline();
 
+    try{
+        
         setLoadingProdutos(true)
 
+           if (online) { 
             const response = await api.get("/produtos",
             {
                headers: { Authorization: `Bearer ${token}` },
             }   
             )
             const produtosAPI = response.data.data; // 
-
+            
+            ProdutoRepository.saveMany(response.data.data);
+            
              
             setProdutos(response.data.data)
             setFiltrados(response.data.data)
-            console.log("produtos da base: ", response.data.data)
+            //console.log("produtos da base: ", response.data.data)
 
             console.log(JSON.stringify(produtosAPI, null, 2));
         }
+       else  {
+         const local = ProdutoRepository.getAll();
+          setProdutos(local);
+          setFiltrados(local);
+                console.log("CLIENTE TESTE",
+          JSON.stringify(local[0], null, 2)
+        );
+          console.log("Produtos OFFLINE:", local);
+      }
+    }
 
         catch(err)
         {

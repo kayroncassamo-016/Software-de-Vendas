@@ -182,7 +182,6 @@ export interface Fornecedores
     nuit:string,
     cidade:string
 
-
 }
 
 
