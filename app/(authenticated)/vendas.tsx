@@ -473,28 +473,7 @@ useEffect(() =>
    
 },[])
 
-  // async function loadClientes()
-  // {
-  //   const token  = await AsyncStorage.getItem("@token")
-  //       try
-  //         {
-           
-  //           const response = await api.get("/clientes",
-  //              {
-  //              headers: { Authorization: `Bearer ${token}` },
-  //              }   
-  //           )
-      
-  //           setClientes(response.data.data)
-  //         }
-
-  //       catch(err:any)
-  //       {
-  //           console.log(err.response)
-  //       }
-        
-  //   }
-
+ 
 
   async function loadClientes()
   {

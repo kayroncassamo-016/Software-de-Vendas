@@ -251,9 +251,8 @@ useEffect(() =>
                headers: { Authorization: `Bearer ${token}` },
             }   
             )
-            const clientesAPI = response.data.data; // 
-
-             
+           
+            
             setClientes(response.data.data)
             setFiltrados(response.data.data)
 

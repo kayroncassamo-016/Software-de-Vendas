@@ -20,9 +20,15 @@ import {
   View
 } from 'react-native';
 // Definir ";
+import { isOnline } from "@/utils/network";
+
 import { colors } from '@/constants/theme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 //import { Item } from 'react-native-paper/lib/typescript/components/Drawer/Drawer';
+import { ClienteRepository } from '@/app/database/ClienteRepository';
+import { FornecedoresRepository } from '@/app/database/FornecedoresRepository';
+import { ProdutoRepository } from '@/app/database/ProdutoRepository';
+import { VendaRepository } from '@/app/database/VendaRepository';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Item {
@@ -123,8 +129,13 @@ export default function AbrirRascunho()
 
     setFornecedorSelecionado(fornecedorSelecionado??null)
 
+console.log(
+    'LINHAS DA VENDA:',
+    JSON.stringify(venda?.linhas, null, 2)
+  ); 
 
- setItens(
+  
+ setItens (
     (venda?.linhas || []).map(l => {
       const produto = produtos.find(p => p.id === l.produto_id);
 
@@ -166,22 +177,37 @@ useEffect (()=>{
    async function loadVenda()
    {
     const token  = await AsyncStorage.getItem("@token")
+    const online = await isOnline();
 
       try {
       
+        if (online)
+        {
             const response = await api.get(`/documentos/${id}`,
                {
                    headers: { Authorization: `Bearer ${token}` },
                }   
             )
             const vendaAPI = response.data.data; // 
-
-             
+            
             setVenda(response.data.data)
+            VendaRepository.save(response.data.data)
 
              console.log(JSON.stringify(vendaAPI, null, 2));
         }
+          else
+          {
+            const local =  VendaRepository.getById(Number(id));
+            setVenda(local);
+            console.log(
+            'LINHAS DO RASCUNHO:',
+            JSON.stringify(local?.linhas, null, 2)
+              );
+           
+          }
 
+        }
+      
         catch(err:any)
         {
             console.log(err.response)
@@ -315,76 +341,98 @@ useEffect (()=>{
       }
   }
 
-async function loadFornecedores()
+
+
+   async function loadClientes()
   {
     const token  = await AsyncStorage.getItem("@token")
-
-      try {
+    const online = await isOnline();
+    
+    try {
       
-            const response = await api.get("/fornecedor",
-               {
-                   headers: { Authorization: `Bearer ${token}` },
-               }   
-            )
-            const fornecedoresAPI = response.data.data; // 
-
-             
-            setFornecedores(response.data.data)
-            setFiltradosFornecedores(response.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
-
-             console.log(JSON.stringify(fornecedoresAPI, null, 2));
-        }
-
-        catch(err:any)
-        {
-            console.log(err.response)
-        }
-
-        finally
-        {
-           
-        }
-    }
-
-   
-  async function loadClientes()
-  {
-    const token  = await AsyncStorage.getItem("@token")
-
-      try {
-      
+        if (online) { 
             const response = await api.get("/clientes",
                {
                headers: { Authorization: `Bearer ${token}` },
             }   
             )
-            const clientesAPI = response.data.data; // 
-
-             
+  
             setClientes(response.data.data)
             setFiltrados(response.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
+        }
+        else 
+        {
+            const local = ClienteRepository.getAll();
+            setClientes(local);
+            setFiltrados(local)
 
-             console.log(JSON.stringify(clientesAPI, null, 2));
         }
 
+      }
         catch(err:any)
         {
             console.log(err.response)
         }
 
-        finally
+    }
+
+
+ async function loadFornecedores()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+     const online = await isOnline();
+        try
+          {
+            if (online) {
+       
+            const response = await api.get("/fornecedor",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+               }   
+            )
+      
+            setFornecedores(response.data.data)
+            setFiltradosFornecedores(response.data.data)
+
+        
+          }
+          else
+          {
+             const local = FornecedoresRepository.getAll();
+             setFornecedores(local);
+               console.log('FORNECEDORES OFFLINE', 
+                JSON.stringify(
+                local,
+                null,
+                2 )
+               );
+            setFiltradosFornecedores(local)
+
+            }
+
+          }
+
+        catch(err:any)
         {
-           
+            console.log(err.response)
         }
+        finally 
+        {
+        
+        }
+       
     }
 
     async function loadProducts()
     {
        const token  = await AsyncStorage.getItem("@token")
+     const online = await isOnline();
+
 
        try {
+
+        if (online)
+        {
       
             const response = await api.get("/produtos",
                {
@@ -394,9 +442,23 @@ async function loadFornecedores()
 
             setProdutos(response.data.data)
             setFiltradosProdutos(response.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
-
+        
         }
+          else
+          {
+            const local = ProdutoRepository.getAll();
+            setProdutos(local);
+              console.log('produtos OFFLINE', 
+              JSON.stringify(
+              local,
+              null,
+              2 )
+              );
+          setFiltradosProdutos(local)
+
+          }
+      }
+
 
         catch(err:any)
         {
@@ -614,31 +676,7 @@ async function loadFornecedores()
 
         if (countAdicionar < totalItens)
         {
-        //   const novoItem: Item = {
-        //   id:IdLinhaRemovida,
-         
-        //   // id: venda?.linhas.find(
-        //   //     p => p.produto_id === selectedProduto?.id
-        //   // )?.id,
-        //   produto_id: selectedProduto?.id?? 0,
-        //   taxa:taxaSelectedProduto,
-        //   nome: nomeProduto,
-        //   quantidade: parseInt(quantidade) || 1,
-        //   preco: parseFloat(preco),
-        // };
-  
-        //   setItens([...itens, novoItem]);
-        //   setNomeProduto('');
-        //   setQuantidade('');
-        //   setQuantidade('');
-        //   setPreco('');
-        //   setCountAdicionar(prev => prev + 1)
-        // }
-        // else  {
-        //   Alert.alert('Não é possível adicionar mais itens.',
-        //     'Caso queira adicionar itens diferentes, remova um da lista!'
-        //   )
-        // }
+     
 
         const linhaLivre = itens.find(i => i.produto_id === 0 || i.nome === '');
 

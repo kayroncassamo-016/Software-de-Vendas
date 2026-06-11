@@ -19,8 +19,13 @@ import {
   View
 } from 'react-native';
 // Definir tipos
+import { isOnline } from '@/utils/network';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ClienteRepository } from '../database/ClienteRepository';
+import { FornecedoresRepository } from '../database/FornecedoresRepository';
+import { ProdutoRepository } from '../database/ProdutoRepository';
+import { VendaRepository } from '../database/VendaRepository';
 
 interface Item {
   id: number;
@@ -174,76 +179,99 @@ export default function VendasScreen() {
       }
   }
 
-async function loadFornecedores()
-  {
-    const token  = await AsyncStorage.getItem("@token")
-
-      try {
-      
-            const response = await api.get("/fornecedor",
-               {
-                   headers: { Authorization: `Bearer ${token}` },
-               }   
-            )
-            const fornecedoresAPI = response.data.data; // 
-
-             
-            setFornecedores(response.data.data)
-            setFiltradosFornecedores(response.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
-
-             console.log(JSON.stringify(fornecedoresAPI, null, 2));
-        }
-
-        catch(err:any)
-        {
-            console.log(err.response)
-        }
-
-        finally
-        {
-           
-        }
-    }
-
-   
   async function loadClientes()
   {
     const token  = await AsyncStorage.getItem("@token")
-
-      try {
+    const online = await isOnline();
+    
+    try {
       
+        if (online) { 
             const response = await api.get("/clientes",
                {
                headers: { Authorization: `Bearer ${token}` },
             }   
             )
-            const clientesAPI = response.data.data; // 
-
-             
+  
             setClientes(response.data.data)
             setFiltrados(response.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
+        }
+        else 
+        {
+            const local = ClienteRepository.getAll();
+            setClientes(local);
+            setFiltrados(local)
 
-             console.log(JSON.stringify(clientesAPI, null, 2));
         }
 
+      }
         catch(err:any)
         {
             console.log(err.response)
         }
 
-        finally
-        {
-           
-        }
     }
 
+
+ async function loadFornecedores()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+     const online = await isOnline();
+        try
+          {
+            if (online) {
+       
+            const response = await api.get("/fornecedor",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+               }   
+            )
+      
+            setFornecedores(response.data.data)
+            setFiltradosFornecedores(response.data.data)
+
+        
+          }
+          else
+          {
+             const local = FornecedoresRepository.getAll();
+             setFornecedores(local);
+               console.log('FORNECEDORES OFFLINE', 
+                JSON.stringify(
+                local,
+                null,
+                2 )
+               );
+            setFiltradosFornecedores(local)
+
+            }
+
+          }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+        finally 
+        {
+        
+        }
+       
+    }
+
+   
+
+  
     async function loadProducts()
     {
        const token  = await AsyncStorage.getItem("@token")
+     const online = await isOnline();
+
 
        try {
+
+        if (online)
+        {
       
             const response = await api.get("/produtos",
                {
@@ -253,9 +281,23 @@ async function loadFornecedores()
 
             setProdutos(response.data.data)
             setFiltradosProdutos(response.data.data)
-             //console.log("clientes da base: ", response.data.data.data)
-
+        
         }
+          else
+          {
+            const local = ProdutoRepository.getAll();
+            setProdutos(local);
+              console.log('produtos OFFLINE', 
+              JSON.stringify(
+              local,
+              null,
+              2 )
+              );
+          setFiltradosProdutos(local)
+
+          }
+      }
+
 
         catch(err:any)
         {
@@ -268,30 +310,27 @@ async function loadFornecedores()
         }
     }
 
+
+
     async function handleGuardarRascunho()
     {
       const token  = await AsyncStorage.getItem("@token")
+      const online = await isOnline();
+     
 
       if (selectedNomeDocumento ===nomeDocumento[1] 
             || selectedTipoDocumento === 'NE' )
       {
-
-         try
-         {
           const payload =
           {
             tipo_doc: selectedTipoDocumento,
             nome_doc: selectedNomeDocumento,
             ano_serie: new Date().getFullYear().toString(),
-            // contribuinte: nrContribuinte,
-
+        
             fornecedor_id: IdFornecedorSelecionado,
-            // nome_fornecedor: fornecedorSelecionado?.nome,
             condicao_pagamento:selectedCondicaoPagamento??'',
-          // estado:'RASCUNHO',
+      
          
-
-
          linhas: itens.map(item => ({
             produto_id: item.produto_id,
             qtd: item.quantidade,
@@ -299,14 +338,20 @@ async function loadFornecedores()
             pr_unit_sem_iva: item.preco
           })),
 
-        
         }
+
+         try
+         {
+          if (online){
+          
          setLoadingGuardarRascunho(true)
            await api.post('/documentos',
             payload, {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
+        VendaRepository.saveAsDraft(payload as any);
+
 
         
        Alert.alert(
@@ -318,6 +363,16 @@ async function loadFornecedores()
         ]
         );
       }
+      else
+      {
+        VendaRepository.saveAsDraft(payload as any);
+
+        Alert.alert(
+        "Rascunho guardado",
+        "O documento foi guardado localmente e será sincronizado quando houver internet."
+      );
+      }
+    }
       catch (err: any)
       {
          console.log('erro ao guardar rascunho: ', err.response)
@@ -325,24 +380,19 @@ async function loadFornecedores()
 
       finally
       {
-           setLoadingGuardarRascunho(false)
+         setLoadingGuardarRascunho(false)
       }
     }
     
     else 
     {
-         try
-         {
-          const payload =
+      const payload =
           {
             tipo_doc: selectedTipoDocumento,
             nome_doc: selectedNomeDocumento,
             ano_serie: new Date().getFullYear().toString(),
-            //contribuinte: nrContribuinte,
             cliente_id: IdClienteSelecionado,
-
-
-         linhas: itens.map(item => ({
+           linhas: itens.map(item => ({
             produto_id: item.produto_id,
             qtd: item.quantidade,
             taxa_iva:item.taxa,
@@ -359,23 +409,40 @@ async function loadFornecedores()
           }]
 
         }
+         try
+         {
+
+          if (online)
+          {
+          
          setLoadingGuardarRascunho(true)
            await api.post('/documentos',
             payload, {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
+        VendaRepository.saveAsDraft(payload as any);
 
-        
        Alert.alert(
       'Factura criada em rascunho',
       `Cliente: ${clienteSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
         [
         { text: 'OK', style: 'cancel' },
-        { text: 'GERAR PDF', onPress: () => console.log('Enviando PDF...') },
+      
         ]
         );
       }
+      else
+      {
+        VendaRepository.saveAsDraft(payload as any);
+
+      Alert.alert(
+        "Rascunho guardado",
+        "O documento foi guardado localmente e será sincronizado quando houver internet."
+      );
+    
+      }
+    }
       catch (err: any)
       {
          console.log('erro ao guardar rascunho: ', err.response)
