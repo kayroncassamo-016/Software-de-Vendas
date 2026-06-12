@@ -1,10 +1,11 @@
-// repositories/VendaRepository.ts
-
 import { Vendas } from '@/types/types';
 import { db } from './db';
 
 export const VendaRepository = {
 
+  // =========================
+  // GET ALL
+  // =========================
   getAll(): Vendas[] {
     const vendas = db.getAllSync(
       'SELECT * FROM vendas'
@@ -71,6 +72,9 @@ export const VendaRepository = {
     });
   },
 
+  // =========================
+  // GET BY ID
+  // =========================
   getById(id: number): Vendas | null {
 
     const venda = db.getFirstSync(
@@ -138,19 +142,25 @@ export const VendaRepository = {
     };
   },
 
+  // =========================
+  // FILTROS
+  // =========================
   getRascunhos(): Vendas[] {
-    return this.getAll().filter(
-      venda => venda.estado === 'RASCUNHO'
-    );
+    return this.getAll().filter(v => v.estado === 'RASCUNHO');
   },
 
   getConfirmadas(): Vendas[] {
-    return this.getAll().filter(
-      venda => venda.estado === 'CONFIRMADO'
-    );
+    return this.getAll().filter(v => v.estado === 'CONFIRMADO');
   },
 
+  // =========================
+  // SAVE (CORRIGIDO)
+  // =========================
   save(venda: Vendas) {
+
+    // 🔥 ID ÚNICO GARANTIDO
+    const vendaId = venda.id ?? Date.now();
+    venda.id = vendaId;
 
     db.runSync(
       `INSERT OR REPLACE INTO vendas (
@@ -180,7 +190,7 @@ export const VendaRepository = {
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )`,
       [
-        venda.id,
+        vendaId,
 
         venda.valor_pago ?? '',
         venda.contribuinte ?? '',
@@ -208,19 +218,28 @@ export const VendaRepository = {
 
         venda.pagamento ?? '',
 
-        venda.created_at ??
-          new Date().toISOString(),
+        venda.created_at ?? new Date().toISOString(),
 
         1
       ]
     );
 
+    // =========================
+    // LINHAS
+    // =========================
     db.runSync(
       'DELETE FROM venda_linhas WHERE venda_id = ?',
-      [venda.id]
+      [vendaId]
     );
 
-    venda.linhas?.forEach(linha => {
+    venda.linhas?.forEach((linha,index) => {
+
+        console.log(
+            'INSERINDO LINHA',
+            index,
+            JSON.stringify(linha, null, 2)
+  );
+      const linhaId = linha.id ?? (Date.now() + Math.random());
 
       db.runSync(
         `INSERT INTO venda_linhas (
@@ -233,22 +252,34 @@ export const VendaRepository = {
         )
         VALUES (?, ?, ?, ?, ?, ?)`,
         [
-          linha.id,
-          venda.id,
+          linhaId,
+
+          vendaId, 
 
           linha.produto_id,
           linha.qtd,
-
           linha.taxa_iva,
           linha.pr_unit_sem_iva
         ]
       );
-
     });
 
+    const teste = db.getAllSync(
+      'SELECT * FROM venda_linhas WHERE venda_id = ?',
+      [vendaId]
+    );
+
+    console.log(
+      'LINHAS DEPOIS DO INSERT:',
+      JSON.stringify(teste, null, 2)
+    );
+
+    // =========================
+    // PAGAMENTOS
+    // =========================
     db.runSync(
       'DELETE FROM venda_pagamentos WHERE venda_id = ?',
-      [venda.id]
+      [vendaId]
     );
 
     venda.pagamentos?.forEach(pagamento => {
@@ -263,65 +294,35 @@ export const VendaRepository = {
         )
         VALUES (?, ?, ?, ?, ?)`,
         [
-          venda.id,
+          vendaId,
 
           pagamento.metodo ?? '',
-          pagamento.valor,
+          pagamento.valor ?? 0,
 
           pagamento.banco_servico ?? '',
           pagamento.nr_movimento ?? null
         ]
       );
-
     });
   },
 
+  // =========================
+  // SAVE MANY
+  // =========================
   saveMany(vendas: Vendas[]) {
-
     vendas.forEach((venda, index) => {
-
       try {
-
-        console.log(
-          'SALVANDO VENDA',
-          index,
-          venda.id
-        );
-
         this.save(venda);
-
-        console.log(
-          'SALVO VENDA',
-          index,
-          venda.id
-        );
-
       } catch (err) {
-
-        console.log(
-          'ERRO NA VENDA',
-          index,
-          venda.id,
-          err
-        );
-
+        console.log('ERRO NA VENDA', index, err);
       }
-
     });
-
   },
 
-  saveAsDraft(venda: Vendas) {
-
-    this.save({
-      ...venda,
-      estado: 'RASCUNHO'
-    });
-
-  },
-
+  // =========================
+  // STATUS
+  // =========================
   confirmLocal(id: number) {
-
     db.runSync(
       `UPDATE vendas
        SET estado = 'CONFIRMADO',
@@ -329,11 +330,9 @@ export const VendaRepository = {
        WHERE id = ?`,
       [id]
     );
-
   },
 
   cancelLocal(id: number) {
-
     db.runSync(
       `UPDATE vendas
        SET estado = 'CANCELADO',
@@ -341,23 +340,14 @@ export const VendaRepository = {
        WHERE id = ?`,
       [id]
     );
-
   },
 
+  // =========================
+  // CLEAR DB
+  // =========================
   clear() {
-
-    db.runSync(
-      'DELETE FROM venda_pagamentos'
-    );
-
-    db.runSync(
-      'DELETE FROM venda_linhas'
-    );
-
-    db.runSync(
-      'DELETE FROM vendas'
-    );
-
+    db.runSync('DELETE FROM venda_pagamentos');
+    db.runSync('DELETE FROM venda_linhas');
+    db.runSync('DELETE FROM vendas');
   }
-
 };

@@ -95,7 +95,7 @@ export default function Home() {
         <Text style ={styles.label}>Email:</Text>
         <TextInput
             placeholder="Digite o seu email"
-            placeholderTextColor="#999"
+            placeholderTextColor="#353535"
             style = {styles.TextFieldStyling}
             onChangeText={(text) =>
             {
@@ -110,7 +110,7 @@ export default function Home() {
         <View style = {styles.InputContainer}>
             <TextInput
             placeholder="Digite a sua senha"
-            placeholderTextColor="#999"
+            placeholderTextColor="#1f1f1f"
             style ={styles.TextFieldSenha}
             secureTextEntry={!showPassword}
             onChangeText={(text) =>
@@ -169,7 +169,7 @@ export default function Home() {
           
         </TouchableOpacity >
         
-        <View style={{flexDirection:'row'}}>
+        {/* <View style={{flexDirection:'row'}}>
           <Text style={{color:'#fff', marginTop:5}}> Ainda não se cadastrou?</Text>
 
           <Pressable onPress={() => router.push('register' as never)
@@ -182,7 +182,7 @@ export default function Home() {
               </Text>
           </Pressable>
 
-        </View>
+        </View> */}
       </View>
 
 
@@ -195,7 +195,8 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     justifyContent: 'center',
-    backgroundColor: '#0f172a',
+    // backgroundColor: '#0f172a',
+    backgroundColor: '#ffffff',
       
   },
 
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
 
   label:
   {
-    color:"#fff",
+    color:"#3b3b3b",
     fontWeight:"bold",
     fontSize: 16
   },
@@ -252,10 +253,10 @@ const styles = StyleSheet.create({
     marginTop:5,
     borderRadius:8,
     borderWidth:1,
-    borderColor: '#7271716c',
-    backgroundColor: '#18223a',
+    borderColor: '#0303036c',
+    backgroundColor: '#ffffff',
     paddingStart:14,
-    color:'#fff',
+    color:'#1a1919',
     flex:1
   },
 
@@ -265,10 +266,10 @@ const styles = StyleSheet.create({
     marginTop:5,
     borderRadius:8,
     borderWidth:1,
-    borderColor: '#7271716c',
-    backgroundColor: '#18223a',
+    borderColor: '#0000006c',
+    backgroundColor: '#ffffff',
     paddingStart:14,
-    color:'#fff',
+    color:'#1a1919',
   }
   ,
   button:

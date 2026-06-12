@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Button, Dialog, Portal, RadioButton } from 'react-native-paper';
+
 interface AdicionarClienteProps
 {
     visible:boolean,

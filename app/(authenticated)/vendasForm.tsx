@@ -350,8 +350,7 @@ export default function VendasScreen() {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
-        VendaRepository.saveAsDraft(payload as any);
-
+        VendaRepository.save({...payload,id: Date.now()} as any);
 
         
        Alert.alert(
@@ -365,8 +364,8 @@ export default function VendasScreen() {
       }
       else
       {
-        VendaRepository.saveAsDraft(payload as any);
-
+        VendaRepository.save({...payload,id: Date.now()} as any);
+      
         Alert.alert(
         "Rascunho guardado",
         "O documento foi guardado localmente e será sincronizado quando houver internet."
@@ -421,7 +420,8 @@ export default function VendasScreen() {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
-        VendaRepository.saveAsDraft(payload as any);
+                VendaRepository.save({...payload,id: Date.now()} as any);
+
 
        Alert.alert(
       'Factura criada em rascunho',
@@ -434,7 +434,7 @@ export default function VendasScreen() {
       }
       else
       {
-        VendaRepository.saveAsDraft(payload as any);
+        VendaRepository.save({...payload,id: Date.now()} as any);
 
       Alert.alert(
         "Rascunho guardado",

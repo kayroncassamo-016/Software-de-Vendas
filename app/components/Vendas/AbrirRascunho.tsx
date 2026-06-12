@@ -109,15 +109,14 @@ export default function AbrirRascunho()
 
    useEffect(() => {
 
+      if (produtos.length === 0 || !venda) return;
     setSelectedTipoDocumento(venda?.tipo_doc ?? '');
     setSelectedNomeDocumento(venda?.nome_doc ?? '');
     setNrContribuinte(venda?.contribuinte ?? '');
     setSelectedCondicaoPagamento(venda?.condicao_pagamento ?? '');
     setIdSelectedProduto(venda?.produto_id?? 0)
-    // setSelectedMetodoPagamento(venda?.pagamentos.find
-    //   (pagamento => ))
 
-    setSelectedMetodoPagamento(venda?.pagamento??'')//Comecar daqui mesmo
+    setSelectedMetodoPagamento(venda?.pagamento??'')
     
     const clienteSeleccionado = clientes.find
     (cliente => cliente.id === venda?.cliente_id)
@@ -153,7 +152,7 @@ console.log(
       setCountAdicionar(itens.length)
       setImpresso(venda?.impresso)
       
-
+  console.log ('itens: ', itens)
   
 }, [venda,produtos,clientes,fornecedores]);
 
@@ -198,9 +197,10 @@ useEffect (()=>{
           else
           {
             const local =  VendaRepository.getById(Number(id));
+            console.log('ANTES DE getById');
             setVenda(local);
             console.log(
-            'LINHAS DO RASCUNHO:',
+             'VENDA LIDA DO SQLITE:',
             JSON.stringify(local?.linhas, null, 2)
               );
            
@@ -522,7 +522,7 @@ useEffect (()=>{
       `Cliente: ${fornecedorSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
         [
         { text: 'OK', style: 'cancel' },
-        { text: 'GERAR PDF', onPress: () => console.log('Enviando PDF...') },
+      
         ]
         );
       }
@@ -584,7 +584,6 @@ useEffect (()=>{
             console.log(JSON.stringify(responseData, null, 2));
 
 
-        
        Alert.alert(
       'Factura actualizada com sucesso.',
       `Cliente: ${clienteSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
