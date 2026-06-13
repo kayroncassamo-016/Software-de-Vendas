@@ -1,13 +1,17 @@
-
-
-import { useContexto } from '@/contexts/AuthContext';
-import { api } from '@/services/api';
-import { formatPermission } from '@/utils/format';
-import { Ionicons } from '@expo/vector-icons';
+import { useContexto } from "@/contexts/AuthContext";
+import { api } from "@/services/api";
+import { formatPermission } from "@/utils/format";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from 'expo-router';
-import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { useRouter } from "expo-router";
+import {
+  Cog,
+  Grid2X2,
+  Handshake,
+  Package,
+  ShoppingBag,
+} from "lucide-react-native";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -21,16 +25,16 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ConfigScreen = () => {
   const NAV_ITEMS = [
-    { icon: ShoppingBag, label: 'Vendas' },
-    { icon: Handshake, label: 'Clientes' },
-    { icon: Grid2X2, label: 'Painel' },
-    { icon: Package, label: 'Produtos' },
-    { icon: Cog, label: 'Config.' },
+    { icon: ShoppingBag, label: "Vendas" },
+    { icon: Handshake, label: "Clientes" },
+    { icon: Grid2X2, label: "Painel" },
+    { icon: Package, label: "Produtos" },
+    { icon: Cog, label: "Config." },
   ];
 
   const [activeNav, setActiveNav] = useState(4);
@@ -60,8 +64,10 @@ const ConfigScreen = () => {
   const [emailNewUser, setEmailNewUser] = useState("");
   const [cargoNewUser, setCargoNewUser] = useState("");
   const [telefoneNewUser, setTelefoneNewUser] = useState("");
-  
-  const [permissionGroups, setPermissionGroups] = useState<Record<string, string[]>>({});
+
+  const [permissionGroups, setPermissionGroups] = useState<
+    Record<string, string[]>
+  >({});
   const [permissionGroupsMeta, setPermissionGroupsMeta] = useState<any>({});
   // Carregar dados do perfil
   useEffect(() => {
@@ -74,22 +80,18 @@ const ConfigScreen = () => {
       setSenhaNova("");
       setSenhaConfirm("");
     }
-       loadPermissions();
+    loadPermissions();
   }, [modalUsuario, user]);
 
   const Item = ({ label, value, onPress, toggle, onToggle }: any) => (
     <TouchableOpacity style={styles.item} onPress={onPress} disabled={toggle}>
       {toggle ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={styles.label}>{label}</Text>
-          <Switch
-            value={value}
-            onValueChange={onToggle}
-            style={{ flex: 1 }}
-          />
+          <Switch value={value} onValueChange={onToggle} style={{ flex: 1 }} />
         </View>
       ) : (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>{label}</Text>
             {value && <Text style={styles.value}>{value}</Text>}
@@ -119,12 +121,12 @@ const ConfigScreen = () => {
   async function sairDoSistema() {
     const token = await AsyncStorage.getItem("@token");
     Alert.alert(
-      'Sair',
-      'Deseja realmente sair do sistema?',
+      "Sair",
+      "Deseja realmente sair do sistema?",
       [
-        { text: 'Não', style: 'cancel' },
+        { text: "Não", style: "cancel" },
         {
-          text: 'Sim',
+          text: "Sim",
           onPress: () => {
             if (token) {
               signOut(token);
@@ -133,24 +135,24 @@ const ConfigScreen = () => {
           },
         },
       ],
-      { cancelable: true }
+      { cancelable: true },
     );
   }
 
   async function guardarPerfil() {
     if (!nome || !email) {
-      Alert.alert('Erro', 'Nome e email são obrigatórios');
+      Alert.alert("Erro", "Nome e email são obrigatórios");
       return;
     }
 
     // Se mudou senha, valida
     if (senhaNova) {
       if (!senhaAtual) {
-        Alert.alert('Erro', 'Precisa da senha actual para mudar');
+        Alert.alert("Erro", "Precisa da senha actual para mudar");
         return;
       }
       if (senhaNova !== senhaConfirm) {
-        Alert.alert('Erro', 'As senhas não coincidem');
+        Alert.alert("Erro", "As senhas não coincidem");
         return;
       }
     }
@@ -174,10 +176,10 @@ const ConfigScreen = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Alert.alert('Sucesso', 'Perfil actualizado com sucesso');
+      Alert.alert("Sucesso", "Perfil actualizado com sucesso");
       setModalUsuario(false);
     } catch (err: any) {
-      Alert.alert('Erro', err.response?.data?.message || 'Erro ao guardar');
+      Alert.alert("Erro", err.response?.data?.message || "Erro ao guardar");
     } finally {
       setSavingProfile(false);
     }
@@ -185,7 +187,7 @@ const ConfigScreen = () => {
 
   async function adicionarUser() {
     if (!nomeNewUser || !emailNewUser || !senhaNewUser || !cargoNewUser) {
-      Alert.alert('Erro', 'Preenche todos os campos');
+      Alert.alert("Erro", "Preenche todos os campos");
       return;
     }
 
@@ -199,10 +201,10 @@ const ConfigScreen = () => {
 
     try {
       const token = await AsyncStorage.getItem("@token");
-      await api.post('/users', payload, {
+      await api.post("/users", payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      Alert.alert('Sucesso', 'Novo utilizador cadastrado com sucesso!');
+      Alert.alert("Sucesso", "Novo utilizador cadastrado com sucesso!");
       setModalAddUser(false);
       // Limpar campos
       setNomeNewUser("");
@@ -211,52 +213,63 @@ const ConfigScreen = () => {
       setCargoNewUser("");
       setTelefoneNewUser("");
     } catch (err: any) {
-      Alert.alert('Erro', err.response?.data?.message || 'Erro ao adicionar utilizador');
+      Alert.alert(
+        "Erro",
+        err.response?.data?.message || "Erro ao adicionar utilizador",
+      );
     }
   }
 
-
   async function loadPermissions() {
-  try {
-    const token = await AsyncStorage.getItem('@token');
+    try {
+      const token = await AsyncStorage.getItem("@token");
 
-    const res = await api.get('/permissoes/all', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      const res = await api.get("/permissoes/all", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    const data = res.data.data;
+      const data = res.data.data;
 
-    const groups: Record<string, string[]> = {};
-    const meta: Record<string, any> = {};
+      const groups: Record<string, string[]> = {};
+      const meta: Record<string, any> = {};
 
-    Object.entries(data).forEach(([key, value]: any) => {
-      const permsObj = value?.permissions || {};
+      Object.entries(data).forEach(([key, value]: any) => {
+        const permsObj = value?.permissions || {};
 
-      groups[key] = Object.keys(permsObj);
-      meta[key] = {
-        label: value?.label || key,
-      };
-    });
+        groups[key] = Object.keys(permsObj);
+        meta[key] = {
+          label: value?.label || key,
+        };
+      });
 
-    setPermissionGroups(groups);
-    setPermissionGroupsMeta(meta);
-  } catch (err) {
-    console.log(err);
+      setPermissionGroups(groups);
+      setPermissionGroupsMeta(meta);
+    } catch (err) {
+      console.log(err);
+    }
   }
-}
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: temaEscuro ? '#292828' : '#e4e4e4' }]}>
+    <SafeAreaView
+      style={[
+        styles.safe,
+        { backgroundColor: temaEscuro ? "#292828" : "#e4e4e4" },
+      ]}
+    >
       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
 
       <View style={styles.header}>
         <Text style={styles.title}>Perfil</Text>
       </View>
 
-      <ScrollView style={[styles.scroll, { backgroundColor: temaEscuro ? '#292828' : '#f4f6f9' }]}>
-        
+      <ScrollView
+        style={[
+          styles.scroll,
+          { backgroundColor: temaEscuro ? "#292828" : "#f4f6f9" },
+        ]}
+      >
         {/* USUÁRIO */}
         <Text style={styles.section}>Usuário</Text>
 
@@ -266,12 +279,10 @@ const ConfigScreen = () => {
           onPress={() => setModalUsuario(true)}
         />
 
-        
-
-        {user?.user.name === 'Administrador' && (
+        {user?.user.name === "Administrador" && (
           <Item
             label="Gestão de utilizadores"
-            onPress={() => router.push('/(authenticated)/users/userList')}
+            onPress={() => router.push("/(authenticated)/users/userList")}
           />
         )}
 
@@ -295,10 +306,7 @@ const ConfigScreen = () => {
         {/* SESSÃO */}
         <Text style={styles.section}>Sessão</Text>
 
-        <Item
-          label="Sair"
-          onPress={() => sairDoSistema()}
-        />
+        <Item label="Sair" onPress={() => sairDoSistema()} />
       </ScrollView>
 
       {/* MODAL - PERFIL DO USUÁRIO */}
@@ -312,16 +320,20 @@ const ConfigScreen = () => {
             <View style={{ width: 50 }} />
           </View>
 
-          <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
-            
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalContent}
+          >
             {/* Avatar/Info Summary */}
             <View style={styles.profileHeader}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{nome.charAt(0).toUpperCase()}</Text>
+                <Text style={styles.avatarText}>
+                  {nome.charAt(0).toUpperCase()}
+                </Text>
               </View>
               <View>
                 <Text style={styles.profileName}>{nome}</Text>
-                <Text style={styles.profileCargo}>{cargo || 'Sem cargo'}</Text>
+                <Text style={styles.profileCargo}>{cargo || "Sem cargo"}</Text>
               </View>
             </View>
 
@@ -366,43 +378,42 @@ const ConfigScreen = () => {
 
             <Text style={styles.fieldSection}>Permissões</Text>
 
-      {Object.entries(permissionGroups).map(([groupKey, permissions]) => {
-        const permissoesDoUser =
-          permissions.filter((p) =>
-            user?.user?.permissoes?.includes(p)
-          );
+            {Object.entries(permissionGroups).map(([groupKey, permissions]) => {
+              const permissoesDoUser = permissions.filter((p) =>
+                user?.user?.permissoes?.includes(p),
+              );
 
-        if (permissoesDoUser.length === 0) return null;
+              if (permissoesDoUser.length === 0) return null;
 
-        return (
-          <View key={groupKey} style={styles.formCard}>
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: '#185FA5',
-                marginBottom: 10,
-              }}
-            >
-              {permissionGroupsMeta?.[groupKey]?.label || groupKey}
-            </Text>
+              return (
+                <View key={groupKey} style={styles.formCard}>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: "#185FA5",
+                      marginBottom: 10,
+                    }}
+                  >
+                    {permissionGroupsMeta?.[groupKey]?.label || groupKey}
+                  </Text>
 
-            {permissoesDoUser.map((permission) => (
-              <Text
-                key={permission}
-                style={{
-                  fontSize: 13,
-                  color: '#1C1C1E',
-                  marginBottom: 6,
-                }}
-              >
-                ✓ {formatPermission(permission)}
-               {/* { permission} */}
-              </Text>
-            ))}
-          </View>
-        );
-      })}
+                  {permissoesDoUser.map((permission) => (
+                    <Text
+                      key={permission}
+                      style={{
+                        fontSize: 13,
+                        color: "#1C1C1E",
+                        marginBottom: 6,
+                      }}
+                    >
+                      ✓ {formatPermission(permission)}
+                      {/* { permission} */}
+                    </Text>
+                  ))}
+                </View>
+              );
+            })}
 
             {/* Alterar Senha */}
             <Text style={styles.fieldSection}>Alterar Senha</Text>
@@ -417,9 +428,12 @@ const ConfigScreen = () => {
                   style={[styles.fieldInput, { flex: 1 }]}
                   secureTextEntry={!showSenha}
                 />
-                <Pressable onPress={() => setShowSenha(!showSenha)} style={styles.eyeBtn}>
+                <Pressable
+                  onPress={() => setShowSenha(!showSenha)}
+                  style={styles.eyeBtn}
+                >
                   <Ionicons
-                    name={showSenha ? 'eye-off' : 'eye'}
+                    name={showSenha ? "eye-off" : "eye"}
                     size={20}
                     color="#185FA5"
                   />
@@ -448,7 +462,9 @@ const ConfigScreen = () => {
                 />
               </View>
 
-              <Text style={styles.helperText}>Deixe em branco se não quer mudar a senha</Text>
+              <Text style={styles.helperText}>
+                Deixe em branco se não quer mudar a senha
+              </Text>
             </View>
 
             <View style={{ height: 20 }} />
@@ -490,7 +506,10 @@ const ConfigScreen = () => {
             <View style={{ width: 50 }} />
           </View>
 
-          <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalContent}
+          >
             <View style={styles.formCard}>
               <Text style={styles.fieldLabel}>Nome</Text>
               <TextInput
@@ -518,9 +537,12 @@ const ConfigScreen = () => {
                   style={[styles.fieldInput, { flex: 1 }]}
                   secureTextEntry={!showSenha}
                 />
-                <Pressable onPress={() => setShowSenha(!showSenha)} style={styles.eyeBtn}>
+                <Pressable
+                  onPress={() => setShowSenha(!showSenha)}
+                  style={styles.eyeBtn}
+                >
                   <Ionicons
-                    name={showSenha ? 'eye-off' : 'eye'}
+                    name={showSenha ? "eye-off" : "eye"}
                     size={20}
                     color="#185FA5"
                   />
@@ -556,10 +578,7 @@ const ConfigScreen = () => {
               <Text style={styles.btnCancelText}>Cancelar</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.btnSave}
-              onPress={adicionarUser}
-            >
+            <TouchableOpacity style={styles.btnSave} onPress={adicionarUser}>
               <Text style={styles.btnSaveText}>Adicionar</Text>
             </TouchableOpacity>
           </View>
@@ -577,7 +596,7 @@ const ConfigScreen = () => {
               activeOpacity={0.7}
             >
               <Text style={[styles.navIcon, i === 4 && styles.navIconActive]}>
-                <Icon color={'#5c5b5b'} />
+                <Icon color={"#5c5b5b"} />
               </Text>
               <Text style={[styles.navLabel, i === 4 && styles.navLabelActive]}>
                 {nav.label}
@@ -596,17 +615,17 @@ export default ConfigScreen;
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: {
-    backgroundColor: '#185FA5',
-    paddingHorizontal: 16,
-    paddingVertical: 22,
-    paddingBottom: 14,
-    borderRadius: 12,
-    marginHorizontal: 5,
+    backgroundColor: "#1e5aa8",
+    padding: 20,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
   title: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   scroll: {
     flex: 1,
@@ -615,55 +634,55 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 20,
     marginBottom: 10,
-    color: '#888',
-    fontWeight: 'bold',
+    color: "#888",
+    fontWeight: "bold",
     fontSize: 13,
   },
   item: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
     marginBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   value: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginTop: 4,
   },
   arrow: {
     fontSize: 18,
-    color: '#999',
+    color: "#999",
   },
   modal: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: "#F2F2F7",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#E5E5EA',
-    backgroundColor: '#fff',
+    borderBottomColor: "#E5E5EA",
+    backgroundColor: "#fff",
   },
   modalCloseBtn: {
     fontSize: 16,
-    color: '#185FA5',
-    fontWeight: '500',
+    color: "#185FA5",
+    fontWeight: "500",
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontWeight: "600",
+    color: "#1C1C1E",
   },
   modalScroll: {
     flex: 1,
@@ -672,9 +691,9 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -684,140 +703,142 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#185FA5',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#185FA5",
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatarText: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   profileName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontWeight: "600",
+    color: "#1C1C1E",
   },
   profileCargo: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: "#8E8E93",
     marginTop: 2,
   },
   fieldSection: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
+    fontWeight: "600",
+    color: "#8E8E93",
     marginTop: 16,
     marginBottom: 10,
   },
   formCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 0.5,
-    borderColor: '#E5E5EA',
+    borderColor: "#E5E5EA",
     padding: 14,
     marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#8E8E93',
+    fontWeight: "500",
+    color: "#8E8E93",
     marginBottom: 6,
     marginTop: 10,
   },
   fieldInput: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: "#F2F2F7",
     borderRadius: 8,
     borderWidth: 0.5,
-    borderColor: '#E5E5EA',
+    borderColor: "#E5E5EA",
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    color: '#1C1C1E',
+    color: "#1C1C1E",
   },
   passwordField: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   eyeBtn: {
     padding: 8,
-    position: 'absolute',
+    position: "absolute",
     right: 8,
   },
   helperText: {
     fontSize: 11,
-    color: '#8E8E93',
-    fontStyle: 'italic',
+    color: "#8E8E93",
+    fontStyle: "italic",
     marginTop: 8,
   },
   modalActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopWidth: 0.5,
-    borderTopColor: '#E5E5EA',
+    borderTopColor: "#E5E5EA",
   },
   btnCancel: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 0.5,
-    borderColor: '#185FA5',
+    borderColor: "#185FA5",
   },
   btnCancelText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#185FA5',
+    fontWeight: "500",
+    color: "#185FA5",
   },
   btnSave: {
     flex: 1,
-    backgroundColor: '#185FA5',
+    backgroundColor: "#185FA5",
     borderRadius: 10,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   btnSaveText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#fff',
+    fontWeight: "500",
+    color: "#fff",
   },
   bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    backgroundColor: "#fff",
     borderTopWidth: 0.5,
-    borderTopColor: '#E5E5EA',
-    paddingTop: 8,
-    paddingBottom: 20,
+    borderTopColor: "#E5E5EA",
+    paddingTop: 15,
+    marginBottom: 0,
+    paddingBottom: 15,
+    width: "100%",
   },
   navItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 3,
   },
   navIcon: {
     fontSize: 18,
-    color: '#8E8E93',
+    color: "#8E8E93",
   },
   navIconActive: {
-    color: '#185FA5',
+    color: "#185FA5",
   },
   navLabel: {
     fontSize: 10,
-    color: '#8E8E93',
+    color: "#8E8E93",
   },
   navLabelActive: {
-    color: '#185FA5',
-    fontWeight: '500',
+    color: "#185FA5",
+    fontWeight: "500",
   },
   navDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#185FA5',
+    backgroundColor: "#185FA5",
     marginTop: 1,
   },
 });
