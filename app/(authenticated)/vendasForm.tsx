@@ -350,7 +350,7 @@ export default function VendasScreen() {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
-        VendaRepository.save({...payload,id: Date.now()} as any);
+        VendaRepository.save({...payload,} as any);
 
         
        Alert.alert(
@@ -364,7 +364,7 @@ export default function VendasScreen() {
       }
       else
       {
-        VendaRepository.save({...payload,id: Date.now()} as any);
+        VendaRepository.save({...payload,} as any);
       
         Alert.alert(
         "Rascunho guardado",
@@ -420,7 +420,8 @@ export default function VendasScreen() {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
-                VendaRepository.save({...payload,id: Date.now()} as any);
+                // VendaRepository.save({...payload,id: Date.now()} as any);
+                VendaRepository.save({...payload} as any);
 
 
        Alert.alert(
@@ -434,7 +435,7 @@ export default function VendasScreen() {
       }
       else
       {
-        VendaRepository.save({...payload,id: Date.now()} as any);
+        VendaRepository.save({...payload} as any);
 
       Alert.alert(
         "Rascunho guardado",

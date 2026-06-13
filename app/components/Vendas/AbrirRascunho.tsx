@@ -28,6 +28,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ClienteRepository } from '@/app/database/ClienteRepository';
 import { FornecedoresRepository } from '@/app/database/FornecedoresRepository';
 import { ProdutoRepository } from '@/app/database/ProdutoRepository';
+import { mapApiVendaToLocal } from '@/app/database/VendaMapper';
 import { VendaRepository } from '@/app/database/VendaRepository';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -107,56 +108,112 @@ export default function AbrirRascunho()
 
    },[id])
 
-   useEffect(() => {
+//    useEffect(() => {
 
-      if (produtos.length === 0 || !venda) return;
-    setSelectedTipoDocumento(venda?.tipo_doc ?? '');
-    setSelectedNomeDocumento(venda?.nome_doc ?? '');
-    setNrContribuinte(venda?.contribuinte ?? '');
-    setSelectedCondicaoPagamento(venda?.condicao_pagamento ?? '');
-    setIdSelectedProduto(venda?.produto_id?? 0)
+//       // if (produtos.length === 0 || !venda) return;
+//     setSelectedTipoDocumento(venda?.tipo_doc ?? '');
+//     setSelectedNomeDocumento(venda?.nome_doc ?? '');
+//     setNrContribuinte(venda?.contribuinte ?? '');
+//     setSelectedCondicaoPagamento(venda?.condicao_pagamento ?? '');
+//     setIdSelectedProduto(venda?.produto_id?? 0)
 
-    setSelectedMetodoPagamento(venda?.pagamento??'')
+//     setSelectedMetodoPagamento(venda?.pagamento??'')
     
-    const clienteSeleccionado = clientes.find
-    (cliente => cliente.id === venda?.cliente_id)
+//     const clienteSeleccionado = clientes.find
+//     (cliente => cliente.id === venda?.cliente_id)
 
-    setClienteSelecionado(clienteSeleccionado??null)
+//     setClienteSelecionado(clienteSeleccionado??null)
     
-    const fornecedorSelecionado = fornecedores.find 
-    (fornecedor => fornecedor.id === venda?.fornecedor_id)
+//     const fornecedorSelecionado = fornecedores.find 
+//     (fornecedor => fornecedor.id === venda?.fornecedor_id)
 
-    setFornecedorSelecionado(fornecedorSelecionado??null)
+//     setFornecedorSelecionado(fornecedorSelecionado??null)
 
-console.log(
+// console.log(
+//     'LINHAS DA VENDA:',
+//     JSON.stringify(venda?.linhas, null, 2)
+//   ); 
+
+  
+//  setItens (
+//     (venda?.linhas || []).map(l => {
+//       const produto = produtos.find(p => p.id === l.produto_id);
+
+//       return {
+//         id: l.id,
+//         produto_id: l.produto_id,
+//         nome: produto?.designacao ?? 'Produto não encontrado',
+//         quantidade: Number(l.qtd),
+//         preco: Number(l.pr_unit_sem_iva),
+//         taxa: String(l.taxa_iva),
+//       };
+//     })
+//   );
+//       setTotalItens(itens.length)
+//       setCountAdicionar(itens.length)
+//       setImpresso(venda?.impresso)
+      
+//   console.log ('itens: ', itens)
+  
+// }, [venda,produtos,clientes,fornecedores]);
+
+
+
+useEffect(() => {
+
+  if (!venda) return;
+
+  setSelectedTipoDocumento(venda?.tipo_doc ?? '');
+  setSelectedNomeDocumento(venda?.nome_doc ?? '');
+  setNrContribuinte(venda?.contribuinte ?? '');
+  setSelectedCondicaoPagamento(venda?.condicao_pagamento ?? '');
+  setIdSelectedProduto(venda?.produto_id ?? 0);
+
+  setSelectedMetodoPagamento(venda?.pagamento ?? '');
+
+  const clienteSeleccionado = clientes.find(
+    cliente => cliente.id === venda?.cliente_id
+  );
+
+  setClienteSelecionado(clienteSeleccionado ?? null);
+
+  const fornecedorSelecionado = fornecedores.find(
+    fornecedor => fornecedor.id === venda?.fornecedor_id
+  );
+
+  setFornecedorSelecionado(fornecedorSelecionado ?? null);
+
+  console.log(
     'LINHAS DA VENDA:',
     JSON.stringify(venda?.linhas, null, 2)
-  ); 
-
-  
- setItens (
-    (venda?.linhas || []).map(l => {
-      const produto = produtos.find(p => p.id === l.produto_id);
-
-      return {
-        id: l.id,
-        produto_id: l.produto_id,
-        nome: produto?.designacao ?? 'Produto não encontrado',
-        quantidade: Number(l.qtd),
-        preco: Number(l.pr_unit_sem_iva),
-        taxa: String(l.taxa_iva),
-      };
-    })
   );
-      setTotalItens(itens.length)
-      setCountAdicionar(itens.length)
-      setImpresso(venda?.impresso)
-      
-  console.log ('itens: ', itens)
-  
-}, [venda,produtos,clientes,fornecedores]);
 
+  // 🔥 monta itens de forma segura
+  const itensFormatados = (venda?.linhas || []).map(l => {
 
+    const produto = produtos.find(p => p.id === l.produto_id);
+
+    return {
+      id: l.id,
+      produto_id: l.produto_id,
+      nome: produto?.designacao ?? 'Produto não encontrado',
+      quantidade: Number(l.qtd),
+      preco: Number(l.pr_unit_sem_iva),
+      taxa: String(l.taxa_iva),
+    };
+  });
+
+  setItens(itensFormatados);
+
+  // 🔥 CORREÇÃO PRINCIPAL: NÃO usar "itens" aqui
+  setTotalItens(itensFormatados.length);
+  setCountAdicionar(itensFormatados.length);
+
+  setImpresso(venda?.impresso);
+
+  console.log('itens:', itensFormatados);
+
+}, [venda, produtos, clientes, fornecedores]);
 
 
 
@@ -171,6 +228,9 @@ useEffect (()=>{
 
 },[selectedProduto,venda])
 
+
+
+  
 
 
    async function loadVenda()
@@ -192,18 +252,25 @@ useEffect (()=>{
             setVenda(response.data.data)
             VendaRepository.save(response.data.data)
 
-             console.log(JSON.stringify(vendaAPI, null, 2));
+            const vendaLocal = mapApiVendaToLocal(vendaAPI);
+
+            VendaRepository.save(vendaLocal);
+
+
+            console.log('Venda-rascunho: ',JSON.stringify(vendaAPI, null, 2));
         }
           else
           {
             const local =  VendaRepository.getById(Number(id));
             console.log('ANTES DE getById');
             setVenda(local);
-            console.log(
-             'VENDA LIDA DO SQLITE:',
-            JSON.stringify(local?.linhas, null, 2)
-              );
-           
+            Alert.alert(  'VENDA LIDA DO SQLITE:', JSON.stringify(local?.linhas, null, 2)
+              )
+            // console.log(
+            //  'VENDA LIDA DO SQLITE:',
+            // JSON.stringify(local?.linhas, null, 2)
+            //   );
+      
           }
 
         }

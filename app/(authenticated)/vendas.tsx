@@ -571,8 +571,10 @@ useEffect(() =>
 
             setVendas(response.data.data.data)
             setFiltrados(response.data.data.data)
-                  VendaRepository.saveMany(response.data.data.data);
-            console.log(JSON.stringify(vendasAPI, null, 2));
+            VendaRepository.saveMany(response.data.data.data);
+
+
+            console.log('Quero ver esta venda: ',JSON.stringify(vendasAPI, null, 2));
           }
            else
            {

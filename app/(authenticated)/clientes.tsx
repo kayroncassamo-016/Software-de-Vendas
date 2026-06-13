@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 
 import {
   ActivityIndicator,
+  Alert,
   RefreshControl,
   // SafeAreaView,
   ScrollView,
@@ -276,6 +277,8 @@ useEffect(() =>
             JSON.stringify(local[0], null, 2)
           );
             console.log("CLIENTES OFFLINE:", local);
+
+            Alert.alert ( "CLIENTE TESTE", JSON.stringify(local[0], null, 2));
           }
       }
 
