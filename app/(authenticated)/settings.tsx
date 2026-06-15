@@ -131,7 +131,7 @@ const ConfigScreen = () => {
             if (token) {
               signOut(token);
             }
-            router.replace("/components/Conection/Conection");
+            router.replace("/login/login");
           },
         },
       ],

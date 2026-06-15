@@ -2,6 +2,15 @@ import { db } from './db';
 
 export function initDatabase() {
 
+
+  db.execSync(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    email TEXT,
+    role TEXT, password TEXT
+  );
+`);
   // CLIENTES
   db.execSync(`
     CREATE TABLE IF NOT EXISTS clientes (

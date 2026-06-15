@@ -100,7 +100,7 @@ export default function RootLayout() {
         <Stack.Screen name="(authenticated)/vendas" options={
           {headerShown: false}}/>
 
-         <Stack.Screen name="/components/Conection/Conection" options={
+         <Stack.Screen name="components/Conection/Conection" options={
           {headerShown: false}}/>
       
       

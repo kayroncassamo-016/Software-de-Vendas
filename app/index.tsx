@@ -27,8 +27,7 @@ export default function Index ()
 
     if(!signed && inAuthGroup)
     {
-        //router.replace("/login/login")
-        router.replace("/components/Conection/Conection")
+        router.replace("/login/login")
     }
     else if(signed && !inAuthGroup)
     {
@@ -37,8 +36,7 @@ export default function Index ()
     }
     else if(!signed)
     {
-        //router.replace("/login/login")
-        router.replace("/components/Conection/Conection")
+        router.replace("/login/login")
 
     }
 

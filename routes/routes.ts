@@ -1,9 +1,12 @@
+import { UserRepository } from "@/app/database/UserRepository";
 import { api } from "@/services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from "react";
 import { LoginResponse, Produtos, User } from "../types/types";
+
+
 
 
 export  function useAuth()
@@ -62,9 +65,21 @@ export  function useAuth()
         {
             console.log(err);
 
+             const localUser = UserRepository.getUser();
+
+               
+
             // Sem internet
             if (!err.response)
             {
+                 if (localUser)
+                {
+                      setUser(localUser);
+                    setSigned(true);
+                    setNetworkError(false);
+                    return;
+                }
+
                 setNetworkError(true);
                 return;
             }
@@ -100,13 +115,6 @@ export  function useAuth()
                 }
             )
             console.log(response.data)
-
-            // router.push({
-            //     pathname:"/(authenticated)/dashboard",
-            //      params:{name:response.data.user.name.toString()}
-            // })
-            // setSigned(true)
-            
              
             
             const {token, ...userData} = response.data
@@ -119,7 +127,9 @@ export  function useAuth()
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 })
-
+              
+             UserRepository.save({ ...responsee.data.user, password
+                });
               router.push({
                 pathname:"/(authenticated)/dashboard",
                  params:{name:response.data.user.name.toString()}
@@ -171,6 +181,7 @@ export  function useAuth()
         await AsyncStorage.removeItem("@user")
         setSigned(false);
         setUser(undefined)
+        UserRepository.clear()
 
     }
     catch (err)
