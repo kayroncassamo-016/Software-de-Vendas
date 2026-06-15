@@ -1,29 +1,104 @@
+import { configureApi } from "@/services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+    Alert,
     SafeAreaView,
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity
+    TouchableOpacity,
 } from "react-native";
+
+const API_VERSION = "/api/v1";
+
 export default function Conection() {
+  const router = useRouter();
+
   const [ip, setIp] = useState("");
   const [porta, setPorta] = useState("8000");
-  const [database, setDatabase] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  async function loadConfig() {
+    const serverIp = await AsyncStorage.getItem("@server_ip");
+    const serverPort = await AsyncStorage.getItem("@server_port");
+
+    if (serverIp) setIp(serverIp);
+    if (serverPort) setPorta(serverPort);
+  }
+
+  function buildUrl() {
+    return `http://${ip}:${porta}${API_VERSION}`;
+  }
+
+  async function testarConexao() {
+    try {
+      setLoading(true);
+
+      const url = buildUrl();
+
+      await axios.get(`${url}/health`, {
+        timeout: 5000,
+      });
+
+      Alert.alert(
+        "Sucesso",
+        "Conexão estabelecida com sucesso."
+      );
+    } catch (error) {
+      Alert.alert(
+        "Erro",
+        "Não foi possível comunicar com o servidor."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function guardarConfiguracao() {
+    try {
+      if (!ip.trim()) {
+        Alert.alert("Erro", "Informe o IP do servidor.");
+        return;
+      }
+
+      await AsyncStorage.setItem("@server_ip", ip);
+      await AsyncStorage.setItem("@server_port", porta);
+
+      await configureApi();
+
+      Alert.alert(
+        "Sucesso",
+        "Configuração guardada com sucesso."
+      );
+
+      router.replace("/login/login");
+    } catch (error) {
+      Alert.alert(
+        "Erro",
+        "Não foi possível guardar a configuração."
+      );
+    }
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Configuração do Servidor</Text>
+      <Text style={styles.title}>
+        Configuração do Servidor
+      </Text>
 
       <Text style={styles.label}>IP do Servidor</Text>
       <TextInput
         style={styles.input}
         value={ip}
         onChangeText={setIp}
-        placeholder="192.168.0.100"
+        placeholder="192.168.0.46"
       />
 
       <Text style={styles.label}>Porta da API</Text>
@@ -34,42 +109,31 @@ export default function Conection() {
         keyboardType="numeric"
       />
 
-      <Text style={styles.label}>Base de Dados</Text>
-      <TextInput
-        style={styles.input}
-        value={database}
-        onChangeText={setDatabase}
-        placeholder="software_vendas"
-      />
-
-      <Text style={styles.label}>Utilizador</Text>
-      <TextInput
-        style={styles.input}
-        value={username}
-        onChangeText={setUsername}
-      />
-
-      <Text style={styles.label}>Palavra-passe</Text>
-      <TextInput
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <TouchableOpacity style={styles.testButton}>
-        <Text style={styles.buttonText}>Testar Conexão</Text>
+      <TouchableOpacity
+        style={styles.testButton}
+        onPress={testarConexao}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Testando..." : "Testar Conexão"}
+        </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.saveButton}>
-        <Text style={styles.buttonText}>Guardar Configuração</Text>
+      <TouchableOpacity
+        style={styles.saveButton}
+        onPress={guardarConfiguracao}
+      >
+        <Text style={styles.buttonText}>
+          Guardar Configuração
+        </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.offlineButton}
         onPress={() => router.replace("/login/login")}
-        >
-        <Text style={styles.offlineText}>Continuar Offline</Text>
+      >
+        <Text style={styles.offlineText}>
+          Continuar Offline
+        </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
