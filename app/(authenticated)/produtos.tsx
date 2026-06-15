@@ -732,18 +732,12 @@ const ProdutosScreen = () => {
                 setVisibleDetalhesProduto(false);
                 setVisibleEditarProduto(true);
               }}
+              labelStyle={{
+                color: colors.blue,
+                fontWeight: 'bold',
+              }}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-around",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ color: colors.blue, fontWeight: "bold" }}>
-                  Editar
-                </Text>
-              </View>
+              Editar
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -976,26 +970,20 @@ const ProdutosScreen = () => {
                 onPress={() => {
                   adicionarProduto();
                 }}
+                icon={() => <Plus size={15} color={colors.blue} fontWeight={"bold"}/>}
+                labelStyle={{
+                  color: colors.blue,
+                  fontWeight: 'bold',
+                }}
               >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-around",
-                    alignItems: "center",
-                  }}
-                >
-                  <Plus size={15} color={colors.blue} fontWeight={"bold"} />
-                  <Text style={{ color: colors.blue, fontWeight: "bold" }}>
-                    Adicionar
-                  </Text>
-                </View>
+                Adicionar
               </Button>
 
               <Button
                 onPress={() => setVisibleFormCadastro(false)}
                 style={{ paddingTop: 2 }}
               >
-                <Text style={{ color: colors.blue, fontWeight: "bold" }}>
+                <Text style={{ color: colors.red, fontWeight: "bold" }}>
                   Cancelar
                 </Text>
               </Button>

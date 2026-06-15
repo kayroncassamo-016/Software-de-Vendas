@@ -22,8 +22,6 @@ interface ProdutoProps
 
 }
 
-
-
 export const DeletarProduto = ({visible,setVisible,
     produto,setProdutos,setFiltrados,
     setVisibleDetalhesProduto}:ProdutoProps) =>
@@ -76,11 +74,6 @@ async function handleDeletarProduto()
     }
         
 }
-
-
-
-
-
     return (
       <Portal>
          <Dialog visible={visible} 
@@ -110,20 +103,18 @@ async function handleDeletarProduto()
             <Dialog.Actions style={{flexDirection:'row',
             alignItems:'center'}}>
 
-                <Button onPress={() => {
-                    handleDeletarProduto()
-                }}
-                loading = {loadingDelete}
-                disabled= {loadingDelete}>
-                <View style={{flexDirection:'row',
-                    justifyContent:'space-around', alignItems:'center'}}> 
-                    <Text style={{
-                        color:colors.primary, 
-                        backgroundColor:colors.red,
-                        borderRadius: 8,
-                        padding:6,
-                        fontWeight:'bold'}}>
-                       {
+                <Button 
+                    onPress={() => {
+                        handleDeletarProduto()
+                    }}
+                    loading = {loadingDelete}
+                    disabled= {loadingDelete}
+                    labelStyle={{
+                        color: colors.blue,
+                        fontWeight: 'bold',
+                    }}
+                >
+                    {
                         loadingDelete ?
                         (
                             "Apagando..."
@@ -131,15 +122,12 @@ async function handleDeletarProduto()
                         (
                             "Apagar"
                         )
-                       }
-                        
-                    </Text> 
-                </View>
+                    }
                 </Button>
 
                 <Button onPress={() => setVisible(false)}
                 style={{paddingTop:2}}>
-                    <Text style={{color:colors.blue,
+                    <Text style={{color:colors.red,
                     fontWeight:'bold'
                     }}>
                     Cancelar

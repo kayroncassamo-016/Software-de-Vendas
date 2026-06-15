@@ -747,21 +747,21 @@ export function EditarProdutoForm({produto,visible,setVisible,
           <Dialog.Actions style={{flexDirection:'row',
             alignItems:'center'}}>
 
-            <Button onPress={() => {
-               ActualizarProduto()
-            }}>
-              <View style={{flexDirection:'row',
-                justifyContent:'space-around', alignItems:'center'}}> 
-                <Text style={{color:colors.blue,
-                  fontWeight:'bold'}}>
-                    Actualizar
-                </Text> 
-              </View>
+            <Button 
+              onPress={() => {
+                ActualizarProduto()
+              }}
+              labelStyle={{
+                color: colors.blue,
+                fontWeight: 'bold',
+              }}
+            >
+              Actualizar
             </Button>
 
             <Button onPress={() => setVisible(false)}
               style={{paddingTop:2}}>
-                <Text style={{color:colors.blue,
+                <Text style={{color:colors.red,
                   fontWeight:'bold'
                 }}>
                   Cancelar

@@ -27,8 +27,8 @@ export default function Index ()
 
     if(!signed && inAuthGroup)
     {
-        router.replace("/login/login")
-
+        //router.replace("/login/login")
+        router.replace("/components/Conection/Conection")
     }
     else if(signed && !inAuthGroup)
     {
@@ -37,7 +37,8 @@ export default function Index ()
     }
     else if(!signed)
     {
-        router.replace("/login/login")
+        //router.replace("/login/login")
+        router.replace("/components/Conection/Conection")
 
     }
 
@@ -81,6 +82,38 @@ export default function Index ()
                     </Text>
                 </TouchableOpacity>
 
+                <TouchableOpacity
+                    style={[styles.button, {
+                        backgroundColor: '#fff',
+                        borderWidth: 1,
+                        borderColor: colors.blue
+                    }]}
+                    onPress={() => router.push("/components/Conection/Conection")}
+                >
+                  <Text 
+                    style={{
+                        color: colors.blue,
+                        textAlign: "center"
+                    }}
+                    >
+                        Configurar servidor
+                </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.button, {
+                        backgroundColor: "#4CAF50"
+                    }]}
+                    onPress={() => router.replace("/login/login")}
+                >
+                    <Text style={{
+                        color: "#fff",
+                        textAlign: "center"
+                    }}>
+                        Continuar Offline
+                    </Text>  
+
+                </TouchableOpacity>
             </View>
         )
     }

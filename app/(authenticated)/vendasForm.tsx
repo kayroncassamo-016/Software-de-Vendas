@@ -685,7 +685,6 @@ const diminuirQuantidade = (id: number|undefined) => {
              <Text style={{color:'#fff'}}>+</Text>
           </TouchableOpacity>
         
-
           <Text style={styles.itemDetalhes}>  × {item.preco.toFixed(2)}  MT</Text>
         </View>
         {/* </Text> */}

@@ -389,20 +389,20 @@ export function AdicionarCliente({visible,setVisible
             alignItems:'center', marginTop:5}}>
 
             <Button onPress={() => {
-            handleAdicionarCliente()
-            }}>
-              <View style={{flexDirection:'row',
-                justifyContent:'space-around', alignItems:'center'}}> 
-                <Plus size={15} color={colors.blue} fontWeight={'bold'}/>
-                <Text style={{color:colors.blue,
-                  fontWeight:'bold'
-                }}>Adicionar</Text> 
-              </View>
+              handleAdicionarCliente();
+              }}
+              icon={() => <Plus size={15} color={colors.blue}/>}
+              labelStyle={{
+                color: colors.blue,
+                fontWeight: 'bold',
+              }}
+            >
+              Adicionar
             </Button>
 
             <Button onPress={() => setVisible(false)}
               style={{paddingTop:2}}>
-                <Text style={{color:colors.blue,
+                <Text style={{color:colors.red,
                   fontWeight:'bold'
                 }}>
                   Cancelar
@@ -646,9 +646,7 @@ const styles = StyleSheet.create({
     alignItems:"center",
     justifyContent:"center",
     backgroundColor: '#F2F2F7',
-
-
-    },
+  },
   
 });
 

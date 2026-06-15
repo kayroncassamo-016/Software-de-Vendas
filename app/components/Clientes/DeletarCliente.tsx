@@ -22,22 +22,15 @@ interface DeletarClienteProps
      
 }
 
-
-
-
-
 export const DeletarCliente = ({visible,setVisible,cliente
     ,setFiltrados,setClientes,  setVisibleDetalhesCliente
 }: DeletarClienteProps) =>
 {
  const [loadingDelete, setLoadingDelete] = useState(false)
-    
 
-  
  async function handleDeletarCliente()
 {
     const token  = await AsyncStorage.getItem("@token")
-
 
     try {
 
@@ -53,7 +46,6 @@ export const DeletarCliente = ({visible,setVisible,cliente
     
      setClientes(response.data.data)
      setFiltrados(response.data.data)
-     
        
      Alert.alert('Cliente deletado com sucesso!',)
      setVisibleDetalhesCliente(false)
@@ -71,22 +63,14 @@ export const DeletarCliente = ({visible,setVisible,cliente
     {
         setLoadingDelete(false)
         
-
     }
         
 }
-
-
-    
-
-   
     return (
       <Portal>
          <Dialog visible={visible} 
           onDismiss={()=>setVisible(false)}
            style={{ backgroundColor: '#fff' }}> 
-
-             
                 <View> 
                   <Text style={{textAlign:'center',fontSize:18,
                     color:colors.blue,fontWeight:'500'
@@ -95,10 +79,7 @@ export const DeletarCliente = ({visible,setVisible,cliente
                   </Text>
                 </View>
               
-               
               {/* </Dialog.Title> */}
-
-         
             <Dialog.Content>
               
               <View >
@@ -106,22 +87,19 @@ export const DeletarCliente = ({visible,setVisible,cliente
               </View>
           </Dialog.Content>
 
-            <Dialog.Actions style={{flexDirection:'row',
-            alignItems:'center'}}>
-
-                <Button onPress={() => {
-                    handleDeletarCliente()
+            <Dialog.Actions 
+                style={{flexDirection:'row',
+                    alignItems:'center'
                 }}
-                loading = {loadingDelete}
-                disabled= {loadingDelete}>
-                <View style={{flexDirection:'row',
-                    justifyContent:'space-around', alignItems:'center'}}> 
-                    <Text style={{
-                        color:colors.primary, 
-                        backgroundColor:colors.red,
-                        borderRadius: 8,
-                        padding:6,
-                        fontWeight:'bold'}}
+            >
+                <Button 
+                    onPress={() => {
+                        handleDeletarCliente()
+                    }}
+                    labelStyle={{
+                        color: colors.blue,
+                        fontWeight: 'bold',
+                    }}
                     >
                        {
                         loadingDelete ?
@@ -132,20 +110,16 @@ export const DeletarCliente = ({visible,setVisible,cliente
                             "Apagar"
                         )
                        }
-                        
-                    </Text> 
-                </View>
                 </Button>
 
                 <Button onPress={() => setVisible(false)}
                 style={{paddingTop:2}}>
-                    <Text style={{color:colors.blue,
+                    <Text style={{color:colors.red,
                     fontWeight:'bold'
                     }}>
                     Cancelar
                     </Text> 
                 </Button>
-           
           </Dialog.Actions>
           
         </Dialog>

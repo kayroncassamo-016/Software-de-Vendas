@@ -196,22 +196,22 @@ export function DetalhesCliente({visible,setVisible,
                 </ScrollView>
             </Dialog.Content> 
          {/*  */}
-          <Dialog.Actions style={{flexDirection:'row',
-            alignItems:'center'}}>
+          <Dialog.Actions style={{
+            flexDirection: "row",
+            justifyContent: "flex-end",
+          }}>
 
-              <Button
+            <Button
               onPress={() => {
               setVisible(false)
               setVisibleEditarcliente(true)
+              }}
+              labelStyle={{
+                color: colors.blue,
+                fontWeight: 'bold',
               }}>
-                <View style={{flexDirection:'row',
-                justifyContent:'space-around', alignItems:'center'}}> 
-                <Text style={{color:colors.blue,
-                  fontWeight:'bold'
-                }}>Editar</Text> 
-              </View>
-              </Button>
-           
+                Editar
+            </Button> 
           </Dialog.Actions>
         </Dialog>
       </Portal>
