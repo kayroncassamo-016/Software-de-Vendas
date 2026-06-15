@@ -28,7 +28,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ClienteRepository } from '@/app/database/ClienteRepository';
 import { FornecedoresRepository } from '@/app/database/FornecedoresRepository';
 import { ProdutoRepository } from '@/app/database/ProdutoRepository';
-import { mapApiVendaToLocal } from '@/app/database/VendaMapper';
 import { VendaRepository } from '@/app/database/VendaRepository';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -183,11 +182,11 @@ useEffect(() => {
 
   setFornecedorSelecionado(fornecedorSelecionado ?? null);
 
-  console.log(
-    'LINHAS DA VENDA:',
-    JSON.stringify(venda?.linhas, null, 2)
-  );
-
+  
+console.log(
+  "PRODUTOS CARREGADOS",
+  produtos.length
+);
   // 🔥 monta itens de forma segura
   const itensFormatados = (venda?.linhas || []).map(l => {
 
@@ -203,7 +202,15 @@ useEffect(() => {
     };
   });
 
+  console.log('ITENS FORMATADOS: ', itensFormatados);
+
   setItens(itensFormatados);
+  
+  console.log(
+  "TOTAL ITENS FORMATADOS:",
+  itensFormatados.length
+);
+
 
   // 🔥 CORREÇÃO PRINCIPAL: NÃO usar "itens" aqui
   setTotalItens(itensFormatados.length);
@@ -211,7 +218,7 @@ useEffect(() => {
 
   setImpresso(venda?.impresso);
 
-  console.log('itens:', itensFormatados);
+  
 
 }, [venda, produtos, clientes, fornecedores]);
 
@@ -230,7 +237,6 @@ useEffect (()=>{
 
 
 
-  
 
 
    async function loadVenda()
@@ -250,26 +256,22 @@ useEffect (()=>{
             const vendaAPI = response.data.data; // 
             
             setVenda(response.data.data)
-            VendaRepository.save(response.data.data)
+            //VendaRepository.save(vendaAPI)
 
-            const vendaLocal = mapApiVendaToLocal(vendaAPI);
+            // Alert.alert(
+            // "VENDA LOCAL",
+            // JSON.stringify(vendaAPI, null, 2))
 
-            VendaRepository.save(vendaLocal);
-
-
-            console.log('Venda-rascunho: ',JSON.stringify(vendaAPI, null, 2));
         }
           else
           {
             const local =  VendaRepository.getById(Number(id));
-            console.log('ANTES DE getById');
+            
+             Alert.alert(
+            "LOCAL LIDO",
+            JSON.stringify(local, null, 2)
+          );
             setVenda(local);
-            Alert.alert(  'VENDA LIDA DO SQLITE:', JSON.stringify(local?.linhas, null, 2)
-              )
-            // console.log(
-            //  'VENDA LIDA DO SQLITE:',
-            // JSON.stringify(local?.linhas, null, 2)
-            //   );
       
           }
 
@@ -321,8 +323,6 @@ useEffect (()=>{
      if (clienteSelecionado)
     {
         setIdClienteSelecionado(clienteSelecionado.id)
-        console.log(clienteSelecionado.nome ,'agora')
-        console.log(clienteSelecionado.id ,'agora')
     }
 
     else
@@ -467,12 +467,7 @@ useEffect (()=>{
           {
              const local = FornecedoresRepository.getAll();
              setFornecedores(local);
-               console.log('FORNECEDORES OFFLINE', 
-                JSON.stringify(
-                local,
-                null,
-                2 )
-               );
+              
             setFiltradosFornecedores(local)
 
             }
@@ -515,12 +510,12 @@ useEffect (()=>{
           {
             const local = ProdutoRepository.getAll();
             setProdutos(local);
-              console.log('produtos OFFLINE', 
-              JSON.stringify(
-              local,
-              null,
-              2 )
-              );
+              // console.log('produtos OFFLINE', 
+              // JSON.stringify(
+              // local,
+              // null,
+              // 2 )
+              // );
           setFiltradosProdutos(local)
 
           }
@@ -573,17 +568,12 @@ useEffect (()=>{
    
          setLoadingGuardarRascunho(true)
 
-         console.log('venda antes de ENVIAR : ', payload)
           
            const response = await api.put(`/documentos/${id}`,
             payload, {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
-         console.log('venda actualizada: ',response.data.data)
-         
-
-        
        Alert.alert(
       'Factura criada em rascunho',
       `Cliente: ${fornecedorSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
@@ -638,7 +628,7 @@ useEffect (()=>{
 
         }
          setLoadingGuardarRascunho(true)
-              console.log('venda antes de ENVIAR : ', payload)
+              
 
            const response = await api.put(`/documentos/${id}`,
             payload, {
@@ -646,7 +636,6 @@ useEffect (()=>{
            } 
          )
              const responseData = response.data.data
-            console.log('venda depois de ENVIAR :')
 
             console.log(JSON.stringify(responseData, null, 2));
 

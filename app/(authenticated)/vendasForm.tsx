@@ -350,7 +350,7 @@ export default function VendasScreen() {
                headers: { Authorization: `Bearer ${token}` },
            } 
          )
-        VendaRepository.save({...payload,} as any);
+      //  VendaRepository.save({...payload,} as any);
 
         
        Alert.alert(
@@ -421,7 +421,7 @@ export default function VendasScreen() {
            } 
          )
                 // VendaRepository.save({...payload,id: Date.now()} as any);
-                VendaRepository.save({...payload} as any);
+             //   VendaRepository.save({...payload} as any);
 
 
        Alert.alert(

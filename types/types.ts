@@ -148,6 +148,7 @@ export interface Vendas
     impresso:boolean
     pagamento:string
     pagamentos:pagamento[]
+    synced: number,
 
      linhas:linha [],
      created_at:string

@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 //import { Swipeable } from 'react-native-gesture-handler';
 import "react-native-gesture-handler";
 // import Swipeable from 'react-native-gesture-handler/Swipeable';
@@ -401,6 +402,68 @@ export default function VendasList() {
     loadData();
   }, []);
 
+ async function syncOfflineVendas() {
+  const token = await AsyncStorage.getItem("@token");
+
+  const pendentes = VendaRepository.getPendingSync();
+
+  if (pendentes.length === 0) {
+    return;
+  }
+
+  for (const venda of pendentes) {
+    try {
+      const payload = {
+        tipo_doc: venda.tipo_doc,
+        nome_doc: venda.nome_doc,
+        ano_serie: venda.ano_serie,
+
+        cliente_id: venda.cliente_id,
+        fornecedor_id: venda.fornecedor_id,
+
+        condicao_pagamento: venda.condicao_pagamento,
+
+        linhas: venda.linhas?.map(linha => ({
+          produto_id: linha.produto_id,
+          qtd: linha.qtd,
+          taxa_iva: linha.taxa_iva,
+          pr_unit_sem_iva: linha.pr_unit_sem_iva,
+        })),
+
+        pagamento: venda.pagamento,
+
+        pagamentos: venda.pagamentos,
+      };
+
+      await api.post(
+        "/documentos",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      VendaRepository.markAsSynced(venda.id);
+
+      console.log(
+        `Venda ${venda.id} sincronizada com sucesso`
+      );
+
+    } catch (err) {
+      console.log(
+        `Erro ao sincronizar venda ${venda.id}`,
+        err
+      );
+    }
+  }
+}
+
+
+
+
+
   async function loadClientes() {
     const token = await AsyncStorage.getItem("@token");
     const online = await isOnline();
@@ -421,55 +484,72 @@ export default function VendasList() {
     }
   }
 
-  async function loadFornecedores() {
-    const token = await AsyncStorage.getItem("@token");
-    const online = await isOnline();
-    try {
-      if (online) {
-        setLoadingFornecedores(true);
+ async function loadFornecedores()
+  {
+    const token  = await AsyncStorage.getItem("@token")
+     const online = await isOnline();
+        try
+          {
+            if (online) {
+            setLoadingFornecedores(true)
 
-        const response = await api.get("/fornecedor", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+            const response = await api.get("/fornecedor",
+               {
+               headers: { Authorization: `Bearer ${token}` },
+               }   
+            )
+      
+            setFornecedores(response.data.data)
+              FornecedoresRepository.saveMany(response.data.data)
+        
+          }
+          else
+          {
+             const local = FornecedoresRepository.getAll();
+             setFornecedores(local);
+             
+            }
 
-        setFornecedores(response.data.data);
-        FornecedoresRepository.saveMany(response.data.data);
-      } else {
-        const local = FornecedoresRepository.getAll();
-        setFornecedores(local);
-        console.log("FORNECEDORES OFFLINE", JSON.stringify(local, null, 2));
-      }
-    } catch (err: any) {
-      console.log(err.response);
-    } finally {
-      setLoadingFornecedores(false);
+          }
+
+        catch(err:any)
+        {
+            console.log(err.response)
+        }
+        finally 
+        {
+          setLoadingFornecedores(false);
+        }
+       
     }
-  }
-
   async function loadVendas() {
     const token = await AsyncStorage.getItem("@token");
     const online = await isOnline();
     try {
       if (online) {
+        
+        await syncOfflineVendas();
+
         const response = await api.get("/documentos", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        const response2 = await api.get("/documentos/with-lines", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
         const vendasAPI = response.data.data.data; //
 
         setVendas(response.data.data.data);
         setFiltrados(response.data.data.data);
-        VendaRepository.saveMany(response.data.data.data);
+        VendaRepository.saveMany(response2.data.data.data);
 
-        console.log(
-          "Quero ver esta venda: ",
-          JSON.stringify(vendasAPI, null, 2),
-        );
+       
       } else {
         const local = VendaRepository.getAll();
         setVendas(local);
         setFiltrados(local);
-        console.log("CLIENTE TESTE", JSON.stringify(local[0], null, 2));
-        console.log("Vendas OFFLINE:", local);
+
       }
     } catch (err: any) {
       console.log(err.response);
