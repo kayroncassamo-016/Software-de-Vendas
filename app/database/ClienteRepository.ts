@@ -142,11 +142,11 @@ export const ClienteRepository = {
     //clientes.forEach(c => this.save(c));
      clientes.forEach((c, index) => {
     try {
-      console.log("SALVANDO", index, c.id);
+     
 
       this.save(c);
 
-      console.log("SALVO", index, c.id);
+      
     } catch (err) {
       console.log("ERRO NO CLIENTE", index, err);
     }

@@ -160,6 +160,12 @@ export default function VendasList() {
           // { estado: "CONFIRMADO" },
           { headers: { Authorization: `Bearer ${token}` } },
         );
+          console.log('💾 Guardando venda no SQLite:', venda.id);
+
+        VendaRepository.updateEstado(
+        venda.id,
+        "CONFIRMADO"
+      );
 
         swipeableRef.current?.close();
 
@@ -192,6 +198,10 @@ export default function VendasList() {
               Authorization: `Bearer ${token}`,
             },
           },
+        );
+        VendaRepository.updateEstado(
+          venda.id,
+          "CANCELADO"
         );
 
         setVendas((prev) =>
@@ -402,9 +412,66 @@ export default function VendasList() {
     loadData();
   }, []);
 
- async function syncOfflineVendas() {
-  const token = await AsyncStorage.getItem("@token");
+//  async function syncOfflineVendas() {
+//   const token = await AsyncStorage.getItem("@token");
 
+//   const pendentes = VendaRepository.getPendingSync();
+
+//   if (pendentes.length === 0) {
+//     return;
+//   }
+
+//   for (const venda of pendentes) {
+//     try {
+//       const payload = {
+//         tipo_doc: venda.tipo_doc,
+//         nome_doc: venda.nome_doc,
+//         ano_serie: venda.ano_serie,
+
+//         cliente_id: venda.cliente_id,
+//         fornecedor_id: venda.fornecedor_id,
+
+//         condicao_pagamento: venda.condicao_pagamento,
+
+//         linhas: venda.linhas?.map(linha => ({
+//           produto_id: linha.produto_id,
+//           qtd: linha.qtd,
+//           taxa_iva: linha.taxa_iva,
+//           pr_unit_sem_iva: linha.pr_unit_sem_iva,
+//         })),
+
+//         pagamento: venda.pagamento,
+
+//         pagamentos: venda.pagamentos,
+//       };
+
+//       await api.post(
+//         "/documentos",
+//         payload,
+//         {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//           },
+//         }
+//       );
+
+//       VendaRepository.markAsSynced(venda.id);
+
+//       console.log(
+//         `Venda ${venda.id} sincronizada com sucesso`
+//       );
+
+//     } catch (err) {
+//       console.log(
+//         `Erro ao sincronizar venda ${venda.id}`,
+//         err
+//       );
+//     }
+//   }
+// }
+
+async function syncOfflineVendas() {
+  const token = await AsyncStorage.getItem("@token");
   const pendentes = VendaRepository.getPendingSync();
 
   if (pendentes.length === 0) {
@@ -417,51 +484,39 @@ export default function VendasList() {
         tipo_doc: venda.tipo_doc,
         nome_doc: venda.nome_doc,
         ano_serie: venda.ano_serie,
-
         cliente_id: venda.cliente_id,
         fornecedor_id: venda.fornecedor_id,
-
         condicao_pagamento: venda.condicao_pagamento,
-
         linhas: venda.linhas?.map(linha => ({
           produto_id: linha.produto_id,
           qtd: linha.qtd,
           taxa_iva: linha.taxa_iva,
           pr_unit_sem_iva: linha.pr_unit_sem_iva,
         })),
-
         pagamento: venda.pagamento,
-
         pagamentos: venda.pagamentos,
       };
 
-      await api.post(
-        "/documentos",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.post("/documentos", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      VendaRepository.markAsSynced(venda.id);
+      // ✅ PEGA O ID QUE O SERVIDOR RETORNOU
+      const idNovoServidor = response.data.data.id;
 
-      console.log(
-        `Venda ${venda.id} sincronizada com sucesso`
-      );
+      console.log(`✅ Venda ${venda.id} sincronizada com novo ID: ${idNovoServidor}`);
+
+      // ✅ ATUALIZA O ID NO SQLite (de ID antigo para novo)
+      VendaRepository.renameId(venda.id, idNovoServidor);
+
+      // ✅ MARCA COMO SINCRONIZADO COM O NOVO ID
+      VendaRepository.markAsSynced(idNovoServidor);
 
     } catch (err) {
-      console.log(
-        `Erro ao sincronizar venda ${venda.id}`,
-        err
-      );
+      console.log(`Erro ao sincronizar venda ${venda.id}`, err);
     }
   }
 }
-
-
-
 
 
   async function loadClientes() {
@@ -522,12 +577,16 @@ export default function VendasList() {
         }
        
     }
+
   async function loadVendas() {
+
     const token = await AsyncStorage.getItem("@token");
     const online = await isOnline();
+
     try {
+
       if (online) {
-        
+
         await syncOfflineVendas();
 
         const response = await api.get("/documentos", {
@@ -537,12 +596,17 @@ export default function VendasList() {
         const response2 = await api.get("/documentos/with-lines", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
-        const vendasAPI = response.data.data.data; //
 
+        const vendasAPI = response2.data.data.data.map((v: any) => ({
+        ...v,
+        synced: 1,
+      }));
+
+   
         setVendas(response.data.data.data);
         setFiltrados(response.data.data.data);
-        VendaRepository.saveMany(response2.data.data.data);
+        // VendaRepository.saveMany(response2.data.data.data);
+        VendaRepository.saveMany(vendasAPI);
 
        
       } else {

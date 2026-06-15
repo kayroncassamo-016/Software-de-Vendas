@@ -79,20 +79,10 @@ export const FornecedoresRepository = {
 
       try {
 
-        console.log(
-          'SALVANDO FORNECEDOR',
-          index,
-          fornecedor.id
-        );
-
+      
         this.save(fornecedor);
 
-        console.log(
-          'SALVO FORNECEDOR',
-          index,
-          fornecedor.id
-        );
-
+        
       } catch (err) {
 
         console.log(

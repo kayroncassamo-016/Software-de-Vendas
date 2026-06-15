@@ -198,7 +198,7 @@ export const VendaRepository = {
         venda.tipo_doc ?? '',
         venda.ano_serie ?? '',
 
-        venda.estado ?? 'RASCUNHO',
+        venda.estado?? 'RASCUNHO' ,
         venda.total_doc ?? '0',
 
         venda.cliente_id ?? null,
@@ -218,7 +218,7 @@ export const VendaRepository = {
 
         venda.created_at ?? new Date().toISOString(),
 
-      0
+      venda.synced ?? 0
       ]
     );
 
@@ -289,9 +289,52 @@ export const VendaRepository = {
   getPendingSync(): Vendas[] {
   return this.getAll().filter((v: any) => v.synced === 0);
 },
-  // =========================
-  // SAVE MANY (✔️ AQUI ESTÁ ELE)
-  // =========================
+  
+updateEstado(id: number, estado: string) {
+  //console.log('🔄 Tentando atualizar venda:', id, 'para:', estado);
+  db.runSync(
+    `
+    UPDATE vendas
+    SET estado = ?
+    WHERE id = ?
+    `,
+    [estado, id]
+  );
+
+   const venda = db.getFirstSync(
+    'SELECT estado FROM vendas WHERE id = ?',
+    [id]
+  ) as any;
+  console.log('✅ Venda agora está com estado:', venda?.estado);
+},
+
+
+// VendaRepository.ts
+
+renameId(idAntigo: number, idNovo: number) {
+  console.log(`🔄 [renameId] Mudando venda de ID ${idAntigo} para ${idNovo}`);
+
+  // Atualiza a venda
+  db.runSync(
+    `UPDATE vendas SET id = ? WHERE id = ?`,
+    [idNovo, idAntigo]
+  );
+
+  // Atualiza as linhas
+  db.runSync(
+    `UPDATE venda_linhas SET venda_id = ? WHERE venda_id = ?`,
+    [idNovo, idAntigo]
+  );
+
+  // Atualiza os pagamentos
+  db.runSync(
+    `UPDATE venda_pagamentos SET venda_id = ? WHERE venda_id = ?`,
+    [idNovo, idAntigo]
+  );
+
+  console.log(`✅ [renameId] Venda atualizada com sucesso!`);
+},
+
   saveMany(vendas: Vendas[]) {
 
     vendas.forEach((venda, index) => {

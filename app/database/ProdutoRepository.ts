@@ -221,11 +221,11 @@ export const ProdutoRepository = {
   saveMany(produtos: Produtos[]) {
     produtos.forEach((produto, index) => {
       try {
-        console.log('SALVANDO PRODUTO', index, produto.id);
+      
 
         this.save(produto);
 
-        console.log('SALVO PRODUTO', index, produto.id);
+     
       } catch (err) {
         console.log('ERRO NO PRODUTO', index, err);
       }

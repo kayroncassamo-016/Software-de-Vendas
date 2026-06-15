@@ -29,6 +29,22 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import NetInfo from "@react-native-community/netinfo";
+
+import { ClienteRepository } from "../database/ClienteRepository";
+import { FornecedoresRepository } from '../database/FornecedoresRepository';
+import { ProdutoRepository } from "../database/ProdutoRepository";
+import { CategoriaRepository } from "../database/propriedades_produto/CategoriaRepository";
+import { MarcaRepository } from "../database/propriedades_produto/MarcaRepository";
+import { TipoRepository } from "../database/propriedades_produto/TipoRepository";
+import { VendaRepository } from "../database/VendaRepository";
+
+
+
+
+
+
 export default function DashBoard() {
   const [loadingProductNumber, SetLoadingProductNumber] = useState(false);
   const [loadingClienteNumber, SetLoadingClienteNumber] = useState(false);
@@ -316,89 +332,283 @@ export default function DashBoard() {
     };
   }, []);
 
-  async function loadingClienteStats() {
-    try {
-      SetLoadingClienteNumber(true);
+  // async function loadingClienteStats() {
+  //   try {
+  //     SetLoadingClienteNumber(true);
+  //     const res = await api.get("/clientes");
+  //     setTotalClientes(res.data.data.length);
+  //     setClientes(res.data.data);
+
+  //     console.log(JSON.stringify(clientes?.[0], null, 2));
+  //   } catch (err) {
+  //     if (err instanceof Error) console.log(err.message);
+  //   } finally {
+  //     SetLoadingClienteNumber(false);
+  //   }
+  // }
+
+
+ async function loadingClienteStats() {
+  try {
+    SetLoadingClienteNumber(true);
+
+    const net = await NetInfo.fetch();
+
+    if (net.isConnected) {
       const res = await api.get("/clientes");
+
       setTotalClientes(res.data.data.length);
       setClientes(res.data.data);
 
-      console.log(JSON.stringify(clientes?.[0], null, 2));
-    } catch (err) {
-      if (err instanceof Error) console.log(err.message);
-    } finally {
-      SetLoadingClienteNumber(false);
+    } else {
+
+      const clientesLocal = ClienteRepository.getAll();
+
+      setClientes(clientesLocal);
+      setTotalClientes(clientesLocal.length);
     }
+
+  } catch (err) {
+    console.log(err);
+  } finally {
+    SetLoadingClienteNumber(false);
   }
+}
+
+
+
+  // async function loadingProductStats() {
+  //   try {
+  //     SetLoadingProductNumber(true);
+  //     const res = await api.get("/produtos");
+  //     setTotalProdutos(res.data.data.length);
+  //     setProdutos(res.data.data);
+  //   } catch (err) {
+  //     if (err instanceof Error) console.log(err.message);
+  //   } finally {
+  //     SetLoadingProductNumber(false);
+  //   }
+  // }
+
 
   async function loadingProductStats() {
-    try {
-      SetLoadingProductNumber(true);
-      const res = await api.get("/produtos");
-      setTotalProdutos(res.data.data.length);
-      setProdutos(res.data.data);
-    } catch (err) {
-      if (err instanceof Error) console.log(err.message);
-    } finally {
-      SetLoadingProductNumber(false);
-    }
-  }
+  try {
+    SetLoadingProductNumber(true);
 
-  async function loadingVendasStats() {
-    try {
-      SetLoadingVendasNumber(true);
-      const res = await api.get("/documentos");
-      setTotalVendas(res.data.data.data.length);
-      setVendas(res.data.data.data);
-    } catch (err: any) {
-      console.log(err.response);
-    } finally {
-      SetLoadingVendasNumber(false);
+    const net = await NetInfo.fetch();
+
+    if (net.isConnected) {
+
+      const res = await api.get("/produtos");
+
+      setProdutos(res.data.data);
+      setTotalProdutos(res.data.data.length);
+
+    } else {
+
+      const produtosLocal = ProdutoRepository.getAll();
+
+      setProdutos(produtosLocal);
+      setTotalProdutos(produtosLocal.length);
     }
+
+  } catch (err) {
+    console.log(err);
+  } finally {
+    SetLoadingProductNumber(false);
   }
+}
+
+async function loadingVendasStats() {
+  try {
+
+    SetLoadingVendasNumber(true);
+
+    const net = await NetInfo.fetch();
+
+    if (net.isConnected) {
+
+      const res = await api.get("/documentos");
+
+      setVendas(res.data.data.data);
+      setTotalVendas(res.data.data.data.length);
+
+    } else {
+
+      const vendasLocal = VendaRepository.getAll();
+
+      setVendas(vendasLocal);
+      setTotalVendas(vendasLocal.length);
+    }
+
+  } catch (err) {
+    console.log(err);
+  } finally {
+    SetLoadingVendasNumber(false);
+  }
+}
+
+
+  // async function loadingVendasStats() {
+  //   try {
+  //     SetLoadingVendasNumber(true);
+  //     const res = await api.get("/documentos");
+  //     setTotalVendas(res.data.data.data.length);
+  //     setVendas(res.data.data.data);
+  //   } catch (err: any) {
+  //     console.log(err.response);
+  //   } finally {
+  //     SetLoadingVendasNumber(false);
+  //   }
+  // }
+
+  // async function loadMarcas() {
+  //   try {
+  //     const response = await api.get("/marcas");
+
+  //     setMarcas(response.data.data);
+  //   } catch (err) {
+  //     if (err instanceof Error) console.log(err.message);
+  //   } finally {
+  //   }
+  // }
 
   async function loadMarcas() {
-    try {
-      const response = await api.get("/marcas");
+
+  try {
+
+    const net = await NetInfo.fetch();
+
+    if (net.isConnected) {
+
+      const response =
+        await api.get("/marcas");
 
       setMarcas(response.data.data);
-    } catch (err) {
-      if (err instanceof Error) console.log(err.message);
-    } finally {
+
+    } else {
+
+      setMarcas(
+        MarcaRepository.getAll()
+      );
     }
+
+  } catch (err) {
+    console.log(err);
   }
+}
+
+  // async function loadTipos() {
+  //   try {
+  //     const response = await api.get("/tipo");
+
+  //     setTipos(response.data.data);
+  //   } catch (err) {
+  //     if (err instanceof Error) console.log(err.message);
+  //   } finally {
+  //   }
+  // }
+
+
+
+
+  // async function loadCategorias() {
+  //   try {
+  //     const response = await api.get("/categorias");
+
+  //     setCategorias(response.data.data);
+  //   } catch (err) {
+  //     if (err instanceof Error) console.log(err.message);
+  //   } finally {
+  //   }
+  // }
 
   async function loadTipos() {
-    try {
-      const response = await api.get("/tipo");
+
+  try {
+
+    const net = await NetInfo.fetch();
+
+    if (net.isConnected) {
+
+      const response =
+        await api.get("/tipo");
 
       setTipos(response.data.data);
-    } catch (err) {
-      if (err instanceof Error) console.log(err.message);
-    } finally {
+
+    } else {
+
+      setTipos(
+        TipoRepository.getAll()
+      );
     }
+
+  } catch (err) {
+    console.log(err);
   }
+}
 
   async function loadCategorias() {
-    try {
-      const response = await api.get("/categorias");
+
+  try {
+
+    const net = await NetInfo.fetch();
+
+    if (net.isConnected) {
+
+      const response =
+        await api.get("/categorias");
 
       setCategorias(response.data.data);
-    } catch (err) {
-      if (err instanceof Error) console.log(err.message);
-    } finally {
+
+    } else {
+
+      setCategorias(
+        CategoriaRepository.getAll()
+      );
     }
+
+  } catch (err) {
+    console.log(err);
   }
+}
+
+
+
 
   async function loadFornecedores() {
-    try {
+
+  try {
+
+    const net = await NetInfo.fetch();
+
+    if (net.isConnected) {
+
       const response = await api.get("/fornecedor");
+
       setFornecedores(response.data.data);
-    } catch (err: any) {
-      console.log(err.response);
-    } finally {
+
+    } else {
+
+      const fornecedoresLocal =
+        FornecedoresRepository.getAll();
+
+      setFornecedores(fornecedoresLocal);
     }
+
+  } catch (err) {
+    console.log(err);
   }
+}
+  // async function loadFornecedores() {
+  //   try {
+  //     const response = await api.get("/fornecedor");
+  //     setFornecedores(response.data.data);
+  //   } catch (err: any) {
+  //     console.log(err.response);
+  //   } finally {
+  //   }
+  // }
 
   function navigatePage(pageIndex: number) {
     setActiveNav(pageIndex);
@@ -568,7 +778,7 @@ export default function DashBoard() {
               {formatMoney(vendasConfirmadoAcumulado) + " MT"}
             </Text>
             <Text style={styles.danger}>
-              {vendasConfirmado?.filter((venda) => !venda.impresso).length}{" "}
+              {vendasConfirmadoVD?.filter((venda) => !venda.impresso).length}{" "}
               factura(s) pendente(s)
             </Text>
           </View>
