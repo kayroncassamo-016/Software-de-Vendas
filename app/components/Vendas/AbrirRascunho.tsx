@@ -2,14 +2,14 @@
 import { api } from '@/services/api';
 import { Clientes, Fornecedores, Produtos, Vendas } from '@/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  FlatList,
-  KeyboardAvoidingView,
+  FlatList, Image, KeyboardAvoidingView,
   //SafeAreaView,
   ScrollView,
   StatusBar,
@@ -848,45 +848,368 @@ useEffect (()=>{
 
 
 
-  function gerarHTMLVenda() {
+//   function gerarHTMLVenda() {
+//   return `
+//     <html>
+//       <body>
+//         <h1>Factura / Venda</h1>
+
+//         <p><strong>Cliente:</strong> ${clienteSelecionado?.nome ?? ''}</p>
+//         <p><strong>Email:</strong> ${clienteSelecionado?.email ?? ''}</p>
+
+//         <hr />
+
+//         <h3>Itens</h3>
+//         <table border="1" cellspacing="0" cellpadding="5" width="100%">
+//           <tr>
+//             <th>Produto</th>
+//             <th>Qtd</th>
+//             <th>Preço</th>
+//             <th>Total</th>
+//           </tr>
+
+//           ${itens.map(item => `
+//             <tr>
+//               <td>${item.nome}</td>
+//               <td>${item.quantidade}</td>
+//               <td>${item.preco.toFixed(2)}</td>
+//               <td>${(item.quantidade * item.preco).toFixed(2)}</td>
+//             </tr>
+//           `).join('')}
+//         </table>
+
+//         <hr />
+
+//         <p><strong>Subtotal:</strong> ${subtotal.toFixed(2)}</p>
+//         <p><strong>IVA:</strong> ${iva.toFixed(2)}</p>
+//         <h2>Total: ${total.toFixed(2)} MT</h2>
+//       </body>
+//     </html>
+//   `;
+// }
+
+
+function gerarHTMLVenda(logoBase64: string = '') {
   return `
+    <!DOCTYPE html>
     <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #1C1C1E;
+            line-height: 1.6;
+            background: #fff;
+          }
+
+          .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            background: white;
+          }
+
+          /* HEADER */
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #185FA5;
+            padding-bottom: 30px;
+          }
+
+          .logo-section h1 {
+            font-size: 28px;
+            color: #185FA5;
+            margin-bottom: 5px;
+            font-weight: 700;
+          }
+
+          .logo-section p {
+            font-size: 12px;
+            color: #8E8E93;
+          }
+
+          .doc-info {
+            text-align: right;
+          }
+
+          .doc-type {
+            font-size: 18px;
+            font-weight: 600;
+            color: #185FA5;
+            margin-bottom: 8px;
+          }
+
+          .doc-number {
+            font-size: 13px;
+            color: #8E8E93;
+            line-height: 1.8;
+          }
+
+          /* CLIENTE */
+          .client-section {
+            display: flex;
+            gap: 60px;
+            margin-bottom: 40px;
+          }
+
+          .client-box {
+            flex: 1;
+          }
+
+          .client-box h3 {
+            font-size: 11px;
+            font-weight: 600;
+            color: #8E8E93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+          }
+
+          .client-box p {
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: #1C1C1E;
+          }
+
+          .client-box .label {
+            font-size: 11px;
+            color: #8E8E93;
+            margin-bottom: 2px;
+          }
+
+          /* TABELA */
+          .items-section {
+            margin-bottom: 30px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
+          }
+
+          thead {
+            background: #F2F2F7;
+            border-top: 2px solid #185FA5;
+            border-bottom: 2px solid #185FA5;
+          }
+
+          th {
+            padding: 14px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #185FA5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          td {
+            padding: 14px;
+            font-size: 13px;
+            border-bottom: 1px solid #E5E5EA;
+          }
+
+          tbody tr:last-child td {
+            border-bottom: 2px solid #185FA5;
+          }
+
+          tbody tr:hover {
+            background: #F9F9FB;
+          }
+
+          .text-right {
+            text-align: right;
+          }
+
+          .text-center {
+            text-align: center;
+          }
+
+          /* TOTAIS */
+          .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 40px;
+          }
+
+          .totals-box {
+            width: 280px;
+          }
+
+          .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #E5E5EA;
+            font-size: 13px;
+          }
+
+          .total-row.subtotal {
+            color: #8E8E93;
+          }
+
+          .total-row.iva {
+            color: #8E8E93;
+          }
+
+          .total-row.final {
+            border-bottom: none;
+            border-top: 2px solid #185FA5;
+            padding-top: 14px;
+            padding-bottom: 0;
+            font-weight: 700;
+            font-size: 16px;
+            color: #185FA5;
+          }
+
+          .total-label {
+            font-weight: 500;
+          }
+
+          .total-value {
+            font-weight: 600;
+          }
+
+          /* RODAPÉ */
+          .footer {
+            border-top: 1px solid #E5E5EA;
+            padding-top: 20px;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 11px;
+            color: #8E8E93;
+          }
+
+          .footer p {
+            margin: 4px 0;
+          }
+
+          @media print {
+            body {
+              background: white;
+            }
+            .container {
+              padding: 20px;
+            }
+          }
+        </style>
+      </head>
       <body>
-        <h1>Factura / Venda</h1>
+        <div class="container">
+           <!-- ✅ LOGO AQUI -->
+          ${logoBase64 ? `
+            <div style="text-align: center; margin-bottom: 30px;">
+              <img src="${logoBase64}" alt="Logo" style="max-width: 120px; height: auto;">
+            </div>
+          ` : ''}
+          <!-- HEADER -->
+          <div class="header">
 
-        <p><strong>Cliente:</strong> ${clienteSelecionado?.nome ?? ''}</p>
-        <p><strong>Email:</strong> ${clienteSelecionado?.email ?? ''}</p>
+            <div class="logo-section">
+              <h1>FACTURA</h1>
+              <p>Documento de Venda</p>
+            </div>
+            <div class="doc-info">
+              <div class="doc-type">${selectedNomeDocumento}</div>
+              <div class="doc-number">
+                <strong>Número:</strong> ${gerarNumeroFactura()}<br>
+                <strong>Série:</strong> ${venda?.ano_serie}<br>
+                <strong>Data:</strong> ${new Date().toLocaleDateString('pt-PT')}
+              </div>
+            </div>
+          </div>
 
-        <hr />
+          <!-- CLIENTE E FORNECEDOR -->
+          <div class="client-section">
+            <div class="client-box">
+              <h3>Cliente</h3>
+              <p class="label">Nome</p>
+              <p><strong>${clienteSelecionado?.nome ?? 'N/A'}</strong></p>
+              <p class="label">Email</p>
+              <p>${clienteSelecionado?.email ?? 'N/A'}</p>
+            </div>
+            <div class="client-box">
+              <h3>Termos</h3>
+              <p class="label">Condição de Pagamento</p>
+              <p><strong>${venda?.condicao_pagamento ?? 'Pronto pagamento'}</strong></p>
+              <p class="label">Método de Pagamento</p>
+              <p>${venda?.pagamento ?? 'N/A'}</p>
+            </div>
+          </div>
 
-        <h3>Itens</h3>
-        <table border="1" cellspacing="0" cellpadding="5" width="100%">
-          <tr>
-            <th>Produto</th>
-            <th>Qtd</th>
-            <th>Preço</th>
-            <th>Total</th>
-          </tr>
+          <!-- ITENS -->
+          <div class="items-section">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 45%;">Descrição do Produto</th>
+                  <th class="text-center" style="width: 15%;">Quantidade</th>
+                  <th class="text-right" style="width: 20%;">Preço Unitário</th>
+                  <th class="text-right" style="width: 20%;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itens.map(item => `
+                  <tr>
+                    <td>
+                      <strong>${item.nome}</strong><br>
+                      <span style="font-size: 11px; color: #8E8E93;">IVA ${parseFloat(item.taxa).toFixed(0)}%</span>
+                    </td>
+                    <td class="text-center">${item.quantidade}</td>
+                    <td class="text-right">${item.preco.toFixed(2)} MT</td>
+                    <td class="text-right"><strong>${(item.quantidade * item.preco).toFixed(2)} MT</strong></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
 
-          ${itens.map(item => `
-            <tr>
-              <td>${item.nome}</td>
-              <td>${item.quantidade}</td>
-              <td>${item.preco.toFixed(2)}</td>
-              <td>${(item.quantidade * item.preco).toFixed(2)}</td>
-            </tr>
-          `).join('')}
-        </table>
+          <!-- TOTAIS -->
+          <div class="totals-section">
+            <div class="totals-box">
+              <div class="total-row subtotal">
+                <span class="total-label">Subtotal:</span>
+                <span class="total-value">${subtotal.toFixed(2)} MT</span>
+              </div>
+              <div class="total-row iva">
+                <span class="total-label">IVA Total:</span>
+                <span class="total-value">${iva.toFixed(2)} MT</span>
+              </div>
+              <div class="total-row final">
+                <span class="total-label">TOTAL A PAGAR:</span>
+                <span class="total-value">${total.toFixed(2)} MT</span>
+              </div>
+            </div>
+          </div>
 
-        <hr />
+          <!-- RODAPÉ -->
+          <div class="footer">
+            <p>Obrigado pela sua confiança</p>
+            <p>Documento gerado eletronicamente em ${new Date().toLocaleString('pt-PT')}</p>
+            <p style="margin-top: 12px; border-top: 1px solid #E5E5EA; padding-top: 12px;">
+              Factura válida como com comprovante de pagamento
+            </p>
+          </div>
 
-        <p><strong>Subtotal:</strong> ${subtotal.toFixed(2)}</p>
-        <p><strong>IVA:</strong> ${iva.toFixed(2)}</p>
-        <h2>Total: ${total.toFixed(2)} MT</h2>
+        </div>
       </body>
     </html>
   `;
 }
+
+
+
 
 function gerarNumeroFactura() {
   const ano = new Date().getFullYear();
@@ -896,11 +1219,34 @@ function gerarNumeroFactura() {
   return `FT-${ano}-${String(numero).padStart(4, '0')}`;
 }
 
+
+async function getLogoBase64() {
+  try {
+    const logoUri = require('@/app/assets/logo.png');
+    const uri = Image.resolveAssetSource(logoUri).uri;
+    
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: 'base64'
+    });
+    
+    return `data:image/png;base64,${base64}`;
+  } catch (err) {
+    console.log('Erro ao carregar logo:', err);
+    return '';
+  }
+}
+
+
+
 async function extrairPDFVenda() {
 
   try {
 
-    const html = gerarHTMLVenda();
+    const logoBase64 = await getLogoBase64();
+
+    // Passa o logo para gerarHTMLVenda
+    const html = gerarHTMLVenda(logoBase64);
+    //const html = gerarHTMLVenda();
 
     const nomeFactura = `${gerarNumeroFactura()}.pdf`;
 
