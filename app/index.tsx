@@ -105,7 +105,7 @@ export default function Index ()
                         Configurar servidor
                 </Text>
                 </TouchableOpacity>
-
+{/* 
                 <TouchableOpacity
                     style={[styles.button, {
                         backgroundColor: "#4CAF50"
@@ -119,7 +119,7 @@ export default function Index ()
                         Continuar Offline
                     </Text>  
 
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
         )
     }

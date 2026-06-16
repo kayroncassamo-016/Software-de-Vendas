@@ -137,14 +137,14 @@ export default function Conection() {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.offlineButton}
         onPress={() => router.replace("/login/login")}
       >
         <Text style={styles.offlineText}>
           Continuar Offline
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </SafeAreaView>
   );
 }
