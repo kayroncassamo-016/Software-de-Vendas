@@ -267,10 +267,7 @@ useEffect (()=>{
           {
             const local =  VendaRepository.getById(Number(id));
             
-             Alert.alert(
-            "LOCAL LIDO",
-            JSON.stringify(local, null, 2)
-          );
+            
             setVenda(local);
       
           }
@@ -1283,10 +1280,10 @@ async function extrairPDFVenda() {
 
     console.log(error);
 
-    Alert.alert(
-      'Erro',
-      'Não foi possível gerar o PDF.'
-    );
+    // Alert.alert(
+    //   'Erro',
+    //   'Não foi possível gerar o PDF.'
+    // );
   }
   finally
   {

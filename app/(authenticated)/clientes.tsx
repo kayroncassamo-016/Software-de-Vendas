@@ -11,7 +11,6 @@ import React, { useEffect, useState } from "react";
 
 import {
   ActivityIndicator,
-  Alert,
   RefreshControl,
   // SafeAreaView,
   ScrollView,
@@ -20,7 +19,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -227,22 +226,12 @@ export default function ClienteScreen() {
 
         ClienteRepository.saveMany(response.data.data);
 
-        // console.log(
-        //   "REGISTROS NO SQLITE:",
-        //   ClienteRepository.getAll()
-        // );
-
-        //console.log("clientes da base: ", response.data.data)
-
-        //console.log(JSON.stringify(clientesAPI, null, 2));
+       
       } else {
         const local = ClienteRepository.getAll();
         setClientes(local);
         setFiltrados(local);
-        console.log("CLIENTE TESTE", JSON.stringify(local[0], null, 2));
-        console.log("CLIENTES OFFLINE:", local);
-
-        Alert.alert("CLIENTE TESTE", JSON.stringify(local[0], null, 2));
+       
       }
     } catch (err: any) {
       console.log(err.response);
