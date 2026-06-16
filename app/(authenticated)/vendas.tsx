@@ -412,63 +412,7 @@ export default function VendasList() {
     loadData();
   }, []);
 
-//  async function syncOfflineVendas() {
-//   const token = await AsyncStorage.getItem("@token");
 
-//   const pendentes = VendaRepository.getPendingSync();
-
-//   if (pendentes.length === 0) {
-//     return;
-//   }
-
-//   for (const venda of pendentes) {
-//     try {
-//       const payload = {
-//         tipo_doc: venda.tipo_doc,
-//         nome_doc: venda.nome_doc,
-//         ano_serie: venda.ano_serie,
-
-//         cliente_id: venda.cliente_id,
-//         fornecedor_id: venda.fornecedor_id,
-
-//         condicao_pagamento: venda.condicao_pagamento,
-
-//         linhas: venda.linhas?.map(linha => ({
-//           produto_id: linha.produto_id,
-//           qtd: linha.qtd,
-//           taxa_iva: linha.taxa_iva,
-//           pr_unit_sem_iva: linha.pr_unit_sem_iva,
-//         })),
-
-//         pagamento: venda.pagamento,
-
-//         pagamentos: venda.pagamentos,
-//       };
-
-//       await api.post(
-//         "/documentos",
-//         payload,
-//         {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           },
-//         }
-//       );
-
-//       VendaRepository.markAsSynced(venda.id);
-
-//       console.log(
-//         `Venda ${venda.id} sincronizada com sucesso`
-//       );
-
-//     } catch (err) {
-//       console.log(
-//         `Erro ao sincronizar venda ${venda.id}`,
-//         err
-//       );
-//     }
-//   }
-// }
 
 async function syncOfflineVendas() {
   const token = await AsyncStorage.getItem("@token");
