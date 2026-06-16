@@ -1,24 +1,26 @@
 
-import { API_CONFIG } from "@/config/api.config"
+import { getApiBaseUrl } from "@/config/server.config"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import axios from "axios"
 import { router } from "expo-router"
 import { Alert } from "react-native"
 export const api = axios.create({
-    baseURL: API_CONFIG.BASE_URL,
-    timeout:API_CONFIG.TIMEOUT,
-
+    timeout: 12000,
     headers:
     {
         "Content-Type":"application/json"
     }
-})
+});
+
+export async function configureApi() {
+  api.defaults.baseURL = await getApiBaseUrl();
+}
 
 api.interceptors.request.use(
 
     async (config) =>
     {
-        const token = await AsyncStorage.getItem("@token")
+        const token = await AsyncStorage.getItem("@token");
 
         if(token)
         {
@@ -33,21 +35,7 @@ api.interceptors.request.use(
     }
 )
 
-// api.interceptors.response.use(
-// (response) => response, 
 
-//  async(error) =>
-//  {
-//     if(error.response?.status === 401)
-//     {
-//         await AsyncStorage.removeItem("@token")
-        
-//     }
-
-//     return Promise.reject(error)
-//  }
-
-// )
 let isHandlingAuthError = false;
 api.interceptors.response.use(
   response => response,

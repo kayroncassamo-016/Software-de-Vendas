@@ -1,5 +1,6 @@
 import { colors } from '@/constants/theme'
 import { useContexto } from '@/contexts/AuthContext'
+import { configureApi } from '@/services/api'
 import { useRouter, useSegments } from 'expo-router'
 import { WifiOff } from 'lucide-react-native'
 import { useEffect } from 'react'
@@ -13,7 +14,16 @@ import {
 export default function Index ()
 {
 
-    const {loading,signed,networkError, loadStorageData} = useContexto()
+    const {loading,signed,networkError, loadStorageData} = useContexto();
+
+    useEffect(() => {
+        async function init() {
+            await configureApi();
+            await loadStorageData();
+        }
+
+        init();
+    }, []);
     const segments = useSegments()
     const router = useRouter()
   
@@ -28,6 +38,10 @@ export default function Index ()
     if(!signed && inAuthGroup)
     {
         router.replace("/login/login")
+<<<<<<< HEAD
+=======
+        
+>>>>>>> Config-serve
     }
     else if(signed && !inAuthGroup)
     {
@@ -37,11 +51,14 @@ export default function Index ()
     else if(!signed)
     {
         router.replace("/login/login")
+<<<<<<< HEAD
+=======
+        
+>>>>>>> Config-serve
 
     }
 
    },[loading,signed,router,networkError])
-
 
     if (networkError)
     {
@@ -123,12 +140,9 @@ export default function Index ()
                 <ActivityIndicator size="large" color={colors.blue}/>
             </View>
             )
- 
        }
     
-
      return (
-
         <View style={styles.container}>
             <ActivityIndicator size="large" color={colors.blue}/>
         </View>
