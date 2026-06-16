@@ -38,10 +38,6 @@ export default function Index ()
     if(!signed && inAuthGroup)
     {
         router.replace("/login/login")
-<<<<<<< HEAD
-=======
-        
->>>>>>> Config-serve
     }
     else if(signed && !inAuthGroup)
     {
@@ -51,11 +47,6 @@ export default function Index ()
     else if(!signed)
     {
         router.replace("/login/login")
-<<<<<<< HEAD
-=======
-        
->>>>>>> Config-serve
-
     }
 
    },[loading,signed,router,networkError])

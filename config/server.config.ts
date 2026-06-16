@@ -1,15 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export interface ServerConfig {
-  host: string;
-  port: string;
-  database?: string;
-  username?: string;
-  password?: string;
+  host?: string;
+  port?: string;
+ 
 }
 
 const DEFAULT_CONFIG: ServerConfig = {
-  host: "192.168.0.46",
+  host: "192.168.0.45",
   port: "8000",
 };
 
@@ -19,6 +17,8 @@ export async function getServerConfig(): Promise<ServerConfig> {
   if (!data) {
     return DEFAULT_CONFIG;
   }
+
+  console.log('Dados depois de guardar configuracao: ',JSON.parse(data));
 
   return JSON.parse(data);
 }

@@ -4,12 +4,12 @@ import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
+  Alert,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
 } from "react-native";
 
 const API_VERSION = "/api/v1";
@@ -43,9 +43,12 @@ export default function Conection() {
 
       const url = buildUrl();
 
-      await axios.get(`${url}/health`, {
+      const response = await axios.get(`${url}/test`, {
         timeout: 5000,
       });
+
+      console.log('URL:', url);
+      console.log('Resposta: ', response);
 
       Alert.alert(
         "Sucesso",
@@ -68,8 +71,15 @@ export default function Conection() {
         return;
       }
 
-      await AsyncStorage.setItem("@server_ip", ip);
-      await AsyncStorage.setItem("@server_port", porta);
+      const config = {
+        host: ip,
+        port: porta,
+      };
+
+      await AsyncStorage.setItem(
+        "@server_config",
+        JSON.stringify(config)
+      );
 
       await configureApi();
 
@@ -147,6 +157,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
+    padding: 20,
     fontSize: 22,
     fontWeight: "bold",
     color: "#185FA5",

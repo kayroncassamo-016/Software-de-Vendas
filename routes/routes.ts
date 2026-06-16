@@ -190,19 +190,7 @@ export  function useAuth()
     }
     finally{
 
-    }}
-
-    function handleLogout() {
-    AsyncStorage.removeItem("@token");
-    AsyncStorage.removeItem("@user");
-
-    setSigned(false);
-    setUser(undefined);
-
-    router.replace("/login/login");
-}
-
-   
+    }} 
 
     return {
         user,

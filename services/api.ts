@@ -16,12 +16,13 @@ export async function configureApi() {
   api.defaults.baseURL = await getApiBaseUrl();
 }
 
+
 api.interceptors.request.use(
+
 
     async (config) =>
     {
         const token = await AsyncStorage.getItem("@token");
-
         if(token)
         {
             config.headers.Authorization = `Bearer ${token}`

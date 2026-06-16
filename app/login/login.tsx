@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Settings } from 'lucide-react-native';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -31,6 +32,7 @@ export default function Home() {
 
    async function handleLogin()
    {
+
       if(!email.trim() || !senha.trim())
       {
             Alert.alert("Atenção", "Preencha todos os campos!")
@@ -42,8 +44,6 @@ export default function Home() {
            setLoading(true)
            await signIn(email,senha)
         }
-
-
         catch (err:any)
         {   
             switch(err.message)
@@ -78,6 +78,12 @@ export default function Home() {
     <KeyboardAvoidingView style={styles.container}
       behavior='padding'>
   
+      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={() => router.push("/components/Conection/Conection")}
+      >
+          <Settings size={24} color="#666"/>
+      </TouchableOpacity>
       <View>  
          <View style ={styles.logoContent}>
              <Image source={require('@/app/assets/logo.png')}
@@ -318,7 +324,32 @@ const styles = StyleSheet.create({
   buttonDisabled:
   {
     opacity:0.6
-  }
+  },
+
+  settingsButton: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    zIndex: 10,
+
+    width: 42,
+    height: 42,
+
+    borderRadius: 21,
+    backgroundColor: "#fff",
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
  
 });
  
