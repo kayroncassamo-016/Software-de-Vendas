@@ -1,15 +1,16 @@
- import { Select } from '@/components/project/Select';
+import { Select } from '@/components/project/Select';
 import { colors } from '@/constants/theme';
 import { api } from '@/services/api';
 import { Clientes, Fornecedores, Produtos } from '@/types/types';
+import { isOnline } from '@/utils/network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { Cog, Grid2X2, Handshake, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
-  //SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,9 +19,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-// Definir tipos
-import { isOnline } from '@/utils/network';
-import { useRouter } from 'expo-router';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ClienteRepository } from '../database/ClienteRepository';
 import { FornecedoresRepository } from '../database/FornecedoresRepository';
@@ -29,28 +27,70 @@ import { VendaRepository } from '../database/VendaRepository';
 
 interface Item {
   id: number;
-  produto_id:number;
-  taxa:string,
+  produto_id: number;
+  taxa: string;
   nome: string;
   quantidade: number;
   preco: number;
+  desconto: number; // Adicionado campo desconto
+}
+
+interface DocumentPayload {
+  tipo_doc: string;
+  nome_doc: string;
+  ano_serie: string;
+  data_documento: string;
+  observacoes: string;
+  condicao_pagamento: string;
+  linhas: Array<{
+    produto_id: number;
+    qtd: number;
+    taxa_iva: number;
+    pr_unit_sem_iva: number;
+    taxa_desconto: number;
+  }>;
+  // Para NE
+  fornecedor_id?: number;
+  nome_fornecedor?: string;
+  nuit?: string;
+  // Para VD
+  cliente_id?: number;
+  nome_cliente?: string;
+  morada_cliente?: string;
+  pagamento?: string;
+  pagamentos?: Array<{
+    metodo: string;
+    valor: number;
+    banco_servico: string;
+    nr_movimento: string;
+  }>;
 }
 
 
-export default function VendasScreen() {
+// Mapeamento de tipos de documento
+const DOCUMENT_TYPES = {
+  VD: { label: 'Venda a Dinheiro'},
+  FT: { label: 'Factura' },
+  NE: { label: 'Nota de Entrada'},
+  ND: { label: 'Nota de Devolução'},
+  GT: { label: 'Guia de Transporte'},
+};
 
+export default function VendasScreen() {
   const [clienteSelecionado, setClienteSelecionado] = useState<Clientes | null>(null);
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState<Fornecedores | null>(null);
   const [IdClienteSelecionado, setIdClienteSelecionado] = useState(0);
   const [IdFornecedorSelecionado, setIdFornecedorSelecionado] = useState(0);
   const [itens, setItens] = useState<Item[]>([]);
   const [nomeProduto, setNomeProduto] = useState('');
-  const [selectedProduto, setSelectedProduto] = useState<Produtos|null>(null);
+  const [selectedProduto, setSelectedProduto] = useState<Produtos | null>(null);
   const [IdSelectedProduto, setIdSelectedProduto] = useState(0);
   const [taxaSelectedProduto, setTaxaSelectedProduto] = useState('');
+  const [loadingConfirmar, setLoadingConfirmar] = useState(false);
   const [quantidade, setQuantidade] = useState('');
   const [nrContribuinte, setNrContribuinte] = useState('');
   const [preco, setPreco] = useState('');
+  const [descontoItem, setDescontoItem] = useState('0'); // Novo estado para desconto
   const [searchText, setSearchText] = useState<string>('');
   const [searchTextProdutos, setSearchTextProdutos] = useState<string>('');
   const [searchTextFornecedores, setSearchTextFornecedores] = useState<string>('');
@@ -64,1067 +104,825 @@ export default function VendasScreen() {
   const [selectedNomeDocumento, setSelectedNomeDocumento] = useState('');
   const [selectedCondicaoPagamento, setSelectedCondicaoPagamento] = useState('');
   const [selectedMetodoPagamento, setSelectedMetodoPagamento] = useState('');
-  const [loadingGuardarRascunho, setLoadingGuardarRascunho] = useState(false)
+  const [observacoes, setObservacoes] = useState(''); // Novo estado para observações
+  const [loadingGuardarRascunho, setLoadingGuardarRascunho] = useState(false);
   const [activeNav, setActiveNav] = useState(0);
-  const router = useRouter()
+  const router = useRouter();
 
-  // const TipoDocumento = ['Factura','Nota de devolução',
-  //   'Guia de transporte','Recibo','Orçamento']
+  const TipoDocumento = ['VD', 'NE'];
+  const nomeDocumento = ['Venda a dinheiro', 'Nota de entrada'];
+  const condicoesPagamento = ['Pronto pagamento', 'Pagamento em 15 dias', 'Pagamento em 30 dias'];
+  const metodoPagamento = ['Numerário', 'Transferência móvel', 'POS', 'Depósito'];
 
-  const TipoDocumento = ['VD','NE',]
-  const nomeDocumento =['Venda a dinheiro', 'Nota de entrada']
-
-  const condicoesPagamento =['Pronto pagamento','Pagamento em 15 dias'
-    ,'Pagamento em 30 dias'
-  ]
-  const metodoPagamento =['Numerário','Transferência móvel','POS', 'Depósito'
-  ]
-
-  useEffect(()=> {
-    async function loadData()
-    {
-       await loadClientes ()
-       await loadProducts()
-       await loadFornecedores()
-    }
-    loadData()
-  },[])
-
-  useEffect(()=>{
-
-    if (selectedProduto)
-    {
-        setIdSelectedProduto(selectedProduto.id)
-        setTaxaSelectedProduto(selectedProduto.imposto.taxa)
-    }
-    else
-    {
-        setIdSelectedProduto(0)
-    }
-
-    if (clienteSelecionado)
-    {
-        setIdClienteSelecionado(clienteSelecionado.id)
-    }
-
-  },[selectedProduto,clienteSelecionado])
-
-
-   useEffect(()=>{
-
-    if (fornecedorSelecionado)
-    {
-        setIdFornecedorSelecionado(fornecedorSelecionado.id)
-        
-    }
-    else
-    {
-        setIdSelectedProduto(0)
-    }
-
-   
-
-  },[fornecedorSelecionado])
-
+  // Função para obter o título dinâmico do header
+  const getHeaderTitle = () => {
+    if (!selectedTipoDocumento) return 'Novo Documento';
+    const docInfo = DOCUMENT_TYPES[selectedTipoDocumento as keyof typeof DOCUMENT_TYPES];
+    return `Nova ${docInfo?.label || selectedTipoDocumento}`;
+  };
 
   useEffect(() => {
-
-    if (selectedTipoDocumento === 'NE')
-    {
-      setSelectedNomeDocumento (nomeDocumento[1])
+    async function loadData() {
+      await loadClientes();
+      await loadProducts();
+      await loadFornecedores();
     }
-    else if (selectedTipoDocumento === 'VD')
-    {  
-      setSelectedNomeDocumento (nomeDocumento[0])
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedProduto) {
+      setIdSelectedProduto(selectedProduto.id);
+      setTaxaSelectedProduto(selectedProduto.imposto?.taxa || '17');
+    } else {
+      setIdSelectedProduto(0);
     }
 
-    else
-    {
-      setSelectedNomeDocumento ('')
+    if (clienteSelecionado) {
+      setIdClienteSelecionado(clienteSelecionado.id);
     }
+  }, [selectedProduto, clienteSelecionado]);
 
-  },[selectedTipoDocumento])
+  useEffect(() => {
+    if (fornecedorSelecionado) {
+      setIdFornecedorSelecionado(fornecedorSelecionado.id);
+    } else {
+      setIdSelectedProduto(0);
+    }
+  }, [fornecedorSelecionado]);
+
+  useEffect(() => {
+    if (selectedTipoDocumento === 'NE') {
+      setSelectedNomeDocumento(nomeDocumento[1]);
+    } else if (selectedTipoDocumento === 'VD') {
+      setSelectedNomeDocumento(nomeDocumento[0]);
+      setSelectedCondicaoPagamento('Pronto pagamento');
+    } else {
+      setSelectedNomeDocumento('');
+    }
+  }, [selectedTipoDocumento]);
 
   const NAV_ITEMS = [
-  { icon: ShoppingBag , label: 'Vendas' },
-    {icon:Handshake,label:'Clientes'},
+    { icon: ShoppingBag, label: 'Vendas' },
+    { icon: Handshake, label: 'Clientes' },
     { icon: Grid2X2, label: 'Painel' },
     { icon: Package, label: 'Produtos' },
     { icon: Cog, label: 'Config.' },
-];
+  ];
 
-
-  function navigatePage(pageIndex:number)
-  {
-      setActiveNav(pageIndex)
-      
-      if (pageIndex === 2) {
-          router.push("/(authenticated)/dashboard")
-        }
-
-       
-      if (pageIndex === 4) {
-          router.push("/(authenticated)/settings")
-        }
-      
-      if (pageIndex === 1) 
-      {
-          router.push("/(authenticated)/clientes")
-      }
-
-      
-      if (pageIndex === 3) 
-      {
-          router.push("/(authenticated)/produtos")
-      }
+  function navigatePage(pageIndex: number) {
+    setActiveNav(pageIndex);
+    if (pageIndex === 2) router.push("/(authenticated)/dashboard");
+    if (pageIndex === 4) router.push("/(authenticated)/settings");
+    if (pageIndex === 1) router.push("/(authenticated)/clientes");
+    if (pageIndex === 3) router.push("/(authenticated)/produtos");
   }
 
-  async function loadClientes()
-  {
-    const token  = await AsyncStorage.getItem("@token")
+  async function loadClientes() {
+    const token = await AsyncStorage.getItem("@token");
     const online = await isOnline();
-    
     try {
-      
-        if (online) { 
-            const response = await api.get("/clientes",
-               {
-               headers: { Authorization: `Bearer ${token}` },
-            }   
-            )
-  
-            setClientes(response.data.data)
-            setFiltrados(response.data.data)
-        }
-        else 
-        {
-            const local = ClienteRepository.getAll();
-            setClientes(local);
-            setFiltrados(local)
-
-        }
-
+      if (online) {
+        const response = await api.get("/clientes", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setClientes(response.data.data);
+        setFiltrados(response.data.data);
+      } else {
+        const local = ClienteRepository.getAll();
+        setClientes(local);
+        setFiltrados(local);
       }
-        catch(err:any)
-        {
-            console.log(err.response)
-        }
+    } catch (err: any) {
+      console.log(err.response);
+    }
+  }
 
+  async function loadFornecedores() {
+    const token = await AsyncStorage.getItem("@token");
+    const online = await isOnline();
+    try {
+      if (online) {
+        const response = await api.get("/fornecedor", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFornecedores(response.data.data);
+        setFiltradosFornecedores(response.data.data);
+      } else {
+        const local = FornecedoresRepository.getAll();
+        setFornecedores(local);
+        setFiltradosFornecedores(local);
+      }
+    } catch (err: any) {
+      console.log(err.response);
+    }
+  }
+
+  async function loadProducts() {
+    const token = await AsyncStorage.getItem("@token");
+    const online = await isOnline();
+    try {
+      if (online) {
+        const response = await api.get("/produtos", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProdutos(response.data.data);
+        setFiltradosProdutos(response.data.data);
+      } else {
+        const local = ProdutoRepository.getAll();
+        setProdutos(local);
+        setFiltradosProdutos(local);
+      }
+    } catch (err: any) {
+      console.log(err.response);
+    }
+  }
+
+  // Função para montar o payload correto
+  const getDocumentPayload = (): DocumentPayload => {
+    const basePayload: DocumentPayload = {
+      tipo_doc: selectedTipoDocumento,
+      nome_doc: selectedNomeDocumento,
+      ano_serie: new Date().getFullYear().toString(),
+      data_documento: new Date().toISOString().split('T')[0],
+      observacoes: observacoes || '',
+      condicao_pagamento: selectedCondicaoPagamento || '',
+      linhas: itens.map(item => ({
+        produto_id: item.produto_id,
+        qtd: item.quantidade,
+        taxa_iva: parseFloat(item.taxa) || 17,
+        pr_unit_sem_iva: item.preco,
+        taxa_desconto: item.desconto || 0
+      })),
+    };
+
+    if (selectedTipoDocumento === 'NE') {
+      return {
+        ...basePayload,
+        fornecedor_id: IdFornecedorSelecionado,
+        nome_fornecedor: fornecedorSelecionado?.nome || '',
+        nuit: fornecedorSelecionado?.nuit || '',
+      };
     }
 
+    // VD, FT, GT
+    return {
+      ...basePayload,
+      cliente_id: IdClienteSelecionado,
+      nome_cliente: clienteSelecionado?.nome || '',
+      nuit: clienteSelecionado?.nuit || '',
+    };
+  }
 
- async function loadFornecedores()
-  {
-    const token  = await AsyncStorage.getItem("@token")
-     const online = await isOnline();
-        try
-          {
-            if (online) {
-       
-            const response = await api.get("/fornecedor",
-               {
-               headers: { Authorization: `Bearer ${token}` },
-               }   
-            )
-      
-            setFornecedores(response.data.data)
-            setFiltradosFornecedores(response.data.data)
+  async function handleGuardarRascunho() {
+    const token = await AsyncStorage.getItem("@token");
+    const online = await isOnline();
 
-        
-          }
-          else
-          {
-             const local = FornecedoresRepository.getAll();
-             setFornecedores(local);
-               console.log('FORNECEDORES OFFLINE', 
-                JSON.stringify(
-                local,
-                null,
-                2 )
-               );
-            setFiltradosFornecedores(local)
-
-            }
-
-          }
-
-        catch(err:any)
-        {
-            console.log(err.response)
-        }
-        finally 
-        {
-        
-        }
-       
+    if (!selectedTipoDocumento) {
+      Alert.alert('Erro', 'Selecione o tipo de documento');
+      return;
     }
 
-   
-
-  
-    async function loadProducts()
-    {
-       const token  = await AsyncStorage.getItem("@token")
-     const online = await isOnline();
-
-
-       try {
-
-        if (online)
-        {
-      
-            const response = await api.get("/produtos",
-               {
-               headers: { Authorization: `Bearer ${token}` },
-               }   
-            )
-
-            setProdutos(response.data.data)
-            setFiltradosProdutos(response.data.data)
-        
-        }
-          else
-          {
-            const local = ProdutoRepository.getAll();
-            setProdutos(local);
-              console.log('produtos OFFLINE', 
-              JSON.stringify(
-              local,
-              null,
-              2 )
-              );
-          setFiltradosProdutos(local)
-
-          }
-      }
-
-
-        catch(err:any)
-        {
-            console.log(err.response)
-        }
-
-        finally
-        {
-           
-        }
+    if (selectedTipoDocumento === 'NE' && !IdFornecedorSelecionado) {
+      Alert.alert('Erro', 'Selecione um fornecedor');
+      return;
     }
 
+    if (selectedTipoDocumento === 'VD' && !IdClienteSelecionado) {
+      Alert.alert('Erro', 'Selecione um cliente');
+      return;
+    }
 
+    if (itens.length === 0) {
+      Alert.alert('Erro', 'Adicione pelo menos um item');
+      return;
+    }
 
-    async function handleGuardarRascunho()
-    {
-      const token  = await AsyncStorage.getItem("@token")
-      const online = await isOnline();
-     
+    let payload: DocumentPayload = getDocumentPayload();
 
-      if (selectedNomeDocumento ===nomeDocumento[1] 
-            || selectedTipoDocumento === 'NE' )
-      {
-          const payload =
-          {
-            tipo_doc: selectedTipoDocumento,
-            nome_doc: selectedNomeDocumento,
-            ano_serie: new Date().getFullYear().toString(),
-        
-            fornecedor_id: IdFornecedorSelecionado,
-            condicao_pagamento:selectedCondicaoPagamento??'',
-      
-         
-         linhas: itens.map(item => ({
-            produto_id: item.produto_id,
-            qtd: item.quantidade,
-            taxa_iva:item.taxa,
-            pr_unit_sem_iva: item.preco
-          })),
-
-        }
-
-         try
-         {
-          if (online){
-          
-         setLoadingGuardarRascunho(true)
-           await api.post('/documentos',
-            payload, {
-               headers: { Authorization: `Bearer ${token}` },
-           } 
-         )
-      //  VendaRepository.save({...payload,} as any);
-
-        
-       Alert.alert(
-      'Factura criada em rascunho',
-      `Fornecedor: ${fornecedorSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
-        [
-        { text: 'OK', style: 'cancel' },
-        { text: 'GERAR PDF', onPress: () => console.log('Enviando PDF...') },
-        ]
-        );
-      }
-      else
-      {
-       // VendaRepository.save({...payload,} as any);
-            VendaRepository.save({
+    if (selectedTipoDocumento === 'VD') {
+      payload = {
         ...payload,
-        synced: 0,
-      } as any);
-      
+        pagamento: selectedMetodoPagamento || '',
+        pagamentos: [{
+          metodo: selectedMetodoPagamento || '',
+          valor: total,
+          banco_servico: '',
+          nr_movimento: ''
+        }]
+      };
+    }
+
+    try {
+      if (online) {
+        setLoadingGuardarRascunho(true);
+        await api.post('/documentos', payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const entityName = selectedTipoDocumento === 'NE' 
+          ? fornecedorSelecionado?.nome 
+          : clienteSelecionado?.nome;
+        
         Alert.alert(
-        "Rascunho guardado",
-        "O documento foi guardado localmente e será sincronizado quando houver internet."
-      );
-      }
-    }
-      catch (err: any)
-      {
-         console.log('erro ao guardar rascunho: ', err.response)
-      }
-
-      finally
-      {
-         setLoadingGuardarRascunho(false)
-      }
-    }
-    
-    else 
-    {
-      const payload =
-          {
-            tipo_doc: selectedTipoDocumento,
-            nome_doc: selectedNomeDocumento,
-            ano_serie: new Date().getFullYear().toString(),
-            cliente_id: IdClienteSelecionado,
-           linhas: itens.map(item => ({
-            produto_id: item.produto_id,
-            qtd: item.quantidade,
-            taxa_iva:item.taxa,
-            pr_unit_sem_iva: item.preco
-          })),
-          pagamento:selectedMetodoPagamento,
-
-          pagamentos:[
-          {
-            metodo: selectedMetodoPagamento,
-            valor:total,
-            banco_servico:'',
-            nr_movimento:''
-          }]
-
-        }
-         try
-         {
-
-          if (online)
-          {
-          
-         setLoadingGuardarRascunho(true)
-           await api.post('/documentos',
-            payload, {
-               headers: { Authorization: `Bearer ${token}` },
-           } 
-         )
-              
-
-       Alert.alert(
-      'Factura criada em rascunho',
-      `Cliente: ${clienteSelecionado?.nome}\nTotal: ${total.toFixed(2)} MT`,
-        [
-        { text: 'OK', style: 'cancel' },
-      
-        ]
+          `${selectedNomeDocumento} criada em rascunho`,
+          `${selectedTipoDocumento === 'NE' ? 'Fornecedor' : 'Cliente'}: ${entityName}\nTotal: ${total.toFixed(2)} MT`,
+          [{ text: 'OK', style: 'cancel' }]
         );
-      }
-      else
-      {
-        // VendaRepository.save({...payload} as any);
+
+        // Reset form
+        setItens([]);
+        setClienteSelecionado(null);
+        setFornecedorSelecionado(null);
+        setSelectedTipoDocumento('');
+        setSelectedCondicaoPagamento('');
+        setSelectedMetodoPagamento('');
+        setObservacoes('');
+      } else {
         VendaRepository.save({
           ...payload,
           synced: 0,
         } as any);
 
-      Alert.alert(
-        "Rascunho guardado",
-        "O documento foi guardado localmente e será sincronizado quando houver internet."
-      );
-    
+        Alert.alert(
+          "Rascunho guardado",
+          "O documento foi guardado localmente e será sincronizado quando houver internet."
+        );
       }
+    } catch (err: any) {
+      console.log('erro ao guardar rascunho: ', err.response);
+      Alert.alert('Erro', 'Não foi possível guardar o rascunho');
+    } finally {
+      setLoadingGuardarRascunho(false);
     }
-      catch (err: any)
-      {
-         console.log('erro ao guardar rascunho: ', err.response)
+  }
+
+  const handleProductPress = (prod: Produtos) => {
+  // Verificar se o produto já está na lista
+  const itemExistente = itens.find(item => item.produto_id === prod.id);
+  
+  if (itemExistente) {
+    // Se já existe, aumenta a quantidade
+    const itensAtualizados = itens.map(item => {
+      if (item.produto_id === prod.id) {
+        return {
+          ...item,
+          quantidade: item.quantidade + 1
+        };
       }
+      return item;
+    });
+    setItens(itensAtualizados);
+  } else {
+    // Se não existe, adiciona novo item com quantidade 1
+    const novoItem: Item = {
+      id: Date.now(),
+      produto_id: prod.id,
+      taxa: prod.imposto?.taxa?.toString() || '17',
+      nome: prod.designacao,
+      quantidade: 1,
+      preco: parseFloat(prod.preco_venda_iliquido_1),
+      desconto: 0
+    };
+    setItens([...itens, novoItem]);
+  }
+};
 
-      finally
-      {
-           setLoadingGuardarRascunho(false)
-      }
-    }
-    
-
-
-      
-    }
-
-
-
-
-  // Adicionar item à venda
   const adicionarItem = () => {
-    if (!nomeProduto || !preco) {
-      Alert.alert('Erro', 'Preenche o nome e preço do produto');
+    if (!selectedProduto || !preco) {
+      Alert.alert('Erro', 'Selecione um produto');
       return;
     }
 
     const quantidadeNova = parseInt(quantidade) || 1;
+    const descontoValor = parseFloat(descontoItem) || 0;
 
-  // Verifica se o produto já existe
-  const itemExistente = itens.find(
-    item => item.produto_id === IdSelectedProduto
-  );
+    if (descontoValor > 100) {
+      Alert.alert('Erro', 'Desconto máximo de 100%');
+      return;
+    }
 
-  if (itemExistente) {
+    const itemExistente = itens.find(item => item.produto_id === IdSelectedProduto);
 
-    // Atualiza quantidade do item existente
-    const itensAtualizados = itens.map(item => {
-      if (item.produto_id === IdSelectedProduto) {
-        return {
-          ...item,
-          quantidade: item.quantidade + quantidadeNova,
-        };
-      }
+    if (itemExistente) {
+      const itensAtualizados = itens.map(item => {
+        if (item.produto_id === IdSelectedProduto) {
+          return {
+            ...item,
+            quantidade: item.quantidade + quantidadeNova,
+            desconto: descontoValor,
+          };
+        }
+        return item;
+      });
+      setItens(itensAtualizados);
+    } else {
+      const novoItem: Item = {
+        id: Date.now(),
+        produto_id: IdSelectedProduto,
+        taxa: taxaSelectedProduto || '17',
+        nome: nomeProduto,
+        quantidade: quantidadeNova,
+        preco: parseFloat(preco),
+        desconto: descontoValor,
+      };
+      setItens([...itens, novoItem]);
+    }
 
-      return item;
-    });
-
-    setItens(itensAtualizados);
-  }
-  
-  else {
-
-    const novoItem: Item = {
-      id: Date.now(),
-      produto_id: IdSelectedProduto,
-      taxa:taxaSelectedProduto,
-      nome: nomeProduto,
-      quantidade: parseInt(quantidade) || 1,
-      preco: parseFloat(preco),
-    };
-
-    setItens([...itens, novoItem]);
-  }
     setNomeProduto('');
-    // setQuantidade(quantidade);
     setQuantidade('');
     setPreco('');
+    setDescontoItem('0');
+    setSelectedProduto(null);
   };
 
-  // Remover item
   const removerItem = (id: number) => {
     setItens(itens.filter(item => item.id !== id));
   };
 
-  // Calcular totais
   const calcularTotais = () => {
-    const subtotal = itens.reduce((acc, item) => acc + (item.quantidade * item.preco), 0);
-    const iva = itens.reduce(
-        (acc, item) => acc + ((item.quantidade * item.preco) * parseFloat(item.taxa) / 100),
-        0
-      );
+    let subtotal = 0;
+    let totalDesconto = 0;
+    let iva = 0;
 
-    const total = subtotal + iva
+    itens.forEach(item => {
+      const totalItem = item.quantidade * item.preco;
+      const descontoItemValor = (totalItem * (item.desconto || 0)) / 100;
+      const totalComDesconto = totalItem - descontoItemValor;
+      const ivaItem = (totalComDesconto * parseFloat(item.taxa || '17')) / 100;
 
-    return { subtotal,iva, total };
+      subtotal += totalItem;
+      totalDesconto += descontoItemValor;
+      iva += ivaItem;
+    });
+
+    const total = subtotal - totalDesconto + iva;
+    return { subtotal, totalDesconto, iva, total };
   };
 
-  const { subtotal,iva, total } = calcularTotais();
+  const { subtotal, totalDesconto, iva, total } = calcularTotais();
 
-  // Confirmar venda
-  async function confirmarVenda ()
-  {
-    const token  = await AsyncStorage.getItem("@token")
-
-
-    if (!clienteSelecionado) {
-      Alert.alert('Erro', 'Selecciona um cliente');
-      return;
-    }
-
-    if (itens.length === 0) {
-      Alert.alert('Erro', 'Adiciona pelo menos um item');
-      return;
-    }
-
-     try 
-     {
-        await api.post('/documentos', 
-          {
-             headers: { Authorization: `Bearer ${token}` },
-          }   
-        )
-     }
-     catch (err:any)
-     {
-
-     }
-
-     finally 
-     {
-
-     }
-
-
-    Alert.alert(
-      'Factura criada',
-      `Cliente: ${clienteSelecionado.nome}\nTotal: ${total.toFixed(2)} MT`,
-       [
-        { text: 'Fechar', style: 'cancel' },
-        { text: 'Enviar PDF', onPress: () => console.log('Enviando PDF...') },
-       ]
-    );
-  };
-
-    const handleSearch = (text: string): void => {
+  const handleSearch = (text: string) => {
     setSearchText(text);
     if (text === '') {
-      setFiltrados(clientes)
+      setFiltrados(clientes);
     } else {
-      const filtered = clientes.filter(
-        (c) =>
-          c.nome.toLowerCase().includes(text.toLowerCase()) 
-      );
+      const filtered = clientes.filter(c => c.nome.toLowerCase().includes(text.toLowerCase()));
       setFiltrados(filtered);
     }
   };
 
-    const handleSearchProdutos = (text: string): void => {
+  const handleSearchProdutos = (text: string) => {
     setSearchTextProdutos(text);
     if (text === '') {
-      setFiltradosProdutos(produtos)
+      setFiltradosProdutos(produtos);
     } else {
-      const filtered = produtos.filter(
-        (p) =>
-          p.designacao.toLowerCase().includes(text.toLowerCase()) 
-      );
+      const filtered = produtos.filter(p => p.designacao.toLowerCase().includes(text.toLowerCase()));
       setFiltradosProdutos(filtered);
     }
   };
 
-   const handleSearchFornecedores = (text: string): void => {
+  const handleConfirmar = async () => {
+  const token = await AsyncStorage.getItem("@token");
+  const online = await isOnline();
+
+  if (!selectedTipoDocumento) {
+    Alert.alert('Erro', 'Selecione o tipo de documento');
+    return;
+  }
+
+  if (selectedTipoDocumento === 'NE' && !IdFornecedorSelecionado) {
+    Alert.alert('Erro', 'Selecione um fornecedor');
+    return;
+  }
+
+  if (selectedTipoDocumento === 'VD' && !IdClienteSelecionado) {
+    Alert.alert('Erro', 'Selecione um cliente');
+    return;
+  }
+
+  if (itens.length === 0) {
+    Alert.alert('Erro', 'Adicione pelo menos um item');
+    return;
+  }
+
+  // Montar payload
+  const payload: DocumentPayload = {
+    tipo_doc: selectedTipoDocumento,
+    nome_doc: selectedNomeDocumento,
+    ano_serie: new Date().getFullYear().toString(),
+    data_documento: new Date().toISOString().split('T')[0],
+    observacoes: observacoes || '',
+    condicao_pagamento: selectedCondicaoPagamento || '',
+    linhas: itens.map(item => ({
+      produto_id: item.produto_id,
+      qtd: item.quantidade,
+      taxa_iva: parseFloat(item.taxa) || 17,
+      pr_unit_sem_iva: item.preco,
+      taxa_desconto: item.desconto || 0
+    })),
+  };
+
+  if (selectedTipoDocumento === 'NE') {
+    payload.fornecedor_id = IdFornecedorSelecionado;
+    payload.nome_fornecedor = fornecedorSelecionado?.nome || '';
+    payload.nuit = fornecedorSelecionado?.nuit || '';
+  } else {
+    payload.cliente_id = IdClienteSelecionado;
+    payload.nome_cliente = clienteSelecionado?.nome || '';
+    payload.nuit = clienteSelecionado?.nuit || '';
+    payload.morada_cliente = typeof clienteSelecionado?.endereco === 'string' 
+                                ? clienteSelecionado.endereco 
+                                : clienteSelecionado?.endereco?.morada || '';
+    payload.pagamento = selectedMetodoPagamento || '';
+    payload.pagamentos = [{
+      metodo: selectedMetodoPagamento || '',
+      valor: total,
+      banco_servico: '',
+      nr_movimento: ''
+    }];
+  }
+
+  try {
+    setLoadingConfirmar(true);
+    await api.post('/documentos/create-and-confirm', payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    Alert.alert('Sucesso', 'Documento confirmado com sucesso!');
+    router.back();
+  } catch (err: any) {
+    console.log('erro ao confirmar: ', err.response);
+    Alert.alert('Erro', err.response?.data?.message || 'Não foi possível confirmar o documento');
+  } finally {
+    setLoadingConfirmar(false);
+  }
+};
+
+  const handleSearchFornecedores = (text: string) => {
     setSearchTextFornecedores(text);
     if (text === '') {
-      setFiltradosFornecedores(fornecedores)
+      setFiltradosFornecedores(fornecedores);
     } else {
-      const filtered = fornecedores.filter(
-        (f) =>
-          f.nome.toLowerCase().includes(text.toLowerCase()) 
-      );
+      const filtered = fornecedores.filter(f => f.nome.toLowerCase().includes(text.toLowerCase()));
       setFiltradosFornecedores(filtered);
     }
   };
 
-   const aumentarQuantidade = (id: number|undefined) => {
-  setItens(prev =>
-    prev.map(item =>
-      item.id === id
-        ? { ...item, quantidade: item.quantidade + 1 }
-        : item
-    )
-  );
-};
+  const aumentarQuantidade = (id: number | undefined) => {
+    setItens(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, quantidade: item.quantidade + 1 } : item
+      )
+    );
+  };
 
-const diminuirQuantidade = (id: number|undefined) => {
-  setItens(prev =>
-    prev.map(item =>
-      item.id === id
-        ? {
-            ...item,
-            quantidade:
-              item.quantidade > 1
-                ? item.quantidade - 1
-                : 1,
-          }
-        : item
-    )
-  );
-};
+  const diminuirQuantidade = (id: number | undefined) => {
+    setItens(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, quantidade: Math.max(1, item.quantidade - 1) } : item
+      )
+    );
+  };
 
- const renderItem = ({ item }: { item: Item }) => (
-    <View style={styles.itemRow}>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemNome}>{item.nome}</Text>
-        
-        <View style={{flexDirection:'row'}}>
+  const renderItem = ({ item }: { item: Item }) => {
+    const totalItem = item.quantidade * item.preco;
+    const descontoItemValor = (totalItem * (item.desconto || 0)) / 100;
+    const totalComDesconto = totalItem - descontoItemValor;
+    const taxaIva = parseFloat(item.taxa) || 17;
+    const ivaItem = (totalComDesconto * taxaIva) / 100;
+    const totalFinal = totalComDesconto + ivaItem;
 
-          
-          <TouchableOpacity style={{borderRadius:2,
-          backgroundColor:colors.blue,
-          paddingHorizontal:7,
-          marginHorizontal:5
-          }}
-          onPress={()=>{
-           diminuirQuantidade(item.id)
-          }}>
-          <Text style={{color:'#fff'}}>-</Text>
-        </TouchableOpacity>
-        
-           <Text style={styles.itemDetalhes}>
-        {item.quantidade}    
-        </Text>
-
-        
-          <TouchableOpacity style={{borderRadius:2,
-              backgroundColor:colors.blue,
-              paddingHorizontal:4,
-              marginHorizontal:5
-          }}
-          onPress={() =>{
-            aumentarQuantidade(item.id)
-          }}>
-          
-             <Text style={{color:'#fff'}}>+</Text>
-          </TouchableOpacity>
-        
-          <Text style={styles.itemDetalhes}>  × {item.preco.toFixed(2)}  MT</Text>
+    return (
+      <View style={styles.itemRow}>
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemNome}>{item.nome}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+            <TouchableOpacity style={styles.btnQtd} onPress={() => diminuirQuantidade(item.id)}>
+              <Text style={styles.btnQtdText}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.itemDetalhes}> {item.quantidade} </Text>
+            <TouchableOpacity style={styles.btnQtd} onPress={() => aumentarQuantidade(item.id)}>
+              <Text style={styles.btnQtdText}>+</Text>
+            </TouchableOpacity>
+            <Text style={styles.itemDetalhes}> × {item.preco.toFixed(2)} MT</Text>
+            {item.desconto > 0 && (
+              <Text style={[styles.itemDetalhes, { color: '#E24B4A', marginLeft: 8 }]}>
+                -{item.desconto}%
+              </Text>
+            )}
+          </View>
+          <Text style={[styles.itemDetalhes, { paddingTop: 4 }]}>
+            IVA {parseFloat(item.taxa).toFixed(0)}%
+          </Text>
         </View>
-        {/* </Text> */}
-        <Text style={[styles.itemDetalhes,{paddingTop:10}]}>
-           IVA {parseFloat(item.taxa).toFixed(0)} %
-        </Text>
+        <View style={styles.itemRight}>
+          <Text style={styles.itemTotal}>{totalFinal.toFixed(2)} MT</Text>
+          <TouchableOpacity onPress={() => removerItem(item.id)} style={styles.btnRemover}>
+            <Text style={styles.btnRemoverText}>✕</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.itemRight}>
-        <Text style={styles.itemTotal}>{(item.quantidade * item.preco).toFixed(2)} MT</Text>
-        <TouchableOpacity
-          onPress={() => removerItem(item.id)}
-          style={styles.btnRemover}
-        >
-          <Text style={styles.btnRemoverText}>✕</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
-  // Renderizar item da lista
-  const renderItem2 = ({ item }: { item: Item }) => (
-    <View style={styles.itemRow}>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemNome}>{item.nome}</Text>
-         <Text style={styles.itemDetalhes}>
-          {item.quantidade}  × {item.preco.toFixed(2)}  MT
-        </Text>
-        <Text style={[styles.itemDetalhes,{paddingTop:10}]}>
-           IVA {parseFloat(item.taxa).toFixed(0)} %
-        </Text>
-      </View>
-      <View style={styles.itemRight}>
-        <Text style={styles.itemTotal}>{(item.quantidade * item.preco).toFixed(2)} MT</Text>
-        <TouchableOpacity
-          onPress={() => removerItem(item.id)}
-          style={styles.btnRemover}
-        >
-          <Text style={styles.btnRemoverText}>✕</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  const isNE = selectedTipoDocumento === 'NE';
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
 
-      {/* Header */}
+      {/* Header com título dinâmico */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Nova Factura</Text>
-        <Text style={styles.headerSubtitle}>Criar venda</Text>
+        <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+        <Text style={styles.headerSubtitle}>
+          {selectedTipoDocumento || 'Selecione o tipo de documento'}
+        </Text>
       </View>
 
-      <KeyboardAvoidingView behavior='padding' style={{flex:1}}>
+      <KeyboardAvoidingView behavior='padding' style={{ flex: 1 }}>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-
-           <View style={{gap:10}}>
-              <Text style={styles.dialogTextStyle}>Tipo de documento:</Text>
-                  <Select
-                    label=""
-                    placeholder="Selecione o tipo de documento"
-                    options ={TipoDocumento.map(tipo => ({
-                      label: tipo,
-                      value: tipo
-                    }))}
-                    selectedValue={selectedTipoDocumento}
-                    onValueChange={setSelectedTipoDocumento}
-                  />
-            </View>
-
-            <View style={{gap:10,marginBottom:15}}>
-              <Text style={styles.dialogTextStyle}>Nome do documento:</Text>
-              <TextInput
-                    style={styles.input}
-                    placeholder=""
-                    value={selectedNomeDocumento}
-                    editable={false}
-                    keyboardType="numeric"  />
-
-            </View>
-
-         
-
-              <View style={{gap:10, marginTop:20}}>
-                  <Text style={styles.dialogTextStyle}>Condição de pagamento:</Text>
-                  <Select
-                    label=""
-                    placeholder="Selecione a condição de pagamento"
-                    options ={condicoesPagamento.map(condicao => ({
-                      label: condicao,
-                      value: condicao
-                    }))}
-                    selectedValue={selectedCondicaoPagamento}
-                    onValueChange={setSelectedCondicaoPagamento}
-                  />
-              </View>
-             
-             <TextInput
-               multiline
-               placeholder="Observações ..."
-               style={{
-                fontStyle:'italic',
-                borderWidth: 1,
-                borderRadius:8,
-                borderColor: '#ccc',
-                padding: 10,
-                height: 100,
-                textAlignVertical: 'top'
-              }} /> 
-        
-
-          { selectedNomeDocumento ===nomeDocumento[1] 
-            || selectedTipoDocumento === 'NE' ?
-            (
-            <View style={{flexDirection:'row',alignItems:'center'}}>
-              <Text style={[styles.sectionTitle,{
-                  paddingTop:10,
-                  
-              }]}>
-                Fornecedores recentes
-              </Text>
-             <View style={styles.searchContainer}>
-               <TextInput
-                 style={styles.searchInput}
-                 placeholder="🔍 Pesquisar fornecedor..."
-                 placeholderTextColor="#AEAEB2"
-                 value={searchTextFornecedores}
-                 onChangeText={handleSearchFornecedores}  />
-             </View>
-         </View>
-            )
-            :
-            (
-            <View style={{flexDirection:'row',alignItems:'center'}}>
-              <Text style={[styles.sectionTitle,{
-                  paddingTop:10,
-                  
-              }]}>
-                Clientes recentes
-              </Text>
-              <View style={styles.searchContainer}>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="🔍 Pesquisar cliente..."
-                  placeholderTextColor="#AEAEB2"
-                  value={searchText}
-                  onChangeText={handleSearch}  />
-              </View>
-         </View>
-            )
-          }
-        
-
-         { selectedNomeDocumento ===nomeDocumento[1] 
-         || selectedTipoDocumento === 'NE' ?
-
-         (
-            fornecedorSelecionado ? (
-            <View style={styles.clienteSelecionado}>
-              <View>
-                <Text style={styles.clienteNome}>{fornecedorSelecionado.nome}</Text>
-                <Text style={styles.clienteNuit}>Email: {fornecedorSelecionado.email}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setFornecedorSelecionado(null)}
-                style={styles.btnMudar}
-              >
-                <Text style={styles.btnMudarText}>Mudar</Text>
-              </TouchableOpacity>
-            </View>
-        ) : (
-          <FlatList
-            data={filtradosFornecedores.slice(0,4)}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.clienteItem}
-                onPress={() => setFornecedorSelecionado(item)}
-              >
-                <View>
-                  <Text style={styles.clienteItemNome}>{item.nome}</Text>
-                  <Text style={styles.clienteItemNuit}>Nuit: {item.nuit}</Text>
-                </View>
-                <Text style={styles.arrow}>›</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )
-
-         ) 
-         :
-         (
-            clienteSelecionado ? (
-          <View style={styles.clienteSelecionado}>
-            <View>
-              <Text style={styles.clienteNome}>{clienteSelecionado.nome}</Text>
-              <Text style={styles.clienteNuit}>Email: {clienteSelecionado.email}</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setClienteSelecionado(null)}
-              style={styles.btnMudar}>
-          
-              <Text style={styles.btnMudarText}>Mudar</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={filtrados.slice(0,4)}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.clienteItem}
-                onPress={() => setClienteSelecionado(item)}
-              >
-                <View>
-                  <Text style={styles.clienteItemNome}>{item.nome}</Text>
-                  <Text style={styles.clienteItemNuit}>Email: {item.email}</Text>
-                </View>
-                <Text style={styles.arrow}>›</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )
-
-         )
-         }
-
-        {/* ADICIONAR ITENS */}
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Itens da Factura</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.inputLabel}>Nome do Produto / Serviço</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: Consultoria em TI"
-            value={nomeProduto}
-            editable={false}
-            onChangeText={setNomeProduto}
-          />
-
-          <Text style={styles.inputLabel}>Quantidade</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="1"
-            value={quantidade}
-            onChangeText={setQuantidade}
-            keyboardType="numeric"
-          />
-
-          <Text style={styles.inputLabel}>Preço Unitário (MT)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="0.00"
-            value={preco}
-            onChangeText={setPreco}
-            editable={false}
-            keyboardType="decimal-pad"
-          />
-
-          <TouchableOpacity
-            style={styles.btnAdicionar}
-            onPress={adicionarItem}
-          >
-            <Text style={styles.btnAdicionarText}>+ Adicionar Item</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* PRODUTOS SUGERIDOS */}
-        <View style={{flexDirection:'row',alignItems:'center'}}>
-          <Text style={[styles.subLabel,{paddingTop:10}]}>Produtos recentes:</Text>
-            <View style={styles.searchContainer}>
-               <TextInput
-                 style={styles.searchInput}
-                 placeholder="🔍 Pesquisar produto..."
-                 placeholderTextColor="#AEAEB2"
-                 value={searchTextProdutos}
-                 onChangeText={handleSearchProdutos}  />
-            </View>
-        </View>
-        <View style={styles.produtosRapidos}>
-          {filtradosProdutos.slice(0, 4).map((prod) => (
-            <TouchableOpacity
-              key={prod.id}
-              style={styles.produtoRapido}
-              onPress={() => {
-                setNomeProduto(prod.designacao);
-                setSelectedProduto(prod)
-                setPreco(parseFloat(prod.preco_venda_iliquido_1).toFixed(2).toString());
-              }}
-            >
-              <Text style={styles.produtoRapidoText}>{prod.designacao}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-           {(selectedNomeDocumento !==nomeDocumento[1] 
-                    || selectedTipoDocumento !== TipoDocumento[1]) && 
-
-                  <View>
-                    <View style={{gap:10,marginTop:20}}>
-                      <Text style={styles.dialogTextStyle}>Método de pagamento:</Text>
-                          <Select
-                            label=""
-                            placeholder="Selecione o método de pagamento"
-                            options ={metodoPagamento.map(metodo => ({
-                              label: metodo ,
-                              value: metodo 
-                            }))}
-                            selectedValue={selectedMetodoPagamento}
-                            onValueChange={setSelectedMetodoPagamento}
-                          />
-                  </View>
-        
-        
-                  <View style={styles.card}>
-                
-                   
-                    <Text style={styles.inputLabel}>Método: </Text>
-                    <TextInput
-                      style={styles.inputUnEditable}
-                      value={selectedMetodoPagamento}
-                      editable={false}
-                      keyboardType="numeric"
-                    />
-        
-                    <Text style={styles.inputLabel}>Banco / Serviço: </Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Banco"
-                      
-                    />
-                     <Text style={styles.inputLabel}>Nº de movimento: </Text>
-                     <TextInput
-                      style={styles.input}
-                      placeholder="ex: 1234xx, 5678xx, etc"
-                      keyboardType="decimal-pad"
-                    />
-                    </View>
-                </View>}
-
-
-        {/* LISTA DE ITENS */}
-        {itens.length > 0 && (
-          <View>
-            <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Itens Adicionados</Text>
-            <FlatList
-              data={itens}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-              renderItem={renderItem}
+          {/* Tipo de documento */}
+          <View style={styles.card}>
+            <Text style={styles.dialogTextStyle}>Tipo de documento:</Text>
+            <Select
+              label=""
+              placeholder="Selecione o tipo de documento"
+              options={TipoDocumento.map(tipo => ({
+                label: tipo,
+                value: tipo
+              }))}
+              selectedValue={selectedTipoDocumento}
+              onValueChange={setSelectedTipoDocumento}
             />
           </View>
-        )}
 
-        {/* TOTAIS */}
-        <View style={styles.totaisCard}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal:</Text>
-            <Text style={styles.totalValue}>{subtotal.toFixed(2)} MT</Text>
+          {/* Nome do documento */}
+          <View style={styles.card}>
+            <Text style={styles.dialogTextStyle}>Nome do documento:</Text>
+            <TextInput
+              style={styles.input}
+              value={selectedNomeDocumento}
+              editable={false}
+              placeholder='Será preenchido automáticamente...'
+            />
           </View>
 
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>IVA total:</Text>
-            <Text style={styles.totalValue}>{iva.toFixed(2)} MT</Text>
+          {/* Condição de pagamento */}
+          <View style={styles.card}>
+            <Text style={styles.dialogTextStyle}>Condição de pagamento:</Text>
+            <Select
+              label=""
+              placeholder="Selecione a condição de pagamento"
+              options={condicoesPagamento.map(condicao => ({
+                label: condicao,
+                value: condicao
+              }))}
+              selectedValue={selectedCondicaoPagamento}
+              onValueChange={setSelectedCondicaoPagamento}
+            />
           </View>
 
-          <View style={[styles.totalRow, styles.totalFinal]}>
-            <Text style={styles.totalLabelFinal}>Total:</Text>
-            <Text style={styles.totalValueFinal}>{total.toFixed(2)} MT</Text>
+          {/* Observações */}
+          <View style={styles.card}>
+            <Text style={styles.dialogTextStyle}>Observações:</Text>
+            <TextInput
+              multiline
+              placeholder="Observações ..."
+              style={styles.textArea}
+              value={observacoes}
+              onChangeText={setObservacoes}
+            />
           </View>
-        </View>
 
-        {/* BOTÕES DE ACÇÃO */}
-        <View style={styles.actionsRow}>
-          <TouchableOpacity style={[styles.btnSecundario,
+          {/* Cliente / Fornecedor */}
+          <View style={styles.card}>
+            <Text style={styles.dialogTextStyle}>
+              {isNE ? 'Fornecedor' : 'Cliente'}
+            </Text>
 
-          loadingGuardarRascunho?
-          (
-            {backgroundColor:'#cecece'}
-          ) : ( 
-            {backgroundColor:'#fff'}
-          )           
-              
-          ]}
-          onPress={()=> handleGuardarRascunho()}>
-            {
-                 loadingGuardarRascunho?
-                 (   
-                 <Text style={styles.btnSecundarioText}>
-                  Guardando Rascunho...
-                 </Text>
-                )
-                 :
-                 (   
-                 <Text style={styles.btnSecundarioText}>
-                    Guardar Rascunho
+            {/* Campo de pesquisa */}
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder={isNE ? "🔍 Pesquisar fornecedor..." : "🔍 Pesquisar cliente..."}
+                placeholderTextColor="#AEAEB2"
+                value={isNE ? searchTextFornecedores : searchText}
+                onChangeText={isNE ? handleSearchFornecedores : handleSearch}
+              />
+            </View>
+
+            {isNE ? (
+              fornecedorSelecionado ? (
+                <View style={styles.clienteSelecionado}>
+                  <View>
+                    <Text style={styles.clienteNome}>{fornecedorSelecionado.nome}</Text>
+                    <Text style={styles.clienteNuit}>Nuit: {fornecedorSelecionado.nuit}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setFornecedorSelecionado(null)} style={styles.btnMudar}>
+                    <Text style={styles.btnMudarText}>Mudar</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <FlatList
+                  data={filtradosFornecedores.slice(0, 4)}
+                  keyExtractor={(item) => item.id.toString()}
+                  scrollEnabled={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.clienteItem} onPress={() => setFornecedorSelecionado(item)}>
+                      <View>
+                        <Text style={styles.clienteItemNome}>{item.nome}</Text>
+                        <Text style={styles.clienteItemNuit}>Nuit: {item.nuit}</Text>
+                      </View>
+                      <Text style={styles.arrow}>›</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              )
+            ) : (
+              clienteSelecionado ? (
+                <View style={styles.clienteSelecionado}>
+                  <View>
+                    <Text style={styles.clienteNome}>{clienteSelecionado.nome}</Text>
+                    <Text style={styles.clienteNuit}>Nuit: {clienteSelecionado.nuit}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setClienteSelecionado(null)} style={styles.btnMudar}>
+                    <Text style={styles.btnMudarText}>Mudar</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <FlatList
+                  data={filtrados.slice(0, 4)}
+                  keyExtractor={(item) => item.id.toString()}
+                  scrollEnabled={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.clienteItem} onPress={() => setClienteSelecionado(item)}>
+                      <View>
+                        <Text style={styles.clienteItemNome}>{item.nome}</Text>
+                        <Text style={styles.clienteItemNuit}>Nuit: {item.nuit}</Text>
+                      </View>
+                      <Text style={styles.arrow}>›</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              )
+            )}
+          </View>
+
+          {/* Produtos */}
+          <View style={styles.card}>
+            <Text style={styles.dialogTextStyle}>Produtos</Text>
+
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="🔍 Pesquisar produto..."
+                placeholderTextColor="#AEAEB2"
+                value={searchTextProdutos}
+                onChangeText={handleSearchProdutos}
+              />
+            </View>
+
+            <View style={styles.produtosRapidos}>
+              {filtradosProdutos.slice(0, 4).map((prod) => (
+                <TouchableOpacity
+                  key={prod.id}
+                  style={[
+                    styles.produtoRapido, 
+                    itens.some(item => item.produto_id === prod.id) && styles.produtoRapidoSelected
+                  ]}
+                  onPress={() => handleProductPress(prod)}
+                >
+                  <Text style={[
+                    styles.produtoRapidoText, 
+                    itens.some(item => item.produto_id === prod.id) && { color: '#fff' }
+                  ]}>
+                    {prod.designacao}
                   </Text>
-                 )
-            }
-          </TouchableOpacity>
+                  <Text style={[
+                    styles.produtoRapidoPreco, 
+                    itens.some(item => item.produto_id === prod.id) && { color: '#fff' }
+                  ]}>
+                    {parseFloat(prod.preco_venda_iliquido_1).toFixed(2)} MT
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+              </View>
+          {/* Lista de itens */}
+          {itens.length > 0 && (
+            <View style={styles.card}>
+              <Text style={styles.dialogTextStyle}>Itens Adicionados ({itens.length})</Text>
+              <FlatList
+                data={itens}
+                keyExtractor={(item) => item.id.toString()}
+                scrollEnabled={false}
+                renderItem={renderItem}
+              />
+            </View>
+          )}
 
-          {/* <TouchableOpacity
-            style={styles.btnPrimario}
-            onPress={confirmarVenda}>
-          
-            <Text style={styles.btnPrimarioText}>Confirmar Factura</Text>
-          </TouchableOpacity> */}
-        </View>
+          {/* Método de pagamento (apenas VD) */}
+          {selectedTipoDocumento === 'VD' && (
+            <View style={styles.card}>
+              <Text style={styles.dialogTextStyle}>Método de pagamento:</Text>
+              <Select
+                label=""
+                placeholder="Selecione o método de pagamento"
+                options={metodoPagamento.map(metodo => ({
+                  label: metodo,
+                  value: metodo
+                }))}
+                selectedValue={selectedMetodoPagamento}
+                onValueChange={setSelectedMetodoPagamento}
+              />
 
-        <View style={{ height: 30 }} />
-      </ScrollView>
+              {selectedMetodoPagamento !== 'Numerário' && (
+                <>
+                  <Text style={styles.inputLabel}>Banco / Serviço:</Text>
+                  <TextInput style={styles.input} placeholder="Banco" />
+
+                  <Text style={styles.inputLabel}>Nº de movimento:</Text>
+                  <TextInput style={styles.input} placeholder="ex: 1234xx, 5678xx" keyboardType="decimal-pad" />
+                </>
+              )}
+            </View>
+          )}
+
+          {/* Totais */}
+          <View style={styles.totaisCard}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Subtotal:</Text>
+              <Text style={styles.totalValue}>{subtotal.toFixed(2)} MT</Text>
+            </View>
+
+            {totalDesconto > 0 && (
+              <View style={styles.totalRow}>
+                <Text style={[styles.totalLabel, { color: '#E24B4A' }]}>Desconto:</Text>
+                <Text style={[styles.totalValue, { color: '#E24B4A' }]}>- {totalDesconto.toFixed(2)} MT</Text>
+              </View>
+            )}
+
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>IVA total:</Text>
+              <Text style={styles.totalValue}>{iva.toFixed(2)} MT</Text>
+            </View>
+
+            <View style={[styles.totalRow, styles.totalFinal]}>
+              <Text style={styles.totalLabelFinal}>Total:</Text>
+              <Text style={styles.totalValueFinal}>{total.toFixed(2)} MT</Text>
+            </View>
+          </View>
+
+          {/* Botões */}
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={[styles.btnSecundario, loadingGuardarRascunho && styles.btnDisabled]}
+              onPress={handleGuardarRascunho}
+              disabled={loadingGuardarRascunho}
+            >
+              <Text style={styles.btnSecundarioText}>
+                {loadingGuardarRascunho ? 'Guardando...' : 'Guardar Rascunho'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btnConfirmar, loadingConfirmar && styles.btnDisabled]}
+              onPress={handleConfirmar}
+              disabled={loadingConfirmar}
+            >
+              <Text style={styles.btnConfirmarText}>
+                {loadingConfirmar ? 'Confirmando...' : ' Confirmar'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ height: 30 }} />
+        </ScrollView>
       </KeyboardAvoidingView>
 
-       {/* Bottom Navigation */}
-            <View style={styles.bottomNav}>
-              {NAV_ITEMS.map((nav, i) => 
-              {
-                const Icon = nav.icon
-              return (
-                
-                <TouchableOpacity
-                  key={i}
-                  style={styles.navItem}
-                  onPress={() => {
-                    navigatePage(i)
-                    
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.navIcon, i === 0 && styles.navIconActive]}>
-                    <Icon color={'#5c5b5b'}/>
-                  </Text>
-                  <Text style={[styles.navLabel, i ===0 && styles.navLabelActive]}>
-                    {nav.label}
-                  </Text>
-                  {i === 0 && <View style={styles.navDot} />}
-                </TouchableOpacity>
-              )})}
-            </View>
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        {NAV_ITEMS.map((nav, i) => {
+          const Icon = nav.icon;
+          return (
+            <TouchableOpacity
+              key={i}
+              style={styles.navItem}
+              onPress={() => navigatePage(i)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.navIcon, i === 0 && styles.navIconActive]}>
+                <Icon color={i === 0 ? '#185FA5' : '#5c5b5b'} />
+              </Text>
+              <Text style={[styles.navLabel, i === 0 && styles.navLabelActive]}>
+                {nav.label}
+              </Text>
+              {i === 0 && <View style={styles.navDot} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </SafeAreaView>
   );
 }
@@ -1132,26 +930,24 @@ const diminuirQuantidade = (id: number|undefined) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-   // backgroundColor: '#185FA5',
-      backgroundColor: '#e4e4e4',
+    backgroundColor: '#e4e4e4',
   },
-   dialogTextStyle:
-  {
-     paddingRight:10,
-     fontWeight:'bold',
-     color:'#8E8E93'
+  dialogTextStyle: {
+    fontWeight: 'bold',
+    color: '#8E8E93',
+    marginBottom: 8,
   },
   header: {
     backgroundColor: '#185FA5',
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 10,
     paddingBottom: 14,
-    marginHorizontal:10,
-    borderRadius:10
+    marginHorizontal: 10,
+    borderRadius: 10,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 20,
+    fontWeight: '600',
     color: '#fff',
     marginBottom: 2,
   },
@@ -1166,23 +962,41 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 14,
   },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
-    marginTop: 12,
-    marginBottom: 10,
-    marginLeft: 4,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: '#E5E5EA',
+    padding: 14,
+    marginBottom: 12,
   },
-  subLabel: {
-    fontSize: 11,
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '500',
     color: '#8E8E93',
+    marginBottom: 4,
     marginTop: 10,
-    marginLeft: 4,
-    marginBottom: 8,
   },
-
-  // Cliente
+  input: {
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: '#E5E5EA',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1C1C1E',
+  },
+  textArea: {
+    fontStyle: 'italic',
+    borderWidth: 1,
+    borderRadius: 8,
+    borderColor: '#E5E5EA',
+    padding: 10,
+    height: 80,
+    textAlignVertical: 'top',
+    backgroundColor: '#F2F2F7',
+  },
   clienteSelecionado: {
     backgroundColor: '#EAF3DE',
     borderRadius: 12,
@@ -1191,7 +1005,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginTop: 8,
   },
   clienteNome: {
     fontSize: 15,
@@ -1222,7 +1036,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E5EA',
     paddingHorizontal: 14,
     paddingVertical: 14,
-    marginBottom: 6,
+    marginTop: 6,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1241,42 +1055,46 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#8E8E93',
   },
-
-  // Formulário de itens
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: '#E5E5EA',
-    padding: 14,
-    marginBottom: 10,
+  searchContainer: {
+    marginBottom: 8,
   },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#8E8E93',
-    marginBottom: 6,
-    marginTop: 8,
-  },
-  input: {
+  searchInput: {
     backgroundColor: '#F2F2F7',
     borderRadius: 8,
     borderWidth: 0.5,
     borderColor: '#E5E5EA',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: 13,
     color: '#1C1C1E',
   },
-   inputUnEditable: {
-    backgroundColor: '#8a8a8a',
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: '#E5E5EA',
+  produtosRapidos: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginVertical: 8,
+    width: '100%',
+  },
+  produtoRapido: {
+    backgroundColor: '#E6F1FB',
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    flex: 1,
+    minWidth: '50%',
+  },
+  produtoRapidoSelected: {
+    backgroundColor: '#185FA5',
+  },
+  produtoRapidoText: {
     fontSize: 14,
-    color: '#1C1C1E',
+    fontWeight: '500',
+    color: '#185FA5',
+  },
+  produtoRapidoPreco: {
+    fontSize: 10,
+    color: '#185FA5',
+    opacity: 0.7,
   },
   btnAdicionar: {
     backgroundColor: '#185FA5',
@@ -1290,24 +1108,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#fff',
   },
-
-  // Produtos rápidos
-  produtosRapidos: {
-    gap: 8,
-  },
-  produtoRapido: {
-    backgroundColor: '#E6F1FB',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  produtoRapidoText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#185FA5',
-  },
-
-  // Itens adicionados
   itemRow: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -1315,7 +1115,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E5EA',
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 6,
+    marginTop: 6,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1332,6 +1132,16 @@ const styles = StyleSheet.create({
   itemDetalhes: {
     fontSize: 11,
     color: '#8E8E93',
+  },
+  btnQtd: {
+    borderRadius: 4,
+    backgroundColor: colors.blue,
+    paddingHorizontal: 8,
+    marginHorizontal: 4,
+  },
+  btnQtdText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   itemRight: {
     alignItems: 'flex-end',
@@ -1354,23 +1164,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#E24B4A',
   },
-
-  // Totais
   totaisCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 0.5,
     borderColor: '#E5E5EA',
     padding: 14,
-    marginTop: 16,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-    paddingBottom: 10,
+    paddingVertical: 6,
     borderBottomWidth: 0.5,
     borderBottomColor: '#E5E5EA',
   },
@@ -1385,11 +1191,10 @@ const styles = StyleSheet.create({
   },
   totalFinal: {
     borderBottomWidth: 0,
-    marginBottom: 0,
-    paddingBottom: 0,
+    paddingTop: 8,
   },
   totalLabelFinal: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1C1C1E',
   },
@@ -1398,15 +1203,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#185FA5',
   },
-
-  // Botões de acção
   actionsRow: {
     flexDirection: 'row',
     gap: 10,
   },
   btnSecundario: {
     flex: 1,
-    //backgroundColor: '#fff',
+    backgroundColor: '#fff',
     borderRadius: 10,
     borderWidth: 0.5,
     borderColor: '#185FA5',
@@ -1418,40 +1221,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#185FA5',
   },
-  btnPrimario: {
-    flex: 1,
-    backgroundColor: '#185FA5',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
+  btnDisabled: {
+    backgroundColor: '#cecece',
+    borderColor: '#cecece',
   },
-  btnPrimarioText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#fff',
-  },
-   searchContainer: {
-    backgroundColor: '#F2F2F7',
-    //paddingHorizontal: 14,
-    paddingLeft:12,
-    paddingTop: 12,
-    paddingBottom: 10,
-    flex:1,
-    
-  },
-  searchInput: {
-
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: '#E5E5EA',
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 13,
-    color: '#1C1C1E',
-    marginTop: 10,
-  },
-
   navItem: {
     flex: 1,
     alignItems: 'center',
@@ -1479,7 +1252,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#185FA5',
     marginTop: 1,
   },
-   bottomNav: {
+  bottomNav: {
     flexDirection: 'row',
     backgroundColor: '#fff',
     borderTopWidth: 0.5,
@@ -1487,5 +1260,24 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 20,
   },
-
+  helperText: {
+    fontSize: 11,
+    color: '#8E8E93',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
+  btnConfirmar: {
+  flex: 1,
+  backgroundColor: '#28a745',
+  borderRadius: 10,
+  borderWidth: 0.5,
+  borderColor: '#28a745',
+  paddingVertical: 12,
+  alignItems: 'center',
+},
+btnConfirmarText: {
+  fontSize: 14,
+  fontWeight: '500',
+  color: '#fff',
+},
 });

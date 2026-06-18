@@ -22,6 +22,7 @@ interface SelectProps
     selectedValue:string,
     onValueChange: (value:string)=> void,
     placeholder?: string
+    disabled?: boolean;
 }
 
 

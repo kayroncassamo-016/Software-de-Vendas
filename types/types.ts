@@ -128,7 +128,7 @@ export interface Motivo_Isencao
 
 export interface Vendas
 {
-    id: number,
+    id: number;
     valor_pago: string,
     contribuinte: string,
     nome_doc: string,
@@ -138,7 +138,8 @@ export interface Vendas
     total_doc: string
     // produtos:Produtos,
     cliente_id?: number,
-    fornecedor_id?:number
+    observacoes?: string;
+    fornecedor_id?:number;
     nome_fornecedor?:string,
     condicao_pagamento?: string,
     produto_id: number,
@@ -169,6 +170,7 @@ export interface linha
     qtd: number,
     taxa_iva:string,
     pr_unit_sem_iva: string,
+    taxa_desconto?:number;
 
 }
 
