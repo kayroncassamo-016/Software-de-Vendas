@@ -26,6 +26,7 @@
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO"
       ],
+      "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "teste.tste"
@@ -57,7 +58,9 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-sqlite"
+      "expo-sqlite",
+      "./plugins/withNetworkSecurity.js",
+      "./plugins/withNetworkSecurityConfig.js"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -4,16 +4,27 @@
     "strict": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+      "@/*": ["./*"]
+    },
+    "types": ["node"] // Adicionar para suporte a tipos Node
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "plugins/**/*.ts" // Incluir explicitamente a pasta plugins
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js"
   ]
 }
