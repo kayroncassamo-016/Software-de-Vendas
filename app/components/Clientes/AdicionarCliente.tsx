@@ -153,21 +153,11 @@ export function AdicionarCliente({visible,setVisible
             Adicione um novo cliente
               </Dialog.Title>
           
-          {/* 
-          <KeyboardAvoidingView 
-           behavior="height"  >*/ }
+         
          
           <Dialog.Content>
             
-            {/* <ScrollView
-            style={{maxHeight:450, paddingHorizontal:3}}
-               keyboardShouldPersistTaps="handled"
-               keyboardDismissMode="interactive"
-              automaticallyAdjustKeyboardInsets={true}
-               contentContainerStyle={{
-                 paddingBottom: 120, // IMPORTANTE
-            }}
-             showsVerticalScrollIndicator={false}> */}
+           
             <KeyboardAwareScrollView
                 style={{ maxHeight: 450, paddingHorizontal: 3 }}
                 keyboardShouldPersistTaps="handled"

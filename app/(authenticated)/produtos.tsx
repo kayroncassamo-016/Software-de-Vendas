@@ -1020,12 +1020,20 @@ const ProdutosScreen = () => {
 
       {/* Header */}
       <View style={styles.header}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <View>
           <Text style={styles.headerTitle}>Produtos e Serviços</Text>
           <Text style={styles.headerSub}>
             {filtrados.length} itens no catálogo
           </Text>
         </View>
+
+          <TouchableOpacity
+            onPress={() => setVisibleFormCadastro(true)}
+            style={{ paddingTop: 10 }}>
+              <Plus color={"#fff"} fontWeight={900} />
+          </TouchableOpacity>
+         </View>
       </View>
 
       {/* Search Bar */}
@@ -1077,13 +1085,13 @@ const ProdutosScreen = () => {
       </ScrollView>
 
       {/* FAB - Novo Produto */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.fab}
         onPress={() => setVisibleFormCadastro(true)}
         activeOpacity={0.8}
       >
         <Text style={styles.fabText}>+ Novo Produto</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>

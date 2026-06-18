@@ -296,12 +296,12 @@ const ConfigScreen = () => {
           onToggle={setNotificacoes}
         />
 
-        <Item
+        {/* <Item
           label="Tema escuro"
           value={temaEscuro}
           toggle
           onToggle={setTemaEscuro}
-        />
+        /> */}
 
         {/* SESSÃO */}
         <Text style={styles.section}>Sessão</Text>

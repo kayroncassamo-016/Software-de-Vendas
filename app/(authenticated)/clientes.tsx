@@ -5,6 +5,7 @@ import {
   Grid2X2,
   Handshake,
   Package,
+  Plus,
   ShoppingBag,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
@@ -246,12 +247,20 @@ export default function ClienteScreen() {
 
       {/* Header */}
       <View style={styles.header}>
+             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <View>
           <Text style={styles.headerTitle}>Clientes</Text>
           <Text style={styles.headerSub}>
             {filtrados?.length || 0} Clientes no catálogo
           </Text>
         </View>
+        <TouchableOpacity
+            onPress={() =>  setVisibleFormCadastro(true)}
+            style={{ paddingTop: 10 }}
+          >
+            <Plus color={"#fff"} fontWeight={900} />
+          </TouchableOpacity>
+         </View>
       </View>
 
       {/* Search Bar */}
@@ -336,13 +345,13 @@ export default function ClienteScreen() {
       </ScrollView>
 
       {/* FAB - Novo cliente */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.fab}
         onPress={() => setVisibleFormCadastro(true)}
         activeOpacity={0.8}
       >
         <Text style={styles.fabText}>+ Novo cliente</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <View style={styles.bottomNav}>
         {NAV_ITEMS.map((nav, i) => {

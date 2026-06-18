@@ -182,6 +182,10 @@ export interface Fornecedores
     morada:string,
     nuit:string,
     cidade:string
+    bairro:string, 
+    provincia:string,
+    limite_credito :string
+
 
 }
 

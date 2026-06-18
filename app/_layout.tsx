@@ -96,6 +96,30 @@ export default function RootLayout() {
 
           }}/>
 
+           <Stack.Screen name="(authenticated)/FornecedoresScreen" options={
+           {  headerShown: true,
+             headerTitle:'Voltar',
+             animation:'fade',
+            
+             headerTintColor:'#5c5b5b',
+             headerStyle: {
+                  backgroundColor: '#e4e4e4',
+               },
+
+              headerLeft: () => (
+                <TouchableOpacity
+                  onPress={() => router.replace('/(authenticated)/dashboard')}
+                >
+                  <Ionicons
+                    name="arrow-back"
+                    size={24}
+                    color="#5c5b5b"
+                  />
+                </TouchableOpacity>
+              ),
+
+          }}/>
+
 
         <Stack.Screen name="(authenticated)/vendas" options={
           {headerShown: false}}/>

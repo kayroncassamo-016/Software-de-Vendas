@@ -1,3 +1,1110 @@
+// import { useContexto } from "@/contexts/AuthContext";
+// import { api } from "@/services/api";
+// import {
+//   Categoria,
+//   Clientes,
+//   Fornecedores,
+//   Marca,
+//   Produtos,
+//   Tipo,
+//   Vendas,
+// } from "@/types/types";
+// import { formatMoney } from "@/utils/format";
+// import { useRouter } from "expo-router";
+// import {
+//   Cog,
+//   Grid2X2,
+//   Handshake,
+//   Package,
+//   ShoppingBag,
+// } from "lucide-react-native";
+// import { useEffect, useState } from "react";
+// import {
+//   RefreshControl,
+//   ScrollView,
+//   StatusBar,
+//   StyleSheet,
+//   Text,
+//   TouchableOpacity,
+//   View,
+// } from "react-native";
+// import { SafeAreaView } from "react-native-safe-area-context";
+
+// import NetInfo from "@react-native-community/netinfo";
+
+// import { ClienteRepository } from "../database/ClienteRepository";
+// import { FornecedoresRepository } from '../database/FornecedoresRepository';
+// import { ProdutoRepository } from "../database/ProdutoRepository";
+// import { CategoriaRepository } from "../database/propriedades_produto/CategoriaRepository";
+// import { MarcaRepository } from "../database/propriedades_produto/MarcaRepository";
+// import { TipoRepository } from "../database/propriedades_produto/TipoRepository";
+// import { VendaRepository } from "../database/VendaRepository";
+
+
+
+
+
+
+// export default function DashBoard() {
+//   const [loadingProductNumber, SetLoadingProductNumber] = useState(false);
+//   const [loadingClienteNumber, SetLoadingClienteNumber] = useState(false);
+//   const [loadingVendasNumber, SetLoadingVendasNumber] = useState(false);
+//   const router = useRouter();
+//   const [totalProdutos, setTotalProdutos] = useState(0);
+//   const [totalClientes, setTotalClientes] = useState(0);
+//   const [totalVendas, setTotalVendas] = useState(0);
+//   const [clientes, setClientes] = useState<Clientes[]>();
+//   const [clientesEmpresa, setClientesEmpresa] = useState<Clientes[]>();
+//   const [clientesParticular, setClientesParticular] = useState<Clientes[]>();
+//   const [clientesHomens, setClientesHomens] = useState<Clientes[]>();
+//   const [clientesMulheres, setClientesMulheres] = useState<Clientes[]>();
+//   const [novosClientes, setNovosClientes] = useState(0);
+
+//   const [produtos, setProdutos] = useState<Produtos[]>();
+//   const [categorias, setCategorias] = useState<Categoria[]>();
+//   const [marcas, setMarcas] = useState<Marca[]>();
+//   const [tipos, setTipos] = useState<Tipo[]>();
+//   const [fornecedores, setFornecedores] = useState<Fornecedores[]>();
+//   const [novosProdutos, setNovosProdutos] = useState(0);
+
+//   const [vendas, setVendas] = useState<Vendas[]>();
+//   const [novasVendas, setNovasVendas] = useState(0);
+//   const [vendasConfirmado, setVendasConfirmado] = useState<Vendas[]>();
+//   const [vendasConfirmadoVD, setVendasConfirmadoVD] = useState<Vendas[]>();
+//   const [vendasCancelado, setVendasCancelado] = useState<Vendas[]>();
+//   const [vendasRascunho, setVendasRascunho] = useState<Vendas[]>();
+//   const [vendasRascunhoVD, setVendasRascunhoVD] = useState<Vendas[]>();
+//   const [vendasFornecedorNE, setVendasFornecedorNE] = useState<Vendas[]>();
+//   const [vendasVD, setVendasVD] = useState<Vendas[]>();
+//   const [vendasNE, setVendasNE] = useState<Vendas[]>();
+//   const [vendasImpresso, setVendasImpresso] = useState<Vendas[]>();
+//   const [vendasImpressoAcumulado, setVendasImpressoAcumulado] =
+//     useState<number>(0);
+//   const [vendasConfirmadoAcumulado, setVendasConfirmadoAcumulado] =
+//     useState<number>(0);
+//   const [vendasRascunhoAcumulado, setVendasRascunhoAcumulado] =
+//     useState<number>(0);
+//   const [vendasFornecedorAcumulado, setVendasFornecedorAcumulado] =
+//     useState<number>(0);
+
+//   const [refreshing, setRefreshing] = useState(false);
+
+//   const { user } = useContexto();
+
+//   const [activeNav, setActiveNav] = useState(2);
+
+//   const data = new Date();
+
+//   const mes = data.toLocaleString("pt-PT", { month: "long" });
+
+//   const mesCapitalizado = mes.charAt(0).toUpperCase() + mes.slice(1);
+
+//   const ano = data.toLocaleString("pt-PT", { year: "numeric" });
+
+//   useEffect(() => {
+//     loadStats();
+//   }, []);
+
+//   async function loadStats() {
+//     try {
+//       await Promise.all([
+//         loadingProductStats(),
+//         loadingClienteStats(),
+//         loadingVendasStats(),
+//         loadTipos(),
+//         loadMarcas(),
+//         loadCategorias(),
+//         loadFornecedores(),
+//       ]);
+//     } catch (err) {
+//       console.log(err);
+//     }
+//   }
+
+//   async function onRefresh() {
+//     try {
+//       setRefreshing(true);
+
+//       await loadStats();
+//     } finally {
+//       setRefreshing(false);
+//     }
+//   }
+
+//   useEffect(() => {
+//     if (produtos) {
+//       const hoje = new Date();
+
+//       const produtosHoje = produtos?.filter((produto: any) => {
+//         const dataCriacao = new Date(produto.created_at);
+
+//         return (
+//           dataCriacao.getDate() === hoje.getDate() &&
+//           dataCriacao.getMonth() === hoje.getMonth() &&
+//           dataCriacao.getFullYear() === hoje.getFullYear()
+//         );
+//       });
+
+//       setNovosProdutos(produtosHoje?.length ?? 0);
+//     }
+//     if (clientes) {
+//       const hoje = new Date();
+
+//       const clientesHoje = clientes?.filter((cliente) => {
+//         const dataCriacao = new Date(cliente.created_at);
+
+//         return (
+//           dataCriacao.getDate() === hoje.getDate() &&
+//           dataCriacao.getMonth() === hoje.getMonth() &&
+//           dataCriacao.getFullYear() === hoje.getFullYear()
+//         );
+//       });
+
+//       setNovosClientes(clientesHoje?.length ?? 0);
+
+//       setClientesEmpresa(
+//         clientes.filter((clienteEmpresa) => clienteEmpresa.tipo === "empresa"),
+//       );
+//       setClientesParticular(
+//         clientes.filter(
+//           (clienteEmpresa) => clienteEmpresa.tipo === "particular",
+//         ),
+//       );
+//       setClientesHomens(
+//         clientes.filter(
+//           (cliente) =>
+//             cliente.sexo === "Masculino" || cliente.sexo === "masculino",
+//         ),
+//       );
+//       setClientesMulheres(
+//         clientes.filter(
+//           (cliente) =>
+//             cliente.sexo === "Feminino" || cliente.sexo === "feminino",
+//         ),
+//       );
+//     }
+
+//     if (vendas) {
+//       const hoje = new Date();
+
+//       const vendasHoje = vendas?.filter((venda) => {
+//         const dataCriacao = new Date(venda.created_at);
+
+//         return (
+//           dataCriacao.getDate() === hoje.getDate() &&
+//           dataCriacao.getMonth() === hoje.getMonth() &&
+//           dataCriacao.getFullYear() === hoje.getFullYear()
+//         );
+//       });
+
+//       setNovasVendas(vendasHoje?.length ?? 0);
+//       setVendasRascunho(vendas.filter((venda) => venda.estado === "RASCUNHO"));
+//       setVendasRascunhoVD(
+//         vendas.filter(
+//           (venda) => venda.estado === "RASCUNHO" && venda.tipo_doc === "VD",
+//         ),
+//       );
+//       setVendasConfirmado(
+//         vendas.filter((venda) => venda.estado === "CONFIRMADO"),
+//       );
+//       setVendasConfirmadoVD(
+//         vendas.filter(
+//           (venda) => venda.estado === "CONFIRMADO" && venda.tipo_doc === "VD",
+//         ),
+//       );
+//       setVendasCancelado(
+//         vendas.filter((venda) => venda.estado === "CANCELADO"),
+//       );
+//       setVendasNE(vendas.filter((venda) => venda.tipo_doc === "NE"));
+//       setVendasVD(vendas.filter((venda) => venda.tipo_doc === "VD"));
+//       setVendasImpresso(
+//         vendas.filter(
+//           (venda) =>
+//             venda.impresso === true &&
+//             venda.estado !== "CANCELADO" &&
+//             venda.tipo_doc === "VD",
+//         ),
+//       );
+//     }
+//     if (fornecedores) {
+//       setVendasFornecedorNE(
+//         vendas?.filter((venda) => venda.impresso && venda.tipo_doc === "NE"),
+//       );
+//     }
+//   }, [produtos, clientes, vendas, fornecedores]);
+
+//   useEffect(() => {
+//     if (vendasImpresso) {
+//       setVendasImpressoAcumulado(
+//         vendasImpresso.reduce((acumulador, vendaAtual) => {
+//           const hoje = new Date();
+//           const dataCriacao = new Date(vendaAtual.created_at);
+
+//           if (
+//             dataCriacao.getMonth() === hoje.getMonth() &&
+//             dataCriacao.getFullYear() === hoje.getFullYear()
+//           ) {
+//             return acumulador + parseFloat(vendaAtual.total_doc);
+//           }
+
+//           return acumulador;
+//         }, 0),
+//       );
+//     }
+//   }, [vendasImpresso]);
+
+//   useEffect(() => {
+//     if (vendasConfirmadoVD) {
+//       setVendasConfirmadoAcumulado(
+//         vendasConfirmadoVD.reduce((acumulador, vendaAtual) => {
+//           const hoje = new Date();
+//           const dataCriacao = new Date(vendaAtual.created_at);
+
+//           if (
+//             dataCriacao.getMonth() === hoje.getMonth() &&
+//             dataCriacao.getFullYear() === hoje.getFullYear() &&
+//             !vendaAtual.impresso
+//           ) {
+//             return acumulador + parseFloat(vendaAtual.total_doc);
+//           }
+
+//           return acumulador;
+//         }, 0),
+//       );
+//     }
+//   }, [vendasConfirmadoVD]);
+
+//   useEffect(() => {
+//     if (vendasRascunhoVD) {
+//       setVendasRascunhoAcumulado(
+//         vendasRascunhoVD.reduce((acumulador, vendaAtual) => {
+//           const hoje = new Date();
+//           const dataCriacao = new Date(vendaAtual.created_at);
+
+//           if (
+//             dataCriacao.getMonth() === hoje.getMonth() &&
+//             dataCriacao.getFullYear() === hoje.getFullYear()
+//           ) {
+//             return acumulador + parseFloat(vendaAtual.total_doc);
+//           }
+
+//           return acumulador;
+//         }, 0),
+//       );
+//     }
+//   }, [vendasRascunhoVD]);
+
+//   useEffect(() => {
+//     if (vendasFornecedorNE) {
+//       setVendasFornecedorAcumulado(
+//         vendasFornecedorNE.reduce((acumulador, vendaAtual) => {
+//           const hoje = new Date();
+//           const dataCriacao = new Date(vendaAtual.created_at);
+
+//           if (
+//             dataCriacao.getMonth() === hoje.getMonth() &&
+//             dataCriacao.getFullYear() === hoje.getFullYear()
+//           ) {
+//             return acumulador + parseFloat(vendaAtual.total_doc);
+//           }
+
+//           return acumulador;
+//         }, 0),
+//       );
+//     }
+//   }, [vendasFornecedorNE]);
+
+//   useEffect(() => {
+//     async function loadStats() {
+//       await loadingProductStats();
+//       await loadingClienteStats();
+//       await loadingVendasStats();
+//       await loadTipos();
+//       await loadMarcas();
+//       await loadCategorias();
+//       await loadFornecedores();
+//     }
+
+//     loadStats();
+//     console.log("ENTROU");
+//     return () => {
+//       console.log("SAIU");
+//     };
+//   }, []);
+
+//   // async function loadingClienteStats() {
+//   //   try {
+//   //     SetLoadingClienteNumber(true);
+//   //     const res = await api.get("/clientes");
+//   //     setTotalClientes(res.data.data.length);
+//   //     setClientes(res.data.data);
+
+//   //     console.log(JSON.stringify(clientes?.[0], null, 2));
+//   //   } catch (err) {
+//   //     if (err instanceof Error) console.log(err.message);
+//   //   } finally {
+//   //     SetLoadingClienteNumber(false);
+//   //   }
+//   // }
+
+
+//  async function loadingClienteStats() {
+//   try {
+//     SetLoadingClienteNumber(true);
+
+//     const net = await NetInfo.fetch();
+
+//     if (net.isConnected) {
+//       const res = await api.get("/clientes");
+
+//       setTotalClientes(res.data.data.length);
+//       setClientes(res.data.data);
+
+//     } else {
+
+//       const clientesLocal = ClienteRepository.getAll();
+
+//       setClientes(clientesLocal);
+//       setTotalClientes(clientesLocal.length);
+//     }
+
+//   } catch (err) {
+//     console.log(err);
+//   } finally {
+//     SetLoadingClienteNumber(false);
+//   }
+// }
+
+
+
+//   // async function loadingProductStats() {
+//   //   try {
+//   //     SetLoadingProductNumber(true);
+//   //     const res = await api.get("/produtos");
+//   //     setTotalProdutos(res.data.data.length);
+//   //     setProdutos(res.data.data);
+//   //   } catch (err) {
+//   //     if (err instanceof Error) console.log(err.message);
+//   //   } finally {
+//   //     SetLoadingProductNumber(false);
+//   //   }
+//   // }
+
+
+//   async function loadingProductStats() {
+//   try {
+//     SetLoadingProductNumber(true);
+
+//     const net = await NetInfo.fetch();
+
+//     if (net.isConnected) {
+
+//       const res = await api.get("/produtos");
+
+//       setProdutos(res.data.data);
+//       setTotalProdutos(res.data.data.length);
+
+//     } else {
+
+//       const produtosLocal = ProdutoRepository.getAll();
+
+//       setProdutos(produtosLocal);
+//       setTotalProdutos(produtosLocal.length);
+//     }
+
+//   } catch (err) {
+//     console.log(err);
+//   } finally {
+//     SetLoadingProductNumber(false);
+//   }
+// }
+
+// async function loadingVendasStats() {
+//   try {
+
+//     SetLoadingVendasNumber(true);
+
+//     const net = await NetInfo.fetch();
+
+//     if (net.isConnected) {
+
+//       const res = await api.get("/documentos");
+
+//       setVendas(res.data.data.data);
+//       setTotalVendas(res.data.data.data.length);
+
+//     } else {
+
+//       const vendasLocal = VendaRepository.getAll();
+
+//       setVendas(vendasLocal);
+//       setTotalVendas(vendasLocal.length);
+//     }
+
+//   } catch (err) {
+//     console.log(err);
+//   } finally {
+//     SetLoadingVendasNumber(false);
+//   }
+// }
+
+
+//   // async function loadingVendasStats() {
+//   //   try {
+//   //     SetLoadingVendasNumber(true);
+//   //     const res = await api.get("/documentos");
+//   //     setTotalVendas(res.data.data.data.length);
+//   //     setVendas(res.data.data.data);
+//   //   } catch (err: any) {
+//   //     console.log(err.response);
+//   //   } finally {
+//   //     SetLoadingVendasNumber(false);
+//   //   }
+//   // }
+
+//   // async function loadMarcas() {
+//   //   try {
+//   //     const response = await api.get("/marcas");
+
+//   //     setMarcas(response.data.data);
+//   //   } catch (err) {
+//   //     if (err instanceof Error) console.log(err.message);
+//   //   } finally {
+//   //   }
+//   // }
+
+//   async function loadMarcas() {
+
+//   try {
+
+//     const net = await NetInfo.fetch();
+
+//     if (net.isConnected) {
+
+//       const response =
+//         await api.get("/marcas");
+
+//       setMarcas(response.data.data);
+
+//     } else {
+
+//       setMarcas(
+//         MarcaRepository.getAll()
+//       );
+//     }
+
+//   } catch (err) {
+//     console.log(err);
+//   }
+// }
+
+//   // async function loadTipos() {
+//   //   try {
+//   //     const response = await api.get("/tipo");
+
+//   //     setTipos(response.data.data);
+//   //   } catch (err) {
+//   //     if (err instanceof Error) console.log(err.message);
+//   //   } finally {
+//   //   }
+//   // }
+
+
+
+
+//   // async function loadCategorias() {
+//   //   try {
+//   //     const response = await api.get("/categorias");
+
+//   //     setCategorias(response.data.data);
+//   //   } catch (err) {
+//   //     if (err instanceof Error) console.log(err.message);
+//   //   } finally {
+//   //   }
+//   // }
+
+//   async function loadTipos() {
+
+//   try {
+
+//     const net = await NetInfo.fetch();
+
+//     if (net.isConnected) {
+
+//       const response =
+//         await api.get("/tipo");
+
+//       setTipos(response.data.data);
+
+//     } else {
+
+//       setTipos(
+//         TipoRepository.getAll()
+//       );
+//     }
+
+//   } catch (err) {
+//     console.log(err);
+//   }
+// }
+
+//   async function loadCategorias() {
+
+//   try {
+
+//     const net = await NetInfo.fetch();
+
+//     if (net.isConnected) {
+
+//       const response =
+//         await api.get("/categorias");
+
+//       setCategorias(response.data.data);
+
+//     } else {
+
+//       setCategorias(
+//         CategoriaRepository.getAll()
+//       );
+//     }
+
+//   } catch (err) {
+//     console.log(err);
+//   }
+// }
+
+
+
+
+//   async function loadFornecedores() {
+
+//   try {
+
+//     const net = await NetInfo.fetch();
+
+//     if (net.isConnected) {
+
+//       const response = await api.get("/fornecedor");
+
+//       setFornecedores(response.data.data);
+
+//     } else {
+
+//       const fornecedoresLocal =
+//         FornecedoresRepository.getAll();
+
+//       setFornecedores(fornecedoresLocal);
+//     }
+
+//   } catch (err) {
+//     console.log(err);
+//   }
+// }
+//   // async function loadFornecedores() {
+//   //   try {
+//   //     const response = await api.get("/fornecedor");
+//   //     setFornecedores(response.data.data);
+//   //   } catch (err: any) {
+//   //     console.log(err.response);
+//   //   } finally {
+//   //   }
+//   // }
+
+//   function navigatePage(pageIndex: number) {
+//     setActiveNav(pageIndex);
+
+//     if (pageIndex === 3) {
+//       router.push("/(authenticated)/produtos");
+//     }
+//     if (pageIndex === 4) {
+//       router.push("/(authenticated)/settings");
+//     }
+
+//     if (pageIndex === 1) {
+//       router.push("/(authenticated)/clientes");
+//     }
+
+//     if (pageIndex === 0) {
+//       router.push("/(authenticated)/vendas");
+//     }
+//   }
+
+//   const NAV_ITEMS = [
+//     { icon: ShoppingBag, label: "Vendas" },
+//     { icon: Handshake, label: "Clientes" },
+//     { icon: Grid2X2, label: "Painel" },
+//     { icon: Package, label: "Produtos" },
+//     { icon: Cog, label: "Config." },
+//     // { icon: Cog, label: "Config." },
+//   ];
+
+//   const BadgeEstadoVenda = ({ estado }: any) => {
+//     if (estado === "CONFIRMADO") {
+//       return (
+//         <View>
+//           <Text
+//             style={{
+//               backgroundColor: "#b9fcce",
+//               color: "#3fa04c",
+//               paddingHorizontal: 5,
+//               paddingVertical: 2,
+//               borderRadius: 20,
+//               fontSize: 11,
+//               fontWeight: 500,
+//             }}
+//           >
+//             {estado}
+//           </Text>
+//         </View>
+//       );
+//     } else if (estado === "CANCELADO") {
+//       return (
+//         <Text
+//           style={{
+//             backgroundColor: "#f58d8d",
+//             color: "#8d3131",
+//             padding: 1,
+//             borderRadius: 20,
+//             fontSize: 11,
+//             paddingHorizontal: 5,
+//             paddingVertical: 2,
+//             fontWeight: 500,
+//           }}
+//         >
+//           {estado}
+//         </Text>
+//       );
+//     } else if (estado === "RASCUNHO") {
+//       return (
+//         <Text
+//           style={{
+//             backgroundColor: "#ffe2b6",
+//             color: "#966f34",
+//             padding: 1,
+//             borderRadius: 20,
+//             fontSize: 11,
+//             paddingHorizontal: 5,
+//             paddingVertical: 2,
+//             fontWeight: 500,
+//           }}
+//         >
+//           {estado}
+//         </Text>
+//       );
+//     }
+//   };
+//   interface VendaProps {
+//     venda: Vendas;
+//   }
+
+//   function FacturaItem({ venda }: VendaProps) {
+//     const cliente = clientes?.find(
+//       (cliente) => cliente.id === venda.cliente_id,
+//     );
+//     const fornecedor = fornecedores?.find(
+//       (fornecedor) => fornecedor.id === venda.fornecedor_id,
+//     );
+
+//     const today = new Date();
+
+//     const date = new Date(venda.created_at);
+
+//     if (date.getMonth() === today.getMonth()) {
+//       return (
+//         <TouchableOpacity style={styles.facturaCard}>
+//           <View style={styles.facturaLeft}>
+//             <Text style={styles.facturaNum}>
+//               {venda.tipo_doc} {new Date().getFullYear() + "/" + venda.id}
+//             </Text>
+//             <Text style={styles.facturaCliente}>
+//               {cliente?.nome ?? fornecedor?.nome}
+//             </Text>
+//             <Text style={styles.facturaData}>
+//               {new Date(venda?.created_at).getDate()}{" "}
+//               {new Date(venda?.created_at).toLocaleString("pt-PT", {
+//                 month: "short",
+//               })}{" "}
+//               {""}
+//               {new Date(venda?.created_at).getFullYear()}
+//             </Text>
+//           </View>
+//           <View style={styles.facturaRight}>
+//             <Text style={styles.facturaValor}>
+//               {formatMoney(venda.total_doc) + " MT"}{" "}
+//             </Text>
+//             <BadgeEstadoVenda estado={venda.estado} />
+//           </View>
+//         </TouchableOpacity>
+//       );
+//     } else return null;
+//   }
+
+//   return (
+//     <SafeAreaView style={styles.container}>
+//       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
+//       <ScrollView
+//         showsVerticalScrollIndicator={false}
+//         refreshControl={
+//           <RefreshControl
+//             refreshing={refreshing}
+//             onRefresh={onRefresh}
+//             colors={["#185FA5"]}
+//             tintColor="#185FA5"
+//           />
+//         }
+//       >
+//         <View style={styles.header}>
+//           <Text style={styles.greeting}>Bom dia, {user?.user.name}</Text>
+//           <Text style={styles.subtitle}>
+//             Facturação — {mesCapitalizado} de {ano}
+//           </Text>
+//         </View>
+
+//         <View style={styles.grid}>
+//           {/* Faturado */}
+
+//           <View style={styles.card}>
+//             <Text style={styles.cardTitle}>Faturado (em VD's)</Text>
+
+//             <Text style={styles.value}>
+//               {formatMoney(vendasImpressoAcumulado) + " MT"}
+//             </Text>
+
+//             {/* <Text style={styles.positive}>↑ 12% vs maio</Text> */}
+//           </View>
+
+//           {/* <View style={styles.card}>
+//             <Text style={styles.cardTitle}>Por receber (em VD's)</Text>
+//             <Text style={styles.value}>
+//               {formatMoney(vendasConfirmadoAcumulado) + " MT"}
+//             </Text>
+//             <Text style={styles.danger}>
+//               {vendasConfirmadoVD?.filter((venda) => !venda.impresso).length}{" "}
+//               factura(s) pendente(s)
+//             </Text>
+//           </View> */}
+
+//           {/* <View style={styles.card}>
+//             <Text style={styles.cardTitle}>Pago (em NE's)</Text>
+
+//             <Text style={styles.value}>
+//               {formatMoney(vendasFornecedorAcumulado) + " MT"}
+//             </Text>
+
+//             <Text style={{ color: "green", fontSize: 12, marginTop: 10 }}>
+//               Valor total pago à fornecedores{" "}
+//             </Text>
+//           </View> */}
+
+//           <View style={styles.card}>
+//             <Text style={styles.cardTitle}>
+//               Rascunhos (vendas não confirmadas)
+//             </Text>
+
+//             <Text style={styles.value}>
+//               {formatMoney(vendasRascunhoAcumulado) + " MT"}
+//             </Text>
+
+//             <Text style={{ color: "#966f34", fontSize: 12, marginTop: 10 }}>
+//               {" "}
+          
+//             </Text>
+//           </View>
+
+//           <View style={styles.card}>
+//             <Text style={styles.cardTitle}>Fornecedores totais</Text>
+//             <Text style={styles.value}>{fornecedores?.length}</Text>
+//             <Text style={styles.cardTitle}>Alguns fornecedores:</Text>
+//             {fornecedores?.slice(0, 2).map((fornecedor, index) => (
+//               <Text
+//                 key={index}
+//                 style={{
+//                   color: "#555",
+//                   fontSize: 10,
+//                 }}
+//               >
+//                 • {fornecedor.nome}
+//               </Text>
+//             ))}
+//           </View>
+
+//           <View style={styles.card}>
+//             <Text style={styles.cardTitle}>Clientes totais</Text>
+//             {loadingClienteNumber ? (
+//               <Text
+//                 style={{
+//                   fontStyle: "italic",
+//                   fontSize: 10,
+//                 }}
+//               >
+//                 Carregando...
+//               </Text>
+//             ) : (
+//               <Text style={styles.value}>{totalClientes}</Text>
+//             )}
+//             <View style={{ flexDirection: "row" }}>
+//               <Text style={styles.positive}> + {novosClientes}</Text>
+//               <Text style={styles.neutral}> hoje</Text>
+//             </View>
+
+//             <View style={{ flexDirection: "row", alignItems: "center" }}>
+//               <Text style={styles.clienteEmpresa}>empresas</Text>
+
+//               <Text
+//                 style={{
+//                   color: "#555",
+//                   fontSize: 11,
+//                 }}
+//               >
+//                 {" "}
+//                 : {clientesEmpresa?.length}
+//               </Text>
+//             </View>
+
+//             <View style={{ flexDirection: "row", alignItems: "center" }}>
+//               <Text style={styles.clienteParticular}>particulares</Text>
+
+//               <Text
+//                 style={{
+//                   color: "#555",
+//                   fontSize: 11,
+//                 }}
+//               >
+//                 : {clientesParticular?.length}
+//               </Text>
+//             </View>
+
+//             <View>
+//               <View style={{ flexDirection: "row", alignItems: "center" }}>
+//                 <Text
+//                   style={{
+//                     color: "#555",
+//                     fontSize: 11,
+//                     paddingLeft: 10,
+//                   }}
+//                 >
+//                   {" "}
+//                   • Homens
+//                 </Text>
+
+//                 <Text
+//                   style={{
+//                     color: "#555",
+//                     fontSize: 11,
+//                   }}
+//                 >
+//                   : {clientesHomens?.length}
+//                 </Text>
+//               </View>
+
+//               <View style={{ flexDirection: "row", alignItems: "center" }}>
+//                 <Text
+//                   style={{
+//                     color: "#555",
+//                     fontSize: 11,
+//                     paddingLeft: 10,
+//                   }}
+//                 >
+//                   {" "}
+//                   • Mulheres
+//                 </Text>
+
+//                 <Text
+//                   style={{
+//                     color: "#555",
+//                     fontSize: 11,
+//                   }}
+//                 >
+//                   : {clientesMulheres?.length}
+//                 </Text>
+//               </View>
+//             </View>
+//           </View>
+
+//           <View style={styles.card}>
+//             <Text style={styles.cardTitle}>Produtos totais</Text>
+
+//             {loadingProductNumber ? (
+//               <Text
+//                 style={{
+//                   fontStyle: "italic",
+//                   fontSize: 10,
+//                 }}
+//               >
+//                 Carregando...
+//               </Text>
+//             ) : (
+//               <Text style={styles.value}>{totalProdutos}</Text>
+//             )}
+
+//             <View style={{ flexDirection: "row" }}>
+//               <Text style={styles.positive}> + {novosProdutos}</Text>
+//               <Text style={styles.neutral}> hoje</Text>
+//             </View>
+
+//             <View style={{ flexDirection: "row" }}>
+//               <Text style={{ color: "#555", fontSize: 11 }}>
+//                 {categorias?.length}
+//               </Text>
+
+//               <Text style={{ color: "#555", fontSize: 11 }}> categorias</Text>
+//             </View>
+
+//             <View style={{ flexDirection: "row" }}>
+//               <Text style={{ color: "#555", fontSize: 11 }}>
+//                 {marcas?.length}
+//               </Text>
+
+//               <Text style={{ color: "#555", fontSize: 11 }}> marcas</Text>
+//             </View>
+
+//             <View style={{ flexDirection: "row" }}>
+//               <Text style={{ color: "#555", fontSize: 11 }}>
+//                 {tipos?.length}
+//               </Text>
+
+//               <Text style={{ color: "#555", fontSize: 11 }}> tipos</Text>
+//             </View>
+//           </View>
+
+//           <View style={styles.card}>
+//             <Text style={styles.cardTitle}>Vendas totais</Text>
+//             {loadingVendasNumber ? (
+//               <Text
+//                 style={{
+//                   fontStyle: "italic",
+//                   fontSize: 10,
+//                 }}
+//               >
+//                 Carregando...
+//               </Text>
+//             ) : (
+//               <Text style={styles.value}>{totalVendas}</Text>
+//             )}
+
+//             <View
+//               style={{
+//                 flexDirection: "row",
+//                 alignItems: "center",
+//                 justifyContent: "space-between",
+//               }}
+//             >
+//               <View>
+//                 <View style={{ flexDirection: "row" }}>
+//                   <Text style={styles.positive}> + {novasVendas}</Text>
+//                   <Text style={styles.neutral}> hoje</Text>
+//                 </View>
+
+//                 <View style={{ flexDirection: "row" }}>
+//                   <Text style={{ color: "green", fontSize: 11 }}>
+//                     Confirmado
+//                   </Text>
+
+//                   <Text style={{ color: "#555", fontSize: 11 }}>
+//                     : {vendasConfirmado?.length}
+//                   </Text>
+//                 </View>
+
+//                 <View style={{ flexDirection: "row" }}>
+//                   <Text style={{ color: "#966f34", fontSize: 11 }}>
+//                     Rascunho
+//                   </Text>
+
+//                   <Text style={{ color: "#555", fontSize: 11 }}>
+//                     : {vendasRascunho?.length}
+//                   </Text>
+//                 </View>
+
+//                 <View style={{ flexDirection: "row" }}>
+//                   <Text style={{ color: "red", fontSize: 11 }}>Cancelado</Text>
+
+//                   <Text style={{ color: "#555", fontSize: 11 }}>
+//                     : {vendasCancelado?.length}
+//                   </Text>
+//                 </View>
+
+//                 <View style={{ flexDirection: "row" }}>
+//                   <Text style={{ color: "#555", fontSize: 11 }}>Impresso</Text>
+
+//                   <Text style={{ color: "#555", fontSize: 11 }}>
+//                     : {vendasImpresso?.length}
+//                   </Text>
+//                 </View>
+//               </View>
+
+//               <View>
+//                 <View style={{ flexDirection: "row" }}>
+//                   <Text style={{ color: "#555", fontSize: 11 }}>VD's</Text>
+
+//                   <Text style={{ color: "#555", fontSize: 11 }}>
+//                     : {vendasVD?.length}
+//                   </Text>
+//                 </View>
+
+//                 <View style={{ flexDirection: "row" }}>
+//                   <Text style={{ color: "#555", fontSize: 11 }}>NE's</Text>
+
+//                   <Text style={{ color: "#555", fontSize: 11 }}>
+//                     : {vendasNE?.length}
+//                   </Text>
+//                 </View>
+//               </View>
+//             </View>
+//           </View>
+//         </View>
+
+//         {/* Facturas recentes */}
+//         <View style={styles.facturaContainer}>
+//           <Text style={styles.sectionTitle}>Facturas recentes</Text>
+
+//           {vendas?.map((venda, i) => (
+//             <FacturaItem key={i} venda={venda} />
+//           ))}
+//         </View>
+
+//         <View>
+//           <Text></Text>
+//         </View>
+//       </ScrollView>
+
+//       <View style={styles.bottomNav}>
+//         {NAV_ITEMS.map((nav, i) => {
+//           const Icon = nav.icon;
+//           return (
+//             <TouchableOpacity
+//               key={i}
+//               style={styles.navItem}
+//               onPress={() => navigatePage(i)}
+//               activeOpacity={0.7}
+//             >
+//               <Text
+//                 style={[
+//                   styles.navIcon,
+//                   i === activeNav && styles.navIconActive,
+//                 ]}
+//               >
+//                 <Icon color={"#5c5b5b"} />
+//               </Text>
+
+//               <Text
+//                 style={[
+//                   styles.navLabel,
+//                   i === activeNav && styles.navLabelActive,
+//                 ]}
+//               >
+//                 {nav.label}
+//               </Text>
+//               {i === activeNav && <View style={styles.navDot} />}
+//             </TouchableOpacity>
+//           );
+//         })}
+//       </View>
+//     </SafeAreaView>
+//   );
+// }
+
+
+
 import { useContexto } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import {
@@ -32,6 +1139,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import NetInfo from "@react-native-community/netinfo";
 
+import { Sidebar } from "@/app/components/Sidebar";
 import { ClienteRepository } from "../database/ClienteRepository";
 import { FornecedoresRepository } from '../database/FornecedoresRepository';
 import { ProdutoRepository } from "../database/ProdutoRepository";
@@ -39,8 +1147,6 @@ import { CategoriaRepository } from "../database/propriedades_produto/CategoriaR
 import { MarcaRepository } from "../database/propriedades_produto/MarcaRepository";
 import { TipoRepository } from "../database/propriedades_produto/TipoRepository";
 import { VendaRepository } from "../database/VendaRepository";
-
-
 
 
 
@@ -92,6 +1198,9 @@ export default function DashBoard() {
   const { user } = useContexto();
 
   const [activeNav, setActiveNav] = useState(2);
+  
+ 
+  const [currentScreen, setCurrentScreen] = useState("painel");
 
   const data = new Date();
 
@@ -332,303 +1441,193 @@ export default function DashBoard() {
     };
   }, []);
 
-  // async function loadingClienteStats() {
-  //   try {
-  //     SetLoadingClienteNumber(true);
-  //     const res = await api.get("/clientes");
-  //     setTotalClientes(res.data.data.length);
-  //     setClientes(res.data.data);
+  async function loadingClienteStats() {
+    try {
+      SetLoadingClienteNumber(true);
 
-  //     console.log(JSON.stringify(clientes?.[0], null, 2));
-  //   } catch (err) {
-  //     if (err instanceof Error) console.log(err.message);
-  //   } finally {
-  //     SetLoadingClienteNumber(false);
-  //   }
-  // }
+      const net = await NetInfo.fetch();
 
+      if (net.isConnected) {
+        const res = await api.get("/clientes");
 
- async function loadingClienteStats() {
-  try {
-    SetLoadingClienteNumber(true);
+        setTotalClientes(res.data.data.length);
+        setClientes(res.data.data);
 
-    const net = await NetInfo.fetch();
+      } else {
 
-    if (net.isConnected) {
-      const res = await api.get("/clientes");
+        const clientesLocal = ClienteRepository.getAll();
 
-      setTotalClientes(res.data.data.length);
-      setClientes(res.data.data);
+        setClientes(clientesLocal);
+        setTotalClientes(clientesLocal.length);
+      }
 
-    } else {
-
-      const clientesLocal = ClienteRepository.getAll();
-
-      setClientes(clientesLocal);
-      setTotalClientes(clientesLocal.length);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      SetLoadingClienteNumber(false);
     }
-
-  } catch (err) {
-    console.log(err);
-  } finally {
-    SetLoadingClienteNumber(false);
   }
-}
-
-
-
-  // async function loadingProductStats() {
-  //   try {
-  //     SetLoadingProductNumber(true);
-  //     const res = await api.get("/produtos");
-  //     setTotalProdutos(res.data.data.length);
-  //     setProdutos(res.data.data);
-  //   } catch (err) {
-  //     if (err instanceof Error) console.log(err.message);
-  //   } finally {
-  //     SetLoadingProductNumber(false);
-  //   }
-  // }
-
 
   async function loadingProductStats() {
-  try {
-    SetLoadingProductNumber(true);
+    try {
+      SetLoadingProductNumber(true);
 
-    const net = await NetInfo.fetch();
+      const net = await NetInfo.fetch();
 
-    if (net.isConnected) {
+      if (net.isConnected) {
 
-      const res = await api.get("/produtos");
+        const res = await api.get("/produtos");
 
-      setProdutos(res.data.data);
-      setTotalProdutos(res.data.data.length);
+        setProdutos(res.data.data);
+        setTotalProdutos(res.data.data.length);
 
-    } else {
+      } else {
 
-      const produtosLocal = ProdutoRepository.getAll();
+        const produtosLocal = ProdutoRepository.getAll();
 
-      setProdutos(produtosLocal);
-      setTotalProdutos(produtosLocal.length);
+        setProdutos(produtosLocal);
+        setTotalProdutos(produtosLocal.length);
+      }
+
+    } catch (err) {
+      console.log(err);
+    } finally {
+      SetLoadingProductNumber(false);
     }
-
-  } catch (err) {
-    console.log(err);
-  } finally {
-    SetLoadingProductNumber(false);
   }
-}
 
-async function loadingVendasStats() {
-  try {
+  async function loadingVendasStats() {
+    try {
 
-    SetLoadingVendasNumber(true);
+      SetLoadingVendasNumber(true);
 
-    const net = await NetInfo.fetch();
+      const net = await NetInfo.fetch();
 
-    if (net.isConnected) {
+      if (net.isConnected) {
 
-      const res = await api.get("/documentos");
+        const res = await api.get("/documentos");
 
-      setVendas(res.data.data.data);
-      setTotalVendas(res.data.data.data.length);
+        setVendas(res.data.data.data);
+        setTotalVendas(res.data.data.data.length);
 
-    } else {
+      } else {
 
-      const vendasLocal = VendaRepository.getAll();
+        const vendasLocal = VendaRepository.getAll();
 
-      setVendas(vendasLocal);
-      setTotalVendas(vendasLocal.length);
+        setVendas(vendasLocal);
+        setTotalVendas(vendasLocal.length);
+      }
+
+    } catch (err) {
+      console.log(err);
+    } finally {
+      SetLoadingVendasNumber(false);
     }
-
-  } catch (err) {
-    console.log(err);
-  } finally {
-    SetLoadingVendasNumber(false);
   }
-}
-
-
-  // async function loadingVendasStats() {
-  //   try {
-  //     SetLoadingVendasNumber(true);
-  //     const res = await api.get("/documentos");
-  //     setTotalVendas(res.data.data.data.length);
-  //     setVendas(res.data.data.data);
-  //   } catch (err: any) {
-  //     console.log(err.response);
-  //   } finally {
-  //     SetLoadingVendasNumber(false);
-  //   }
-  // }
-
-  // async function loadMarcas() {
-  //   try {
-  //     const response = await api.get("/marcas");
-
-  //     setMarcas(response.data.data);
-  //   } catch (err) {
-  //     if (err instanceof Error) console.log(err.message);
-  //   } finally {
-  //   }
-  // }
 
   async function loadMarcas() {
 
-  try {
+    try {
 
-    const net = await NetInfo.fetch();
+      const net = await NetInfo.fetch();
 
-    if (net.isConnected) {
+      if (net.isConnected) {
 
-      const response =
-        await api.get("/marcas");
+        const response =
+          await api.get("/marcas");
 
-      setMarcas(response.data.data);
+        setMarcas(response.data.data);
 
-    } else {
+      } else {
 
-      setMarcas(
-        MarcaRepository.getAll()
-      );
+        setMarcas(
+          MarcaRepository.getAll()
+        );
+      }
+
+    } catch (err) {
+      console.log(err);
     }
-
-  } catch (err) {
-    console.log(err);
   }
-}
-
-  // async function loadTipos() {
-  //   try {
-  //     const response = await api.get("/tipo");
-
-  //     setTipos(response.data.data);
-  //   } catch (err) {
-  //     if (err instanceof Error) console.log(err.message);
-  //   } finally {
-  //   }
-  // }
-
-
-
-
-  // async function loadCategorias() {
-  //   try {
-  //     const response = await api.get("/categorias");
-
-  //     setCategorias(response.data.data);
-  //   } catch (err) {
-  //     if (err instanceof Error) console.log(err.message);
-  //   } finally {
-  //   }
-  // }
 
   async function loadTipos() {
 
-  try {
+    try {
 
-    const net = await NetInfo.fetch();
+      const net = await NetInfo.fetch();
 
-    if (net.isConnected) {
+      if (net.isConnected) {
 
-      const response =
-        await api.get("/tipo");
+        const response =
+          await api.get("/tipo");
 
-      setTipos(response.data.data);
+        setTipos(response.data.data);
 
-    } else {
+      } else {
 
-      setTipos(
-        TipoRepository.getAll()
-      );
+        setTipos(
+          TipoRepository.getAll()
+        );
+      }
+
+    } catch (err) {
+      console.log(err);
     }
-
-  } catch (err) {
-    console.log(err);
   }
-}
 
   async function loadCategorias() {
 
-  try {
+    try {
 
-    const net = await NetInfo.fetch();
+      const net = await NetInfo.fetch();
 
-    if (net.isConnected) {
+      if (net.isConnected) {
 
-      const response =
-        await api.get("/categorias");
+        const response =
+          await api.get("/categorias");
 
-      setCategorias(response.data.data);
+        setCategorias(response.data.data);
 
-    } else {
+      } else {
 
-      setCategorias(
-        CategoriaRepository.getAll()
-      );
+        setCategorias(
+          CategoriaRepository.getAll()
+        );
+      }
+
+    } catch (err) {
+      console.log(err);
     }
-
-  } catch (err) {
-    console.log(err);
   }
-}
-
-
-
 
   async function loadFornecedores() {
 
-  try {
+    try {
 
-    const net = await NetInfo.fetch();
+      const net = await NetInfo.fetch();
 
-    if (net.isConnected) {
+      if (net.isConnected) {
 
-      const response = await api.get("/fornecedor");
+        const response = await api.get("/fornecedor");
 
-      setFornecedores(response.data.data);
+        setFornecedores(response.data.data);
 
-    } else {
+      } else {
 
-      const fornecedoresLocal =
-        FornecedoresRepository.getAll();
+        const fornecedoresLocal =
+          FornecedoresRepository.getAll();
 
-      setFornecedores(fornecedoresLocal);
-    }
+        setFornecedores(fornecedoresLocal);
+      }
 
-  } catch (err) {
-    console.log(err);
-  }
-}
-  // async function loadFornecedores() {
-  //   try {
-  //     const response = await api.get("/fornecedor");
-  //     setFornecedores(response.data.data);
-  //   } catch (err: any) {
-  //     console.log(err.response);
-  //   } finally {
-  //   }
-  // }
-
-  function navigatePage(pageIndex: number) {
-    setActiveNav(pageIndex);
-
-    if (pageIndex === 3) {
-      router.push("/(authenticated)/produtos");
-    }
-    if (pageIndex === 4) {
-      router.push("/(authenticated)/settings");
-    }
-
-    if (pageIndex === 1) {
-      router.push("/(authenticated)/clientes");
-    }
-
-    if (pageIndex === 0) {
-      router.push("/(authenticated)/vendas");
+    } catch (err) {
+      console.log(err);
     }
   }
 
+
+  
+  // ✅ TODO O TEU CÓDIGO ORIGINAL ABAIXO
   const NAV_ITEMS = [
     { icon: ShoppingBag, label: "Vendas" },
     { icon: Handshake, label: "Clientes" },
@@ -692,55 +1691,52 @@ async function loadingVendasStats() {
       );
     }
   };
-  interface VendaProps {
-    venda: Vendas;
+
+ 
+
+  function handleSidebarNavigation(pageId: string) {
+    setCurrentScreen(pageId);
+
+    if (pageId === "vendas") {
+      router.push("/(authenticated)/vendas");
+    } else if (pageId === "clientes") {
+      router.push("/(authenticated)/clientes");
+    } else if (pageId === "produtos") {
+      router.push("/(authenticated)/produtos");
+    } else if (pageId === "config") {
+      router.push("/(authenticated)/settings");
+    }
+    else if (pageId === "fornecedores") {
+     router.push ('/(authenticated)/FornecedoresScreen')
+
+    }
+
+   
   }
 
-  function FacturaItem({ venda }: VendaProps) {
-    const cliente = clientes?.find(
-      (cliente) => cliente.id === venda.cliente_id,
-    );
-    const fornecedor = fornecedores?.find(
-      (fornecedor) => fornecedor.id === venda.fornecedor_id,
-    );
+  
+  // if (currentScreen === "fornecedores") {
 
-    const today = new Date();
+  //   router.push ('/components/FornecedoresScreen')
 
-    const date = new Date(venda.created_at);
+  //   return (
+  //     <View style={styles.container}>
+  //       {/* <View style={styles.sidebarButtonContainer}>
+  //         <Sidebar onNavigate={handleSidebarNavigation} activeNav={currentScreen} />
+  //       </View> */}
+         
+  //       <FornecedoresScreen  />
+  //     </View>
+  //   );
+  // }
 
-    if (date.getMonth() === today.getMonth()) {
-      return (
-        <TouchableOpacity style={styles.facturaCard}>
-          <View style={styles.facturaLeft}>
-            <Text style={styles.facturaNum}>
-              {venda.tipo_doc} {new Date().getFullYear() + "/" + venda.id}
-            </Text>
-            <Text style={styles.facturaCliente}>
-              {cliente?.nome ?? fornecedor?.nome}
-            </Text>
-            <Text style={styles.facturaData}>
-              {new Date(venda?.created_at).getDate()}{" "}
-              {new Date(venda?.created_at).toLocaleString("pt-PT", {
-                month: "short",
-              })}{" "}
-              {""}
-              {new Date(venda?.created_at).getFullYear()}
-            </Text>
-          </View>
-          <View style={styles.facturaRight}>
-            <Text style={styles.facturaValor}>
-              {formatMoney(venda.total_doc) + " MT"}{" "}
-            </Text>
-            <BadgeEstadoVenda estado={venda.estado} />
-          </View>
-        </TouchableOpacity>
-      );
-    } else return null;
-  }
-
+  
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
+
+   
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -750,14 +1746,20 @@ async function loadingVendasStats() {
             colors={["#185FA5"]}
             tintColor="#185FA5"
           />
-        }
-      >
-        <View style={styles.header}>
-          <Text style={styles.greeting}>Bom dia, {user?.user.name}</Text>
-          <Text style={styles.subtitle}>
-            Facturação — {mesCapitalizado} de {ano}
-          </Text>
-        </View>
+        } >
+   
+   
+      <View style={styles.header}>
+        <Text style={styles.greeting}>Bom dia, {user?.user.name}</Text>
+        <Text style={styles.subtitle}>
+          Facturação — {mesCapitalizado} de {ano}
+        </Text>
+      </View>
+      <View style={styles.sidebarButtonContainer}>
+        <Sidebar onNavigate={handleSidebarNavigation} activeNav={currentScreen} />
+      </View>
+      
+       
 
         <View style={styles.grid}>
           {/* Faturado */}
@@ -769,10 +1771,10 @@ async function loadingVendasStats() {
               {formatMoney(vendasImpressoAcumulado) + " MT"}
             </Text>
 
-            <Text style={styles.positive}>↑ 12% vs maio</Text>
+            {/* <Text style={styles.positive}>↑ 12% vs maio</Text> */}
           </View>
 
-          <View style={styles.card}>
+          {/* <View style={styles.card}>
             <Text style={styles.cardTitle}>Por receber (em VD's)</Text>
             <Text style={styles.value}>
               {formatMoney(vendasConfirmadoAcumulado) + " MT"}
@@ -781,9 +1783,9 @@ async function loadingVendasStats() {
               {vendasConfirmadoVD?.filter((venda) => !venda.impresso).length}{" "}
               factura(s) pendente(s)
             </Text>
-          </View>
+          </View> */}
 
-          <View style={styles.card}>
+          {/* <View style={styles.card}>
             <Text style={styles.cardTitle}>Pago (em NE's)</Text>
 
             <Text style={styles.value}>
@@ -793,7 +1795,7 @@ async function loadingVendasStats() {
             <Text style={{ color: "green", fontSize: 12, marginTop: 10 }}>
               Valor total pago à fornecedores{" "}
             </Text>
-          </View>
+          </View> */}
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>
@@ -806,7 +1808,7 @@ async function loadingVendasStats() {
 
             <Text style={{ color: "#966f34", fontSize: 12, marginTop: 10 }}>
               {" "}
-              VD's não confirmadas{" "}
+            
             </Text>
           </View>
 
@@ -1100,17 +2102,86 @@ async function loadingVendasStats() {
       </View>
     </SafeAreaView>
   );
+
+  interface VendaProps {
+    venda: Vendas;
+  }
+
+  function FacturaItem({ venda }: VendaProps) {
+    const cliente = clientes?.find(
+      (cliente) => cliente.id === venda.cliente_id,
+    );
+    const fornecedor = fornecedores?.find(
+      (fornecedor) => fornecedor.id === venda.fornecedor_id,
+    );
+
+    const today = new Date();
+
+    const date = new Date(venda.created_at);
+
+    if (date.getMonth() === today.getMonth()) {
+      return (
+        <TouchableOpacity style={styles.facturaCard}>
+          <View style={styles.facturaLeft}>
+            <Text style={styles.facturaNum}>
+              {venda.tipo_doc} {new Date().getFullYear() + "/" + venda.id}
+            </Text>
+            <Text style={styles.facturaCliente}>
+              {cliente?.nome ?? fornecedor?.nome}
+            </Text>
+            <Text style={styles.facturaData}>
+              {new Date(venda?.created_at).getDate()}{" "}
+              {new Date(venda?.created_at).toLocaleString("pt-PT", {
+                month: "short",
+              })}{" "}
+              {""}
+              {new Date(venda?.created_at).getFullYear()}
+            </Text>
+          </View>
+          <View style={styles.facturaRight}>
+            <Text style={styles.facturaValor}>
+              {formatMoney(venda.total_doc) + " MT"}{" "}
+            </Text>
+            <BadgeEstadoVenda estado={venda.estado} />
+          </View>
+        </TouchableOpacity>
+      );
+    } else return null;
+  }
+
+  function navigatePage(pageIndex: number) {
+    setActiveNav(pageIndex);
+
+    if (pageIndex === 3) {
+      router.push("/(authenticated)/produtos");
+    }
+    if (pageIndex === 4) {
+      router.push("/(authenticated)/settings");
+    }
+
+    if (pageIndex === 1) {
+      router.push("/(authenticated)/clientes");
+    }
+
+    if (pageIndex === 0) {
+      router.push("/(authenticated)/vendas");
+    }
+  }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#e4e4e4",
-    // marginHorizontal: 10,
+  },
+  sidebarButtonContainer: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 10,
   },
   safe: {
     flex: 1,
-    // backgroundColor: '#185FA5',
   },
 
   header: {
@@ -1139,8 +2210,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    // borderWidth:2,
-    // borderColor:'#000',
     margin: 10,
   },
 
@@ -1294,23 +2363,17 @@ const styles = StyleSheet.create({
   },
 
   clienteEmpresa: {
-    //  backgroundColor: '#c9ccec',
     color: "#4f0fe2",
-    // paddingHorizontal:3,
-    // paddingVertical:1,
-    // borderRadius:20,
     fontSize: 11,
     fontWeight: 500,
   },
 
   clienteParticular: {
-    // backgroundColor: '#fae5d9',
     color: "#854F0B",
     padding: 1,
-    // borderRadius:20,
     fontSize: 11,
-    // paddingHorizontal:5,
-    // paddingVertical:2,
     fontWeight: 500,
   },
 });
+
+

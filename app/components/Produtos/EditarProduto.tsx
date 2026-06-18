@@ -481,7 +481,7 @@ export function EditarProdutoForm({produto,visible,setVisible,
         categoria_id: selectedCategoryId,
         preco_venda_liquido_1: precoL,
         preco_venda_iliquido_1: precoIL,
-        stock_actual:stock,
+        // stock_actual:stock,
         preco_venda_liquido_2: 0,
         preco_venda_iliquido_2: 0,
         preco_venda_liquido_3: 0,
@@ -627,14 +627,17 @@ export function EditarProdutoForm({produto,visible,setVisible,
 
               <View style={styles.dialogContentStyle}>
                 <Text style={styles.dialogTextStyle}> Stock:</Text>
-                <TextInput value={stock}
+                <TextInput value={stock} editable={false}
+                
                  onChangeText={(text) =>{
                   
                   setStock(text)
               
                 }}
                 keyboardType='numeric'
-                style={styles.TextFieldStyling}/>
+                style={[styles.TextFieldStyling,{  
+                  backgroundColor: '#dcdcdc',
+                    color: '#666'}]}/>
               </View>
               
               <View style={styles.dialogContent}>
