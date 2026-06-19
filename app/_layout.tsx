@@ -96,8 +96,11 @@ export default function RootLayout() {
 
           }}/>
 
-           <Stack.Screen name="(authenticated)/FornecedoresScreen" options={
-           {  headerShown: true,
+           <Stack.Screen name="(authenticated)/FornecedoresScreen" 
+           options=
+           { { 
+           
+             headerShown: true,
              headerTitle:'Voltar',
              animation:'fade',
             
@@ -118,7 +121,9 @@ export default function RootLayout() {
                 </TouchableOpacity>
               ),
 
-          }}/>
+          } }
+          
+         />
 
 
         <Stack.Screen name="(authenticated)/vendas" options={

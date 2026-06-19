@@ -353,7 +353,7 @@ export default function VendasList() {
           </Text> */}
 
             <Text style={{ color: "#838282" }}>
-              {(cliente?.email ?? fornecedor?.email) + ` (${venda.ano_serie})`}
+              {(cliente?.nome ?? fornecedor?.nome) + ` (${venda.ano_serie})`}
             </Text>
           </View>
 

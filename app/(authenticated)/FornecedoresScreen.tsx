@@ -152,7 +152,8 @@ export default function FornecedoresScreen ()
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container}
+      edges={['left', 'right', 'bottom']}>
       <StatusBar barStyle="light-content" backgroundColor="#185FA5" />
 
       {/* Header */}
@@ -230,6 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
+    marginTop:0,
     marginBottom: 15,
   },
   headerTitle: {
